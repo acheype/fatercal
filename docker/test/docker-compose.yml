@@ -1,0 +1,29 @@
+version: '3'
+services:
+    www:
+        container_name: fatercal-www
+        build: ../..
+        image: acheype/httpd-www
+        ports:
+            - "80:80"
+        links:
+            - "postgres"
+        environment:
+            - DJANGO_SECRET_KEY=$$2+%qlo!%5j6@t*+f*d2^!8rqvop(%sf@#2dbths8j=+gfr!up
+            - DJANGO_DEBUT=false
+            - POSTGRES_HOST=postgres
+            - POSTGRES_DB=fatercal
+            - POSTGRES_USER=fatercal
+            - POSTGRES_PASSWORD=ftc
+
+    postgres:
+        container_name: fatercal-db
+        image: postgres:9.6.6
+        volumes:
+            - /data/postgresql2:/var/lib/postgresql/data
+        ports:
+            - "5432:5432"
+        environment:
+            - POSTGRES_DB=fatercal
+            - POSTGRES_USER=fatercal
+            - POSTGRES_PASSWORD=ftc
