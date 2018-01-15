@@ -10,150 +10,12 @@ from __future__ import unicode_literals
 from django.db import models
 
 
-class AuthGroup(models.Model):
-    name = models.CharField(unique=True, max_length=80)
-
-    class Meta:
-        managed = False
-        db_table = 'auth_group'
-
-
-class AuthGroupPermissions(models.Model):
-    group = models.ForeignKey(AuthGroup, models.DO_NOTHING)
-    permission = models.ForeignKey('AuthPermission', models.DO_NOTHING)
-
-    class Meta:
-        managed = False
-        db_table = 'auth_group_permissions'
-        unique_together = (('group', 'permission'),)
-
-
-class AuthPermission(models.Model):
-    name = models.CharField(max_length=255)
-    content_type = models.ForeignKey('DjangoContentType', models.DO_NOTHING)
-    codename = models.CharField(max_length=100)
-
-    class Meta:
-        managed = False
-        db_table = 'auth_permission'
-        unique_together = (('content_type', 'codename'),)
-
-
-class AuthUser(models.Model):
-    password = models.CharField(max_length=128)
-    last_login = models.DateTimeField(blank=True, null=True)
-    is_superuser = models.BooleanField()
-    username = models.CharField(unique=True, max_length=150)
-    first_name = models.CharField(max_length=30)
-    last_name = models.CharField(max_length=30)
-    email = models.CharField(max_length=254)
-    is_staff = models.BooleanField()
-    is_active = models.BooleanField()
-    date_joined = models.DateTimeField()
-
-    class Meta:
-        managed = False
-        db_table = 'auth_user'
-
-
-class AuthUserGroups(models.Model):
-    user = models.ForeignKey(AuthUser, models.DO_NOTHING)
-    group = models.ForeignKey(AuthGroup, models.DO_NOTHING)
-
-    class Meta:
-        managed = False
-        db_table = 'auth_user_groups'
-        unique_together = (('user', 'group'),)
-
-
-class AuthUserUserPermissions(models.Model):
-    user = models.ForeignKey(AuthUser, models.DO_NOTHING)
-    permission = models.ForeignKey(AuthPermission, models.DO_NOTHING)
-
-    class Meta:
-        managed = False
-        db_table = 'auth_user_user_permissions'
-        unique_together = (('user', 'permission'),)
-
-
-class DashboardUserdashboardmodule(models.Model):
-    title = models.CharField(max_length=255)
-    module = models.CharField(max_length=255)
-    app_label = models.CharField(max_length=255, blank=True, null=True)
-    user = models.IntegerField()
-    column = models.IntegerField()
-    order = models.IntegerField()
-    settings = models.TextField()
-    children = models.TextField()
-    collapsed = models.BooleanField()
-
-    class Meta:
-        managed = False
-        db_table = 'dashboard_userdashboardmodule'
-
-
-class DjangoAdminLog(models.Model):
-    action_time = models.DateTimeField()
-    object_id = models.TextField(blank=True, null=True)
-    object_repr = models.CharField(max_length=200)
-    action_flag = models.SmallIntegerField()
-    change_message = models.TextField()
-    content_type = models.ForeignKey('DjangoContentType', blank=True, null=True)
-    user = models.ForeignKey(AuthUser, models.DO_NOTHING)
-
-    class Meta:
-        managed = False
-        db_table = 'django_admin_log'
-
-
-class DjangoContentType(models.Model):
-    app_label = models.CharField(max_length=100)
-    model = models.CharField(max_length=100)
-
-    class Meta:
-        managed = False
-        db_table = 'django_content_type'
-        unique_together = (('app_label', 'model'),)
-
-
-class DjangoMigrations(models.Model):
-    app = models.CharField(max_length=255)
-    name = models.CharField(max_length=255)
-    applied = models.DateTimeField()
-
-    class Meta:
-        managed = False
-        db_table = 'django_migrations'
-
-
-class DjangoSession(models.Model):
-    session_key = models.CharField(primary_key=True, max_length=40)
-    session_data = models.TextField()
-    expire_date = models.DateTimeField()
-
-    class Meta:
-        managed = False
-        db_table = 'django_session'
-
-
-class DocsTaxref(models.Model):
-    id_doc = models.AutoField(primary_key=True)
-    id_taxon = models.ForeignKey('Taxon', db_column='id_taxon', blank=True, null=True)
-    id_docuse = models.ForeignKey('DocsUses', db_column='id_docuse', blank=True, null=True)
-    page = models.SmallIntegerField(blank=True, null=True)
-    url = models.CharField(max_length=250, blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'docs_taxref'
-
-
 class DocsUses(models.Model):
     id_docuse = models.AutoField(primary_key=True)
     lb_docuse = models.TextField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'docs_uses'
 
 
@@ -162,17 +24,19 @@ class HabitatDetail(models.Model):
     nom = models.CharField(max_length=100)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'habitat_detail'
+
 
 class Hote(models.Model):
     id_hote = models.ForeignKey('Taxon', db_column='id_hote', related_name='hote')
     id_parasite = models.ForeignKey('Taxon', db_column='id_parasite', related_name='parasite')
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'hote'
         unique_together = (('id_hote', 'id_parasite'),)
+
 
 class Iso6393(models.Model):
     iso639_3 = models.CharField(primary_key=True, max_length=3)
@@ -181,29 +45,8 @@ class Iso6393(models.Model):
     type = models.CharField(max_length=1)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'iso639-3'
-
-
-class JetBookmark(models.Model):
-    url = models.CharField(max_length=200)
-    title = models.CharField(max_length=255)
-    user = models.IntegerField()
-    date_add = models.DateTimeField()
-
-    class Meta:
-        managed = False
-        db_table = 'jet_bookmark'
-
-
-class JetPinnedapplication(models.Model):
-    app_label = models.CharField(max_length=255)
-    user = models.IntegerField()
-    date_add = models.DateTimeField()
-
-    class Meta:
-        managed = False
-        db_table = 'jet_pinnedapplication'
 
 
 class Localitee(models.Model):
@@ -213,7 +56,7 @@ class Localitee(models.Model):
     longitude = models.FloatField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'localitee'
 
     def __str__(self):
@@ -229,7 +72,7 @@ class PlanteHote(models.Model):
     espece = models.CharField(max_length=100, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'plante_hote'
 
 
@@ -260,7 +103,7 @@ class Prelevement(models.Model):
             return "{} {}".format(self.id_taxref.__str__(), self.date)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'prelevement'
 
 
@@ -269,7 +112,7 @@ class PrelevementRecolteur(models.Model):
     lb_auteur = models.CharField(max_length=250, blank=True, null=True, verbose_name='Récolteurs')
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'prelevement_auteurs'
 
     def __str__(self):
@@ -283,7 +126,7 @@ class PrelevementTypeEnregistrement(models.Model):
         return self.lb_type
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'prelevement_type_enregistrement'
 
 
@@ -330,7 +173,7 @@ class Taxon(models.Model):
         return 'lb_nom', 'lb_auteur',
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'taxon'
         ordering = ['-lb_nom']
 
@@ -340,7 +183,7 @@ class TaxrefHabitat(models.Model):
     lb_habitat = models.CharField(max_length=100)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'taxref_habitat'
 
     def __str__(self):
@@ -355,7 +198,7 @@ class TaxrefRang(models.Model):
         return self.lb_rang
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'taxref_rang'
 
 
@@ -364,7 +207,7 @@ class TaxrefStatus(models.Model):
     lb_status = models.TextField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'taxref_status'
 
     def __str__(self):
@@ -379,5 +222,5 @@ class Taxvern(models.Model):
     iso639_3 = models.ForeignKey(Iso6393, db_column='iso639-3')
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'taxvern'
