@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Fatercal</title>
+</head>
+<body>
+{% load static %}
+<h2>Modification de Taxon</h2>
+<h3>Nom du Taxon : {{ taxon_to_change.lb_nom }}</h3>
+<ul>
+
+{% if taxon_to_change.id_ref.id == taxon_to_change.id %}
+    <li><a>Ce taxon est valide.</a></li>
+{% else %}
+    <li> <a>Taxon de référence : {{ taxon_to_change.id_ref.lb_nom }}</a></li>
+{% endif %}
+{% if taxon_to_change.id_sup != None %}
+    <li> <a>Supérieur : {{ taxon_to_change.id_sup.lb_nom }}</a></li>
+{% else %}
+        {% if taxon_to_change.id_ref.id == taxon_to_change.id %}
+        Il n'a pas de supérieur Hiérarchique
+        {% endif %}
+{% endif %}
+{% block content %}
+</ul>
+<div>
+    <form action="" method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" />
+    </form>
+</div>
+{% endblock %}
+
+{% block footer %}
+
+{{ form.media }}
+{% endblock %}
+</body>
+</html>
