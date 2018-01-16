@@ -6,7 +6,8 @@ import nested_admin
 
 
 class HabitatDetailObj(nested_admin.NestedTabularInline):
-    """This Class will the model of the table
+    """
+    This Class will the model of the table
     HabitatDetail to display all the object affected to the actual taxon selected
     by the user
     """
@@ -47,9 +48,7 @@ class PrelevementObj(nested_admin.NestedStackedInline):
 
 # This class serve to modify the admin look for the Model Taxon
 class TaxonModify(nested_admin.NestedModelAdmin):
-    """
-    This class will display the model Taxon for modification
-    """
+    """ This class will display the model Taxon for modification """
 
     # It will use the class define ealier to display all the object affected to the actual taxon
     inlines = (
@@ -89,10 +88,10 @@ class TaxonModify(nested_admin.NestedModelAdmin):
         'lb_auteur',
     )
 
-    # The field that will be showing to the user either or not it is alterable
-    fieldsets = (
+    # The field that will be showing to the user when we edit the object
+    fieldsets_edit = (
         ('Taxonomie', {
-            'fields': ('lb_nom', 'lb_auteur', 'nom_complet', 'id_ref', 'id_sup', 'rang', 'hierarchy')
+            'fields': ('lb_nom', 'lb_auteur', 'nom_complet', 'id_ref', 'id_sup', 'rang', 'change_taxon', 'hierarchy')
         }),
         ('Statut et Habitat', {
             'fields': ('nc', 'habitat', 'grande_terre', 'iles_loyautee', 'autre',)
@@ -106,23 +105,65 @@ class TaxonModify(nested_admin.NestedModelAdmin):
         })
     )
 
+    # The field that will be showing to the user when we add a new object
+    fieldsets_add = (
+        ('Taxonomie', {
+            'fields': ('lb_nom', 'lb_auteur', 'id_ref', 'id_sup', 'rang', 'info')
+        }),
+        ('Statut et Habitat', {
+            'fields': ('nc', 'habitat', 'grande_terre', 'iles_loyautee', 'autre',)
+        }),
+        ('Information complémentaires', {
+            'classes': ('collapse',),
+            'fields': ('remarque', 'sources', 'reference',)
+        })
+    )
+
     # Redefinition of the function to have a readonly only when whe modify the object
     def get_readonly_fields(self, request, obj=None):
         if obj:  # editing an existing object
-            return self.readonly_fields + ('id_sup', 'id_ref')
-        return self.readonly_fields
+            return self.readonly_fields + ('id_sup', 'id_ref', 'change_taxon',)
+        else:
+            return self.readonly_fields + ('info',)
 
+    # Redefinition of the function to have different fieldsets when we edit or add a taxon
+    def get_fieldsets(self, request, obj=None):
+        if obj:
+            return self.fieldsets_edit
+        else:
+            return self.fieldsets_add
+
+    # redefinition of the method save_model
     def save_model(self, request, obj, form, change):
         obj.nom_complet = obj.lb_nom + ' ' + obj.lb_auteur
         super(TaxonModify, self).save_model(request, obj, form, change)
+        # When a user want to create a new valid taxon to refer itself
+        if obj.id_ref is None and obj.id_sup is not None:
+            obj.id_ref = obj
+            obj.save()
 
-    def id(self, obj):
+    def change_taxon(self, obj):
+        if obj == obj.id_ref:
+            return """<br/>
+            <p><a href='/fatercaladmin/change_ref/{}/'>Changez le référent</a></p>
+            <p><a href="/fatercaladmin/change_sup/{}/">Changez le supérieur</a></p>
+            <br/>
+            """.format(obj.id, obj.id)
+        else:
+            return "<p>Vous ne pouvez pas changez le supérieur ou le référent de ce taxon</p>"
+
+    change_taxon.allow_tags = True
+
+    @staticmethod
+    def id(obj):
         return obj.id
 
-    def id_ref_id(self, obj):
+    @staticmethod
+    def id_ref_id(obj):
         return obj.id_ref.id
 
-    def id_sup_id(self, obj):
+    @staticmethod
+    def id_sup_id(obj):
         return obj.id_sup.id
 
     # This function will construct the hierarchy tree of the taxon
@@ -146,7 +187,7 @@ class TaxonModify(nested_admin.NestedModelAdmin):
             str_hierarchy_end = '</ul>'
             if liste_hierarchy is not None:
                 for tup in reversed(liste_hierarchy):
-                    str_hierarchy_begin = str_hierarchy_begin + '<li><label class="tree_label" for="c{}"><strong>{} : </strong></al><a href="/admin/fatercaladmin/taxon/{}/">{}</a></label><ul>'.format(nb2, tup.rang, tup.id, tup)
+                    str_hierarchy_begin = str_hierarchy_begin + '<li><label class="tree_label" for="c{}"><strong>{} : </strong></al><a href="/fatercaladmin/taxon/{}/">{}</a></label><ul>'.format(nb2, tup.rang, tup.id, tup)
                     str_hierarchy_end = '</li></ul>' + str_hierarchy_end
                     nb2 = nb2-1
             son = Taxon.objects.filter(id_sup=obj.id).order_by('rang')
@@ -155,17 +196,17 @@ class TaxonModify(nested_admin.NestedModelAdmin):
                 str_son = '<ul><li><label class="tree_label" for="c{}"/><strong>{} : </strong></label><ul>'.format(str(nb+1), rang)
                 for tup in son:
                     if rang != tup.rang:
-                        str_son = str_son + '</ul></li><li class="folder"><label for="c{}"><strong>{} : </strong></label><li><ul><a href="/admin/fatercaladmin/taxon/{}/">{}</a>'.format(str(nb+1), tup.rang, tup.id, tup)
+                        str_son = str_son + '</ul></li><li class="folder"><label for="c{}"><strong>{} : </strong></label><li><ul><a href="/fatercaladmin/taxon/{}/">{}</a>'.format(str(nb+1), tup.rang, tup.id, tup)
                         rang = tup.rang
                     else:
-                        str_son = str_son + '<li><a href="/admin/fatercaladmin/taxon/{}/">{} {}</a></li>'.format(tup.id, tup.lb_nom, tup.lb_auteur)
+                        str_son = str_son + '<li><a href="/fatercaladmin/taxon/{}/">{} {}</a></li>'.format(tup.id, tup.lb_nom, tup.lb_auteur)
                 str_son = str_son+'</ul></ul></li>'
                 str_hierarchy = '<ul>Hierarchie du taxon' + str_hierarchy_begin+'<li class="folder"><strong>{} : </strong>{} {}<ul>'.format(obj.rang, obj.lb_nom, obj.lb_auteur)+str_son+'</ul></li>'+str_hierarchy_end
             else:
-                str_hierarchy = '<ul class="tree">Hierarchie du taxon' + str_hierarchy_begin + '<li class="folder"><label>{} : </label><a href="/admin/fatercaladmin/taxon/{}/change">{} {}</a></li>'.format(obj.rang, obj.id, obj.lb_nom, obj.lb_auteur) + str_hierarchy_end
+                str_hierarchy = '<ul class="tree"><br/>' + str_hierarchy_begin + '<li class="folder"><label>{} : </label><a href="/fatercaladmin/taxon/{}/">{} {}</a></li>'.format(obj.rang, obj.id, obj.lb_nom, obj.lb_auteur) + str_hierarchy_end
             return str_hierarchy
         else:
-            return None
+            return "Il n'y a pas de hiérarchie pour ce taxon"
     hierarchy.allow_tags = True
 
     # list of file to use for style or javascript function
@@ -203,8 +244,9 @@ class PrelevementModify(admin.ModelAdmin):
 
     # The search field will be on these field to find a taxon
     search_fields = (
-            'toponyme',
-        )
+        'id_taxref__lb_nom',
+        'toponyme',
+    )
 
     fieldsets = [
         ('Spécimen', {

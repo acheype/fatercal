@@ -1,11 +1,11 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Fatercal</title>
-</head>
-<body>
-<p>{% message %}</p>
-<p><a href="/admin/fatercaladmin/{{ taxon_to_change.id }}">Retour a la page d'administration du taxon </a></p>
-</body>
-</html>
+{% extends "fatercaladmin/header.html" %}
+
+{% block content %}
+
+<fieldset class="module aligned ">
+    <div class="form-row field-lb_nom">
+{{ message }}
+        <strong><a href="/fatercaladmin/taxon/{{ taxon_to_change.id }}"> Retour a la page du taxon</a></strong>
+    </div>
+</fieldset>
+{% endblock %}

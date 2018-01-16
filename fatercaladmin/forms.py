@@ -8,7 +8,7 @@ class TaxonChangeRef(forms.Form):
     class Meta:
         model = Taxon
 
-    referent = AutoCompleteSelectField("valid", required=True, help_text=None)
+    referent = AutoCompleteSelectField("valid_and_syn", required=True, help_text=None)
 
 
 class TaxonChangeSup(forms.Form):

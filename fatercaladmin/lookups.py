@@ -12,4 +12,16 @@ class ValidLookup(LookupChannel):
         return self.model.objects.filter(lb_nom__istartswith=q, id=F('id_ref')).order_by('lb_nom')
 
     def format_item_display(self, item):
-        return u"<span class='tag'>%s</span>" % item.lb_nom
+        return u"<span class='tag'>%s</span>" % item
+
+
+@register('valid_and_syn')
+class ValidSynLookup(LookupChannel):
+
+    model = Taxon
+
+    def get_query(self, q, request):
+        return self.model.objects.filter(lb_nom__istartswith=q).order_by('lb_nom')
+
+    def format_item_display(self, item):
+        return u"<span class='tag'>%s</span>" % item

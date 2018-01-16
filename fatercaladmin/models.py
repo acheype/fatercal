@@ -65,7 +65,7 @@ class Localitee(models.Model):
 
 
 class PlanteHote(models.Model):
-    id_plante_hote = models.AutoField(db_column='id_plante-hote', primary_key=True)  # Field renamed to remove unsuitable characters.
+    id_plante_hote = models.AutoField(db_column='id_plante-hote', primary_key=True)  # Field renamed remove characters.
     id_taxref = models.ForeignKey('Taxon', db_column='id_taxref')
     famille = models.CharField(max_length=100, blank=True, null=True)
     genre = models.CharField(max_length=100, blank=True, null=True)
@@ -157,7 +157,7 @@ class Taxon(models.Model):
 
     def valide(self):
         """Return a boolean about whether or not it is a valid taxon"""
-        return self.id == self.id_ref.id
+        return self == self.id_ref
 
     valide.boolean = True
 
@@ -167,6 +167,12 @@ class Taxon(models.Model):
         else:
             str_lb = str(self.lb_nom)
         return str_lb
+
+    def info(self):
+        return '''<strong>Si vous voulez créer un nouveau taxon
+        ne mettez rien dans référent et mettez 
+        un supérieur à votre nouveau taxon</strong>'''
+    info.allow_tags = True
 
     @staticmethod
     def autocomplete_search_fields():
