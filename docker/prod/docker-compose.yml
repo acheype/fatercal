@@ -9,13 +9,14 @@ services:
         links:
             - "postgres"
         environment:
-            - DJANGO_DEBUT=false
+            - DJANGO_DEBUG=false
             - POSTGRES_HOST=postgres
             - POSTGRES_DB=fatercal
         env_file: ./fatercal-web.env
-        # please define the variables DJANGO_SECRET_KEY and POSTGRES_PASSWORD in fatercal-web.env file.
+        # please define the variables DJANGO_SECRET_KEY (think to double any '$' character) and POSTGRES_PASSWORD in
+        # fatercal-web.env file.
         # example of the environment file content :
-        # DJANGO_SECRET_KEY=$$2+%qlo!%5j6@t*+f*d2^!8rqvop(%sf@#2dbths8j=+gfr!up
+        # DJANGO_SECRET_KEY=_4k52&$$59@7mas*mgmj7cipas*2+dz5h3nahw@po!3&q8^vhex
         # POSTGRES_PASSWORD=ftc
 
     postgres:

@@ -9,8 +9,8 @@ services:
         links:
             - "postgres"
         environment:
-            - DJANGO_SECRET_KEY=$$2+%qlo!%5j6@t*+f*d2^!8rqvop(%sf@#2dbths8j=+gfr!up
-            - DJANGO_DEBUT=false
+            - DJANGO_SECRET_KEY=_4k52&$$59@7mas*mgmj7cipas*2+dz5h3nahw@po!3&q8^vhex
+            - DJANGO_DEBUG=false
             - POSTGRES_HOST=postgres
             - POSTGRES_DB=fatercal
             - POSTGRES_USER=fatercal

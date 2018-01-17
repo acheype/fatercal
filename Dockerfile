@@ -19,7 +19,7 @@ RUN apt update && apt install -y apache2 apache2-utils libapache2-mod-wsgi-py3 p
 RUN mkdir /app
 COPY manage.py requirements.txt /app/
 COPY fatercal /app/fatercal
-COPY fatercaladmin /app/fatercaladmin
+COPY fatercal-site /app/fatercal-site
 
 # install python dependencies
 RUN pip3 install -r /app/requirements.txt
