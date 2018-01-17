@@ -2,7 +2,6 @@ version: '3'
 services:
     www:
         container_name: fatercal-web
-        build: ../..
         image: acheype/fatercal-www:0.8
         ports:
             - "80:80"
