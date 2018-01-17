@@ -34,7 +34,7 @@ def change_taxon_ref(request, id_taxon):
                             taxon_to_change.id_ref = form.cleaned_data['referent']
                             taxon_to_change.id_sup = None
                             taxon_to_change.save()
-                            template = loader.get_template('fatercaladmin/return_change_taxon.html')
+                            template = loader.get_template('fatercal/return_change_taxon.html')
                             context = {
                                 'taxon_to_change': taxon_to_change,
                                 'message': message,
@@ -43,7 +43,7 @@ def change_taxon_ref(request, id_taxon):
                             return HttpResponse(template.render(context, request))
             else:
                 form = TaxonChangeRef()
-                template = loader.get_template('fatercaladmin/change_taxon.html')
+                template = loader.get_template('fatercal/change_taxon.html')
                 context ={
                     'taxon_to_change': taxon_to_change,
                     'form': form,
@@ -68,7 +68,7 @@ def change_taxon_sup(request, id_taxon):
                     if form.cleaned_data['taxon_superieur'] is not None:
                         taxon_to_change.id_sup = form.cleaned_data['taxon_superieur']
                         taxon_to_change.save()
-                    template = loader.get_template('fatercaladmin/return_change_taxon.html')
+                    template = loader.get_template('fatercal/return_change_taxon.html')
                     context = {
                         'taxon_to_change': taxon_to_change,
                         'message': message,
@@ -77,7 +77,7 @@ def change_taxon_sup(request, id_taxon):
                     return HttpResponse(template.render(context, request))
             else:
                 form = TaxonChangeSup()
-                template = loader.get_template('fatercaladmin/change_taxon.html')
+                template = loader.get_template('fatercal/change_taxon.html')
                 context ={
                     'taxon_to_change': taxon_to_change,
                     'form': form,

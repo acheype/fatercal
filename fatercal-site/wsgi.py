@@ -1,5 +1,5 @@
 """
-WSGI config for fatercal project.
+WSGI config for fatercal-site project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 

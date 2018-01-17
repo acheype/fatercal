@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from fatercaladmin.views import ValidSpecialFilter
+from fatercal.views import ValidSpecialFilter
 from .models import Taxon, HabitatDetail, Localitee, Prelevement, PrelevementRecolteur
 import nested_admin
 
@@ -145,8 +145,8 @@ class TaxonModify(nested_admin.NestedModelAdmin):
     def change_taxon(self, obj):
         if obj == obj.id_ref:
             return """<br/>
-            <p><a href='/fatercaladmin/change_ref/{}/'>Changez le référent</a></p>
-            <p><a href="/fatercaladmin/change_sup/{}/">Changez le supérieur</a></p>
+            <p><a href='/fatercal/change_ref/{}/'>Changez le référent</a></p>
+            <p><a href="/fatercal/change_sup/{}/">Changez le supérieur</a></p>
             <br/>
             """.format(obj.id, obj.id)
         else:
@@ -187,7 +187,9 @@ class TaxonModify(nested_admin.NestedModelAdmin):
             str_hierarchy_end = '</ul>'
             if liste_hierarchy is not None:
                 for tup in reversed(liste_hierarchy):
-                    str_hierarchy_begin = str_hierarchy_begin + '<li><label class="tree_label" for="c{}"><strong>{} : </strong></al><a href="/fatercaladmin/taxon/{}/">{}</a></label><ul>'.format(nb2, tup.rang, tup.id, tup)
+                    str_hierarchy_begin = str_hierarchy_begin + '''<li><label class="tree_label" for="c{}">
+                    <strong>{} : </strong></al><a href="/fatercal/taxon/{}/">{}</a>
+                    </label><ul>'''.format(nb2, tup.rang, tup.id, tup)
                     str_hierarchy_end = '</li></ul>' + str_hierarchy_end
                     nb2 = nb2-1
             son = Taxon.objects.filter(id_sup=obj.id).order_by('rang')
@@ -196,14 +198,18 @@ class TaxonModify(nested_admin.NestedModelAdmin):
                 str_son = '<ul><li><label class="tree_label" for="c{}"/><strong>{} : </strong></label><ul>'.format(str(nb+1), rang)
                 for tup in son:
                     if rang != tup.rang:
-                        str_son = str_son + '</ul></li><li class="folder"><label for="c{}"><strong>{} : </strong></label><li><ul><a href="/fatercaladmin/taxon/{}/">{}</a>'.format(str(nb+1), tup.rang, tup.id, tup)
+                        str_son = str_son + '''</ul></li><li class="folder"><label for="c{}">
+                        <strong>{} : </strong></label><li><ul>
+                        <a href="/fatercal/taxon/{}/">{}</a>'''.format(str(nb+1), tup.rang, tup.id, tup)
                         rang = tup.rang
                     else:
-                        str_son = str_son + '<li><a href="/fatercaladmin/taxon/{}/">{} {}</a></li>'.format(tup.id, tup.lb_nom, tup.lb_auteur)
+                        str_son = str_son + '<li><a href="/fatercal/taxon/{}/">{} {}</a></li>'.format(tup.id, tup.lb_nom, tup.lb_auteur)
                 str_son = str_son+'</ul></ul></li>'
-                str_hierarchy = '<ul>Hierarchie du taxon' + str_hierarchy_begin+'<li class="folder"><strong>{} : </strong>{} {}<ul>'.format(obj.rang, obj.lb_nom, obj.lb_auteur)+str_son+'</ul></li>'+str_hierarchy_end
+                str_hierarchy = '<ul><br/>' + str_hierarchy_begin+'''<li class="folder">
+                <strong>{} : </strong>{} {}<ul>'''.format(obj.rang, obj.lb_nom, obj.lb_auteur)+str_son+'</ul></li>'+str_hierarchy_end
             else:
-                str_hierarchy = '<ul class="tree"><br/>' + str_hierarchy_begin + '<li class="folder"><label>{} : </label><a href="/fatercaladmin/taxon/{}/">{} {}</a></li>'.format(obj.rang, obj.id, obj.lb_nom, obj.lb_auteur) + str_hierarchy_end
+                str_hierarchy = '<ul class="tree"><br/>' + str_hierarchy_begin + '''<li class="folder">
+                <label>{} : </label><a href="/fatercal/taxon/{}/">{} {}</a></li>'''.format(obj.rang, obj.id, obj.lb_nom, obj.lb_auteur) + str_hierarchy_end
             return str_hierarchy
         else:
             return "Il n'y a pas de hiérarchie pour ce taxon"

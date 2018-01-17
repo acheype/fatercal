@@ -54,7 +54,7 @@
 </head>
 
 
-<body class="menu-pinned  app-fatercaladmin model-taxon change-form"
+<body class="menu-pinned  app-fatercal model-taxon change-form"
   data-admin-utc-offset="0">
 
 <!-- Container -->
@@ -99,8 +99,8 @@
 
 <div class="breadcrumbs">
 <a href="/">Accueil</a>
-&rsaquo; <a href="/fatercaladmin/">Fatercaladmin</a>
-&rsaquo; <a href="/fatercaladmin/taxon/">Taxons</a>
+&rsaquo; <a href="/fatercal/">Fatercaladmin</a>
+&rsaquo; <a href="/fatercal/taxon/">Taxons</a>
 &rsaquo; {{ taxon_to_change }}
 </div>
 
@@ -113,7 +113,7 @@
 
     <li>
 
-        <a href="/fatercaladmin/taxon/{{ taxon_to_change.id }}/history/" class="historylink">Historique</a>
+        <a href="/fatercal/taxon/{{ taxon_to_change.id }}/history/" class="historylink">Historique</a>
     </li>
 
 
@@ -122,7 +122,7 @@
 
     {% block content %}
     {% endblock %}
-    <p class="deletelink-box"><a href="/fatercaladmin/taxon/{{ taxon_to_change.id }}/delete/" class="deletelink">Supprimer</a></p>
+    <p class="deletelink-box"><a href="/fatercal/taxon/{{ taxon_to_change.id }}/delete/" class="deletelink">Supprimer</a></p>
 
 
 
@@ -136,7 +136,7 @@
 
                             ---
 
-                    </span></a><a href="/fatercaladmin/taxon/9175/" class="changeform-navigation-button segmented-button right" title="Zyxomma petiolatum Rambur, 1842"><span class="changeform-navigation-button-icon right icon-arrow-right"></span><span class="changeform-navigation-button-label">
+                    </span></a><a href="/fatercal/taxon/9175/" class="changeform-navigation-button segmented-button right" title="Zyxomma petiolatum Rambur, 1842"><span class="changeform-navigation-button-icon right icon-arrow-right"></span><span class="changeform-navigation-button-label">
 
                             Zyxomma petiolatum Rambur, 1842
 
@@ -220,7 +220,7 @@
 
 
 
-                                        <a href="/fatercaladmin/" class="sidebar-link popup-section-link app-item" data-app-label="fatercaladmin" data-popup-section-class="sidebar-popup-section-fatercaladmin" data-order="2">
+                                        <a href="/fatercal/" class="sidebar-link popup-section-link app-item" data-app-label="fatercal" data-popup-section-class="sidebar-popup-section-fatercal" data-order="2">
                                             <span class="sidebar-left collapsible">
                                                 <span class="sidebar-left-pin icon-star pin-toggle"></span>
                                                 <span class="sidebar-left-unpin icon-cross pin-toggle"></span>
@@ -323,7 +323,7 @@
 
 
 
-                                <div class="sidebar-popup-section sidebar-popup-section-fatercaladmin">
+                                <div class="sidebar-popup-section sidebar-popup-section-fatercal">
                                     <div class="sidebar-popup-title">
                                         Fatercaladmin
                                     </div>
@@ -332,15 +332,15 @@
 
                                     <ul class="sidebar-popup-list">
 
-                                            <li class="sidebar-popup-list-item app-fatercaladmin">
-                                                <a href="/fatercaladmin/" class="sidebar-popup-list-item-link">Application page</a>
+                                            <li class="sidebar-popup-list-item app-fatercal">
+                                                <a href="/fatercal/" class="sidebar-popup-list-item-link">Application page</a>
                                             </li>
 
 
 
 
                                                 <li class="sidebar-popup-list-item model-localitee">
-                                                    <a href="/fatercaladmin/localitee/" class="sidebar-popup-list-item-link">
+                                                    <a href="/fatercal/localitee/" class="sidebar-popup-list-item-link">
                                                         Localitees
                                                     </a>
                                                 </li>
@@ -348,7 +348,7 @@
 
 
                                                 <li class="sidebar-popup-list-item model-prelevement">
-                                                    <a href="/fatercaladmin/prelevement/" class="sidebar-popup-list-item-link">
+                                                    <a href="/fatercal/prelevement/" class="sidebar-popup-list-item-link">
                                                         Prelevements
                                                     </a>
                                                 </li>
@@ -356,7 +356,7 @@
 
 
                                                 <li class="sidebar-popup-list-item model-taxon current">
-                                                    <a href="/fatercaladmin/taxon/" class="sidebar-popup-list-item-link">
+                                                    <a href="/fatercal/taxon/" class="sidebar-popup-list-item-link">
                                                         Taxons
                                                     </a>
                                                 </li>
