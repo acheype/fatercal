@@ -28,7 +28,6 @@ services:
         environment:
             - POSTGRES_DB=fatercal
             - POSTGRES_USER=fatercal
-            - POSTGRES_PASSWORD=ftc
         env_file: ./fatercal-db.env
         # please define the variables POSTGRES_PASSWORD in fatercal-web.env file.
         # example of the environment file content :
