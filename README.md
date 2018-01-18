@@ -63,8 +63,8 @@ The connection form is then accessible in the port 80 of your host.
 You can verify the status of the containers with `docker ps` and stop properly the application with `docker-compose down`.
 
 The database data will be stored in the directory `/data/postgres`. If this location refer to an existing postgres data
-directory, the application expects that a fatercal database already exists. However, the containers will init an empty
- fatercal database.
+directory, the application expects that a fatercal database already exists. However, the containers will create
+this directory and init an empty fatercal database.
 
 If needed, it's possible to modify the postgres data directory location by changing in the docker-compose.yml the part
 before ':' in that section :
