@@ -99,7 +99,7 @@
 
 <div class="breadcrumbs">
 <a href="/">Accueil</a>
-&rsaquo; <a href="/fatercal/">Fatercaladmin</a>
+&rsaquo; <a href="/fatercal/">Fatercal</a>
 &rsaquo; <a href="/fatercal/taxon/">Taxons</a>
 &rsaquo; {{ taxon_to_change }}
 </div>
@@ -136,9 +136,9 @@
 
                             ---
 
-                    </span></a><a href="/fatercal/taxon/9175/" class="changeform-navigation-button segmented-button right" title="Zyxomma petiolatum Rambur, 1842"><span class="changeform-navigation-button-icon right icon-arrow-right"></span><span class="changeform-navigation-button-label">
+                    </span></a><a class="changeform-navigation-button segmented-button right disabled" title=""><span class="changeform-navigation-button-icon right icon-arrow-right"></span><span class="changeform-navigation-button-label">
 
-                            Zyxomma petiolatum Rambur, 1842
+                            ---
 
                     </span></a>
         </div>
@@ -200,7 +200,7 @@
                                 <span class="apps-hide-label apps-visible">Hide applications</span>
                                 <span class="apps-hide-label apps-hidden">Show hidden</span>
                             </a>
-                            <div class="apps-list">
+                             <div class="apps-list">
 
 
                                         <a href="/auth/" class="sidebar-link popup-section-link app-item" data-app-label="auth" data-popup-section-class="sidebar-popup-section-auth" data-order="1">
@@ -231,7 +231,7 @@
                                             </span>
 
                                             <span class="sidebar-link-label">
-                                                Fatercaladmin
+                                                Fatercal
                                             </span>
                                         </a>
 
@@ -240,42 +240,6 @@
                         </div>
 
 
-                    <div class="sidebar-section last">
-                        <div class="dialog-confirm" id="bookmarks-add-dialog" title="Add bookmark">
-                            <form action="/jet/add_bookmark/" method="POST" id="bookmarks-add-form">
-                                <input type='hidden' name='csrfmiddlewaretoken' value='xWkUAVxt6XsP27n3dXIPpRZ0dHnASf0A' />
-                                <p>Title:</p>
-                                <input type="text" name="title" class="fill_width">
-                                <p>URL:</p>
-                                <input type="text" name="url" class="fill_width">
-                            </form>
-                        </div>
-                        <form action="/jet/remove_bookmark/" method="POST" id="bookmarks-remove-form">
-                            <input type='hidden' name='csrfmiddlewaretoken' value='xWkUAVxt6XsP27n3dXIPpRZ0dHnASf0A' />
-                            <input type="hidden" name="id">
-                        </form>
-                        <div class="dialog-confirm" id="bookmarks-remove-dialog" title="Delete bookmark">
-                            <p>Are you sure want to delete this bookmark?</p>
-                        </div>
-
-                        <div class="sidebar-title">
-                            <span class="sidebar-right">
-                                <a href="#" class="sidebar-right-plus bookmarks-add" title="Add bookmark" data-title="Modification de taxon"><span class="icon-add"></span></a>
-                            </span>
-                            bookmarks
-                        </div>
-
-                        <div class="bookmarks-list">
-
-
-                            <a class="sidebar-link bookmark-item clone">
-                                <span class="sidebar-right collapsible">
-                                    <span class="sidebar-right-remove bookmarks-remove">Supprimer</span>
-                                </span>
-                                <span class="sidebar-link-label"></span>
-                            </a>
-                        </div>
-                    </div>
 
             </div>
 
@@ -325,7 +289,7 @@
 
                                 <div class="sidebar-popup-section sidebar-popup-section-fatercal">
                                     <div class="sidebar-popup-title">
-                                        Fatercaladmin
+                                        Fatercal
                                     </div>
 
                                     <input class="sidebar-popup-search" placeholder="Rechercher...">
@@ -339,9 +303,25 @@
 
 
 
+                                                <li class="sidebar-popup-list-item model-hote">
+                                                    <a href="/fatercal/hote/" class="sidebar-popup-list-item-link">
+                                                        Hotes
+                                                    </a>
+                                                </li>
+
+
+
                                                 <li class="sidebar-popup-list-item model-localitee">
                                                     <a href="/fatercal/localitee/" class="sidebar-popup-list-item-link">
                                                         Localitees
+                                                    </a>
+                                                </li>
+
+
+
+                                                <li class="sidebar-popup-list-item model-plantehote">
+                                                    <a href="/fatercal/plantehote/" class="sidebar-popup-list-item-link">
+                                                        Plante hotes
                                                     </a>
                                                 </li>
 
@@ -362,6 +342,14 @@
                                                 </li>
 
 
+
+                                                <li class="sidebar-popup-list-item model-vernaculaire">
+                                                    <a href="/fatercal/vernaculaire/" class="sidebar-popup-list-item-link">
+                                                        Vernaculaires
+                                                    </a>
+                                                </li>
+
+
                                     </ul>
                                 </div>
 
@@ -370,10 +358,11 @@
                 </div>
 
         </div>
+
+
+
+
 </div>
-
-
-
 <!-- END Container -->
 
 </body>

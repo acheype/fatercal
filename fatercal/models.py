@@ -9,6 +9,8 @@ from __future__ import unicode_literals
 
 from django.db import models
 
+from django.core.validators import RegexValidator
+
 
 class DocsUses(models.Model):
     id_docuse = models.AutoField(primary_key=True)
@@ -29,13 +31,21 @@ class HabitatDetail(models.Model):
 
 
 class Hote(models.Model):
-    id_hote = models.ForeignKey('Taxon', db_column='id_hote', related_name='hote')
-    id_parasite = models.ForeignKey('Taxon', db_column='id_parasite', related_name='parasite')
+    id_hote = models.ForeignKey('Taxon', db_column='id_hote', related_name='hote', verbose_name='Hote')
+    id_parasite = models.ForeignKey('Taxon', db_column='id_parasite', related_name='parasite', verbose_name='Parasite')
 
     class Meta:
         managed = True
         db_table = 'hote'
         unique_together = (('id_hote', 'id_parasite'),)
+
+    @staticmethod
+    def autocomplete_search_fields():
+        return 'id_hote__lb_nom', 'id_hote__lb_auteur',
+
+    def __str__(self):
+
+        return "{}".format(self.id_hote,)
 
 
 class Iso6393(models.Model):
@@ -47,6 +57,10 @@ class Iso6393(models.Model):
     class Meta:
         managed = True
         db_table = 'iso639-3'
+
+    def __str__(self):
+
+        return "{}".format(self.iso639_3,)
 
 
 class Localitee(models.Model):
@@ -66,23 +80,45 @@ class Localitee(models.Model):
 
 class PlanteHote(models.Model):
     id_plante_hote = models.AutoField(db_column='id_plante-hote', primary_key=True)  # Field renamed remove characters.
-    id_taxref = models.ForeignKey('Taxon', db_column='id_taxref')
-    famille = models.CharField(max_length=100, blank=True, null=True)
-    genre = models.CharField(max_length=100, blank=True, null=True)
-    espece = models.CharField(max_length=100, blank=True, null=True)
+    id_taxref = models.ForeignKey('Taxon', db_column='id_taxref', verbose_name="Taxon")
+    famille = models.CharField(max_length=100, blank=True, null=True, verbose_name="Famille")
+    genre = models.CharField(max_length=100, blank=True, null=True, verbose_name="Genre")
+    espece = models.CharField(max_length=100, blank=True, null=True, verbose_name="Espèce")
+
+    def plante(self):
+        """Return the name of the taxon"""
+        return "{} {}".format(self.genre, self.espece)
 
     class Meta:
         managed = True
         db_table = 'plante_hote'
+
+    def __str__(self):
+
+        return "{} {}".format(self.genre, self.espece)
 
 
 class Prelevement(models.Model):
     id_prelevement = models.AutoField(primary_key=True)
     id_localitee = models.ForeignKey(Localitee, db_column='id_localitee', blank=True, null=True, verbose_name='Localité')
     id_taxref = models.ForeignKey('Taxon', db_column='id_taxref', verbose_name='Taxon')
-    type_enregistrement = models.ForeignKey('PrelevementTypeEnregistrement', db_column='type_enregistrement',
+    type_enregistrement = models.ForeignKey('TypeEnregistrement', db_column='type_enregistrement',
                                             blank=True, null=True)
-    date = models.CharField(max_length=10, blank=True, null=True)
+    date = models.CharField(max_length=10, blank=True, null=True,
+                            validators=[
+                                RegexValidator(
+                                    regex=
+                                    '''
+                                        (^\d{4}$)|
+                                        (^\d{4}-(0[1-9]|1[0-2])$)|
+                                        (^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)|
+                                        (^$)
+                                    ''',
+                                    message='La date doit être dans l\'une des formes suivantes: 1850, 1850-12, 1850-12-01',
+                                    code='invalid_username'
+                                ),
+                            ]
+                            )
     nb_taxon_present = models.SmallIntegerField(blank=True, null=True)
     collection_museum = models.CharField(max_length=250, blank=True, null=True)
     type_specimen = models.CharField(max_length=250, blank=True, null=True)
@@ -107,19 +143,19 @@ class Prelevement(models.Model):
         db_table = 'prelevement'
 
 
-class PrelevementRecolteur(models.Model):
+class Recolteur(models.Model):
     id_prelevement = models.ForeignKey(Prelevement, db_column='id_prelevement', blank=True, null=True)
     lb_auteur = models.CharField(max_length=250, blank=True, null=True, verbose_name='Récolteurs')
 
     class Meta:
         managed = True
-        db_table = 'prelevement_auteurs'
+        db_table = 'recolteur'
 
     def __str__(self):
         return self.lb_auteur
 
 
-class PrelevementTypeEnregistrement(models.Model):
+class TypeEnregistrement(models.Model):
     lb_type = models.CharField(max_length=250, blank=True, null=True)
 
     def __str__(self):
@@ -127,7 +163,7 @@ class PrelevementTypeEnregistrement(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'prelevement_type_enregistrement'
+        db_table = 'type_enregistrement'
 
 
 class Taxon(models.Model):
@@ -170,7 +206,7 @@ class Taxon(models.Model):
 
     def info(self):
         return '''<strong>Si vous voulez créer un nouveau taxon
-        ne mettez rien dans référent et mettez 
+        ne mettez rien dans référent et mettez
         un supérieur à votre nouveau taxon</strong>'''
     info.allow_tags = True
 
@@ -181,7 +217,7 @@ class Taxon(models.Model):
     class Meta:
         managed = True
         db_table = 'taxon'
-        ordering = ['-lb_nom']
+        ordering = ['lb_nom']
 
 
 class TaxrefHabitat(models.Model):
@@ -220,13 +256,16 @@ class TaxrefStatus(models.Model):
         return self.lb_status
 
 
-class Taxvern(models.Model):
+class Vernaculaire(models.Model):
     id_taxvern = models.AutoField(primary_key=True)
-    id_taxref = models.ForeignKey(Taxon, db_column='id_taxref')
-    nom_vern = models.CharField(max_length=100)
-    pays = models.CharField(max_length=100)
+    id_taxref = models.ForeignKey(Taxon, db_column='id_taxref', verbose_name='Taxon')
+    nom_vern = models.CharField(max_length=100, verbose_name='Nom Vernaculaire')
+    pays = models.CharField(max_length=100, verbose_name='Pays d\'utilisation')
     iso639_3 = models.ForeignKey(Iso6393, db_column='iso639-3')
 
     class Meta:
         managed = True
-        db_table = 'taxvern'
+        db_table = 'vernaculaire'
+
+    def __str__(self):
+        return self.nom_vern

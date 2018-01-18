@@ -1,8 +1,32 @@
 from django.contrib import admin
 
 from fatercal.views import ValidSpecialFilter
-from .models import Taxon, HabitatDetail, Localitee, Prelevement, PrelevementRecolteur
+from .models import Taxon, HabitatDetail, Localitee, Prelevement, Recolteur, Hote, PlanteHote, Vernaculaire, Iso6393
 import nested_admin
+
+
+class PlanteHoteObj(admin.StackedInline):
+    model = PlanteHote
+    # How many empty line it will display for creating new object
+    extra = 1
+
+
+class HoteParasiteObj(admin.StackedInline):
+    model = Hote
+    # How many empty line it will display for creating new object
+    fk_name = 'id_hote'
+    verbose_name = "Parasite du taxon"
+    verbose_name_plural = "Parasites du taxon"
+    extra = 1
+
+
+class HoteHoteObj(admin.StackedInline):
+    model = Hote
+    # How many empty line it will display for creating new object
+    fk_name = 'id_parasite'
+    verbose_name = "Hote du taxon"
+    verbose_name_plural = "Hotes du taxon"
+    extra = 1
 
 
 class HabitatDetailObj(nested_admin.NestedTabularInline):
@@ -12,25 +36,25 @@ class HabitatDetailObj(nested_admin.NestedTabularInline):
     by the user
     """
     model = HabitatDetail
-    # How many empty line it will display fro creating new object
+    # How many empty line it will display for creating new object
     extra = 1
 
 
 # This class will be used to empack this inline in the  PrelevementObj nested_inline
-class PrelevementRecolteurObj(nested_admin.NestedStackedInline):
+class RecolteurObj(nested_admin.NestedStackedInline):
 
-    model = PrelevementRecolteur
+    model = Recolteur
     # How many empty line it will display for creating new object
     extra = 1
 
 
 # This class will be used only in Prelevement
-class PrelevementRecolteurObjPrev(admin.StackedInline):
+class RecolteurObjPrev(admin.StackedInline):
     """
     This Class will the model of the table
     PrelevementRecolteur to display all the object affected to a taxon
     """
-    model = PrelevementRecolteur
+    model = Recolteur
     # How many empty line it will display for creating new object
     extra = 1
 
@@ -41,7 +65,7 @@ class PrelevementObj(nested_admin.NestedStackedInline):
     model = Prelevement
 
     # The author who made the prelevement
-    inlines = [PrelevementRecolteurObj]
+    inlines = [RecolteurObj]
     # How many empty line it will display for creating a new object
     extra = 1
 
@@ -52,6 +76,9 @@ class TaxonModify(nested_admin.NestedModelAdmin):
 
     # It will use the class define ealier to display all the object affected to the actual taxon
     inlines = (
+        HoteHoteObj,
+        HoteParasiteObj,
+        PlanteHoteObj,
         HabitatDetailObj,
         PrelevementObj,
     )
@@ -240,13 +267,7 @@ class PrelevementModify(admin.ModelAdmin):
         'date',
     )
 
-    inlines = (PrelevementRecolteurObjPrev,)
-
-    # Redefinition of the function to have a readonly only when whe modify the object
-    def get_readonly_fields(self, request, obj=None):
-        if obj:  # editing an existing object
-            return self.readonly_fields + ('id_taxref',)
-        return self.readonly_fields
+    inlines = (RecolteurObjPrev,)
 
     # The search field will be on these field to find a taxon
     search_fields = (
@@ -267,6 +288,88 @@ class PrelevementModify(admin.ModelAdmin):
     ]
 
 
+class HoteModify(admin.ModelAdmin):
+    list_display = [
+        'id_hote',
+        'id_parasite'
+    ]
+
+    search_fields = (
+        'id_hote__lb_nom',
+        'id_parasite__lb_nom',
+    )
+
+    fieldsets = [
+        ('Informations', {
+            'fields': ('id_hote', 'id_parasite',)
+        })
+    ]
+
+
+class PlanteHoteModify(admin.ModelAdmin):
+    list_display = [
+        'plante',
+        'id_taxref',
+    ]
+
+    search_fields = (
+        'id_taxref__lb_nom',
+        'genre',
+        'espece',
+    )
+
+    fieldsets = [
+        ('Informations', {
+            'fields': ('id_taxref', 'famille', 'genre', 'espece')
+        })
+    ]
+
+
+class VernaculaireModify(admin.ModelAdmin):
+    list_display = [
+        'id_taxref',
+        'nom_vern',
+    ]
+
+    search_fields = (
+        'id_taxref__lb_nom',
+    )
+
+    fieldsets = [
+        ('Informations', {
+            'fields': ('id_taxref', 'nom_vern', 'pays', 'iso639_3')
+        })
+    ]
+
+
+class Iso6393Modify(admin.ModelAdmin):
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # editing an existing object
+            return self.readonly_fields + ('iso639_3',)
+        else:
+            return self.readonly_fields
+
+    list_display = [
+        'iso639_3',
+        'language_name',
+        'language_name_fr',
+    ]
+
+    search_fields = (
+        'id_taxref__lb_nom',
+    )
+
+    fieldsets = [
+        ('Informations', {
+            'fields': ('iso639_3', 'language_name', 'language_name_fr', 'type')
+        })
+    ]
+
+
 admin.site.register(Taxon, TaxonModify)
 admin.site.register(Localitee, LocaliteeModify)
 admin.site.register(Prelevement, PrelevementModify)
+admin.site.register(Hote, HoteModify)
+admin.site.register(PlanteHote, PlanteHoteModify)
+admin.site.register(Vernaculaire, VernaculaireModify)
+admin.site.register(Iso6393, Iso6393Modify)
