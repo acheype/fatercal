@@ -2,8 +2,7 @@ version: '3'
 services:
     www:
         container_name: fatercal-web
-        build: ../..
-        image: acheype/fatercal-www:0.8
+        image: acheype/fatercal-web:0.8
         ports:
             - "80:80"
         links:
@@ -23,14 +22,13 @@ services:
         container_name: fatercal-db
         image: postgres:9.6.6
         volumes:
-            - /data/postgresql2:/var/lib/postgresql/data
+            - /data/postgresql:/var/lib/postgresql/data
         ports:
             - "5432:5432"
         environment:
             - POSTGRES_DB=fatercal
             - POSTGRES_USER=fatercal
-            - POSTGRES_PASSWORD=ftc
-        env-file: ./fatercal-db.env
+        env_file: ./fatercal-db.env
         # please define the variables POSTGRES_PASSWORD in fatercal-web.env file.
         # example of the environment file content :
         # POSTGRES_PASSWORD=ftc
