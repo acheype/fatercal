@@ -202,6 +202,8 @@ class Taxon(models.Model):
             str_lb = str(self.lb_nom) + ' ' + str(self.lb_auteur)
         else:
             str_lb = str(self.lb_nom)
+        if self != self.id_ref:
+            str_lb += ' (Non Valide)'
         return str_lb
 
     def info(self):

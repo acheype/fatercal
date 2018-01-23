@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.db.models import Q
 
 from fatercal.views import ValidSpecialFilter
 from .models import Taxon, HabitatDetail, Localitee, Prelevement, Recolteur, Hote, PlanteHote, Vernaculaire, Iso6393
@@ -74,6 +75,8 @@ class PrelevementObj(nested_admin.NestedStackedInline):
 class TaxonModify(nested_admin.NestedModelAdmin):
     """ This class will display the model Taxon for modification """
 
+    change_list_template = 'fatercal/taxon/change_list.html'
+
     # It will use the class define ealier to display all the object affected to the actual taxon
     inlines = (
         HoteHoteObj,
@@ -87,6 +90,7 @@ class TaxonModify(nested_admin.NestedModelAdmin):
     readonly_fields = (
         'nom_complet',
         'hierarchy',
+        'referent',
         'id',
         'id_sup_id',
         'id_ref_id',
@@ -118,7 +122,7 @@ class TaxonModify(nested_admin.NestedModelAdmin):
     # The field that will be showing to the user when we edit the object
     fieldsets_edit = (
         ('Taxonomie', {
-            'fields': ('lb_nom', 'lb_auteur', 'nom_complet', 'id_ref', 'id_sup', 'rang', 'change_taxon', 'hierarchy')
+            'fields': ('lb_nom', 'lb_auteur', 'nom_complet', 'referent', 'id_sup', 'rang', 'change_taxon', 'hierarchy')
         }),
         ('Statut et Habitat', {
             'fields': ('nc', 'habitat', 'grande_terre', 'iles_loyautee', 'autre',)
@@ -169,6 +173,18 @@ class TaxonModify(nested_admin.NestedModelAdmin):
             obj.id_ref = obj
             obj.save()
 
+    @staticmethod
+    def id(obj):
+        return obj.id
+
+    @staticmethod
+    def id_ref_id(obj):
+        return obj.id_ref.id
+
+    @staticmethod
+    def id_sup_id(obj):
+        return obj.id_sup.id
+
     def change_taxon(self, obj):
         if obj == obj.id_ref:
             return """<br/>
@@ -181,17 +197,22 @@ class TaxonModify(nested_admin.NestedModelAdmin):
 
     change_taxon.allow_tags = True
 
-    @staticmethod
-    def id(obj):
-        return obj.id
+    def referent(self, obj):
+        if obj == obj.id_ref:
+            list_syn = Taxon.objects.filter(id_ref=obj.id).filter(~Q(id=obj.id))
+            if len(list_syn) != 0:
+                string = """Le taxon est valide.<br/>Voici ses synonymes:<br/>"""
+                for tup in list_syn:
+                    string += "<a href='/fatercal/taxon/{}/'>{}</a><br/>".format(tup.id, tup.nom_complet)
+            else:
+                string = """Le taxon est valide mais n'a pas de synonymes connues"""
+            return string
 
-    @staticmethod
-    def id_ref_id(obj):
-        return obj.id_ref.id
+        else:
+            return """Le taxon n'est pas un valide.<br/>Voici son référent: 
+            <a href='/fatercal/taxon/{}/'>{}</a>""".format(obj.id_ref.id, obj.id_ref.nom_complet)
 
-    @staticmethod
-    def id_sup_id(obj):
-        return obj.id_sup.id
+    referent.allow_tags = True
 
     # This function will construct the hierarchy tree of the taxon
     def hierarchy(self, obj) :
@@ -245,7 +266,7 @@ class TaxonModify(nested_admin.NestedModelAdmin):
     # list of file to use for style or javascript function
     class Media:
         css = {
-            'all': ('admin/css.css',)
+            'all': ('admin/fatercal/taxon/css.css',)
         }
 
 
