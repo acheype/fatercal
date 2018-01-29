@@ -7,12 +7,22 @@ import nested_admin
 
 
 class PlanteHoteObj(admin.StackedInline):
+    """
+        This Class will display the model of the table
+        Hote to display all plant hote affected to the actual taxon selected
+        by the user
+    """
     model = PlanteHote
     # How many empty line it will display for creating new object
     extra = 1
 
 
 class HoteParasiteObj(admin.StackedInline):
+    """
+        This Class will display the model of the table
+        Hote to display all parasite affected to the actual taxon selected
+        by the user
+    """
     model = Hote
     # How many empty line it will display for creating new object
     fk_name = 'id_hote'
@@ -22,6 +32,11 @@ class HoteParasiteObj(admin.StackedInline):
 
 
 class HoteHoteObj(admin.StackedInline):
+    """
+        This Class will display the model of the table
+        Hote to display all hote affected to the actual taxon selected
+        by the user
+    """
     model = Hote
     # How many empty line it will display for creating new object
     fk_name = 'id_parasite'
@@ -43,17 +58,10 @@ class HabitatDetailObj(nested_admin.NestedTabularInline):
 
 # This class will be used to empack this inline in the  PrelevementObj nested_inline
 class RecolteurObj(nested_admin.NestedStackedInline):
-
-    model = Recolteur
-    # How many empty line it will display for creating new object
-    extra = 1
-
-
-# This class will be used only in Prelevement
-class RecolteurObjPrev(admin.StackedInline):
     """
-    This Class will the model of the table
-    PrelevementRecolteur to display all the object affected to a taxon
+        This Class will display the model of the table
+        Recolteur to display all parasite affected to the actual prelevement selected
+        by the user
     """
     model = Recolteur
     # How many empty line it will display for creating new object
@@ -62,7 +70,7 @@ class RecolteurObjPrev(admin.StackedInline):
 
 # The purpose of this class is to create new prelements for a taxon
 class PrelevementObj(nested_admin.NestedStackedInline):
-    """ This Class will the model of the table Prelevement """
+    """ This Class will display the model of the table Prelevement """
     model = Prelevement
 
     # The author who made the prelevement
@@ -73,7 +81,7 @@ class PrelevementObj(nested_admin.NestedStackedInline):
 
 # This class serve to modify the admin look for the Model Taxon
 class TaxonModify(nested_admin.NestedModelAdmin):
-    """ This class will display the model Taxon for modification """
+    """ This class will display the model Taxon for adding or modifying a taxon"""
 
     change_list_template = 'fatercal/taxon/change_list.html'
 
@@ -173,18 +181,7 @@ class TaxonModify(nested_admin.NestedModelAdmin):
             obj.id_ref = obj
             obj.save()
 
-    @staticmethod
-    def id(obj):
-        return obj.id
-
-    @staticmethod
-    def id_ref_id(obj):
-        return obj.id_ref.id
-
-    @staticmethod
-    def id_sup_id(obj):
-        return obj.id_sup.id
-
+    # an url path to change referent or superior
     def change_taxon(self, obj):
         if obj == obj.id_ref:
             return """<br/>
@@ -197,6 +194,7 @@ class TaxonModify(nested_admin.NestedModelAdmin):
 
     change_taxon.allow_tags = True
 
+    # show if the taxon is valid or not whith is referent or synonymous
     def referent(self, obj):
         if obj == obj.id_ref:
             list_syn = Taxon.objects.filter(id_ref=obj.id).filter(~Q(id=obj.id))
@@ -263,6 +261,18 @@ class TaxonModify(nested_admin.NestedModelAdmin):
             return "Il n'y a pas de hiérarchie pour ce taxon"
     hierarchy.allow_tags = True
 
+    @staticmethod
+    def id(obj):
+        return obj.id
+
+    @staticmethod
+    def id_ref_id(obj):
+        return obj.id_ref.id
+
+    @staticmethod
+    def id_sup_id(obj):
+        return obj.id_sup.id
+
     # list of file to use for style or javascript function
     class Media:
         css = {
@@ -288,7 +298,7 @@ class PrelevementModify(admin.ModelAdmin):
         'date',
     )
 
-    inlines = (RecolteurObjPrev,)
+    inlines = (RecolteurObj,)
 
     # The search field will be on these field to find a taxon
     search_fields = (
@@ -310,6 +320,7 @@ class PrelevementModify(admin.ModelAdmin):
 
 
 class HoteModify(admin.ModelAdmin):
+    """ This class will display the model Taxon for adding or modifying hote nad parasite"""
     list_display = [
         'id_hote',
         'id_parasite'
@@ -328,6 +339,7 @@ class HoteModify(admin.ModelAdmin):
 
 
 class PlanteHoteModify(admin.ModelAdmin):
+    """ This class will display the model Taxon for adding or modifying a plante_hote"""
     list_display = [
         'plante',
         'id_taxref',
@@ -347,6 +359,7 @@ class PlanteHoteModify(admin.ModelAdmin):
 
 
 class VernaculaireModify(admin.ModelAdmin):
+    """ This class will display the model Taxon for adding or modifying a vernaculaire object"""
     list_display = [
         'id_taxref',
         'nom_vern',
@@ -364,6 +377,7 @@ class VernaculaireModify(admin.ModelAdmin):
 
 
 class Iso6393Modify(admin.ModelAdmin):
+    """ This class will display the model Taxon for adding or modifying a iso6393"""
     def get_readonly_fields(self, request, obj=None):
         if obj:  # editing an existing object
             return self.readonly_fields + ('iso639_3',)
@@ -387,6 +401,7 @@ class Iso6393Modify(admin.ModelAdmin):
     ]
 
 
+# the list of model to show to the user for modification
 admin.site.register(Taxon, TaxonModify)
 admin.site.register(Localitee, LocaliteeModify)
 admin.site.register(Prelevement, PrelevementModify)
@@ -394,3 +409,6 @@ admin.site.register(Hote, HoteModify)
 admin.site.register(PlanteHote, PlanteHoteModify)
 admin.site.register(Vernaculaire, VernaculaireModify)
 admin.site.register(Iso6393, Iso6393Modify)
+admin.site.site_header = 'Fatercal'
+admin.site.site_title = 'Fatercal'
+

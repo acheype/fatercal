@@ -5,6 +5,9 @@ from django.db.models import F
 
 @register('valid')
 class ValidLookup(LookupChannel):
+    """
+    A lookup to have all valid taxons
+    """
 
     model = Taxon
 
@@ -17,7 +20,9 @@ class ValidLookup(LookupChannel):
 
 @register('valid_and_syn')
 class ValidSynLookup(LookupChannel):
-
+    """
+        A lookup to have all valid and synonymous taxons
+    """
     model = Taxon
 
     def get_query(self, q, request):

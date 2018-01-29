@@ -68,8 +68,28 @@ def get_info(tup):
     }
 
 
+def get_msg(tup):
+    """
+    This function aim to get a message for taxref if it's != or not
+    :param tup: the object from the Taxon model
+    :return a tupple:
+    """
+    if tup.cd_nom is None:
+        return 'x', None, None, None
+    elif (tup.id_ref != tup and tup.cd_ref == tup.id_ref.cd_nom) or (tup.id_ref == tup and tup.cd_ref != tup.id_ref.cd_nom):
+        return None, None, None, 'x'
+    elif tup.cd_ref != tup.id_ref.cd_nom:
+        return None, 'x', None, None
+    elif tup.cd_sup is not None:
+        if tup.cd_sup != tup.id_sup.cd_nom:
+            return None, None, 'x', None
+    return (None, None, None, None)
+
+
 def get_taxon():
-    """ This function get all Information needed from a taxon """
+    """
+    This function get all Information needed from a taxon
+    """
 
     list_not_proper = Taxon.objects.all()
     list_taxon = [(
@@ -78,9 +98,10 @@ def get_taxon():
         'ID_REF', 'ID_SUP', 'CD_NOM', 'CD_TAXSUP', 'CD_SUP',
         'CD_REF', 'RANG', 'LB_NOM',	'LB_AUTEUR', 'NOM_COMPLET',
         'NOM_COMPLET_HTML', 'NOM_VALIDE', 'NOM_VERN',
-        'NOM_VERN_ENG', 'HABITAT', 'NC')
+        'NOM_VERN_ENG', 'HABITAT', 'NC', 'NOT IN TAXREF', 'CD_REF !=', 'CD_SUP !=', 'VALIDITY !=')
     ]
     for tup in list_not_proper:
+        msg = get_msg(tup)
         if 'sp.' not in tup.lb_nom:
             if tup == tup.id_ref:
                 if tup.id_sup is None:
@@ -91,21 +112,21 @@ def get_taxon():
                 tupple = (dict_taxon['regne'], dict_taxon['phylum'], dict_taxon['class'],
                            dict_taxon['order'], dict_taxon['famille'], None, None, tup.id, tup.id_ref.id,
                            id_sup, tup.cd_nom, None, tup.cd_sup, tup.cd_ref, tup.rang.rang,
-                           tup.lb_auteur, tup.nom_complet, None, tup.lb_nom, None, None,
-                           dict_taxon['habitat'], dict_taxon['nc'])
+                           tup.lb_nom, tup.lb_auteur, tup.nom_complet, None, tup.lb_nom, None, None,
+                           dict_taxon['habitat'], dict_taxon['nc']) + msg
                 list_taxon.append(tupple)
             else:
                 dict_taxon = get_info(tup.id_ref)
                 tupple = (dict_taxon['regne'], dict_taxon['phylum'], dict_taxon['class'],
                           dict_taxon['order'], dict_taxon['famille'], None, None, tup.id, tup.id_ref.id,
                           None, tup.cd_nom, None, tup.cd_sup, tup.cd_ref, tup.rang.rang,
-                          tup.lb_auteur, tup.nom_complet, None, tup.id_ref.lb_nom, None, None, None, None)
+                          tup.lb_nom, tup.lb_auteur, tup.nom_complet, None, tup.id_ref.lb_nom, None, None, None, None) + msg
                 list_taxon.append(tupple)
 
     return list_taxon
 
 
-def extract_taxon(request):
+def extract_taxon_taxref(request):
     """
     A view that streams a large CSV file. In this case the file in format
     for the organization taxref
@@ -124,7 +145,9 @@ def extract_taxon(request):
 
 
 def change_taxon_ref(request, id_taxon):
-    """ View for changing the validity, reference and/or superior of a taxon """
+    """
+    View for changing the superior of a taxon
+    """
     if request.user.is_authenticated():
         taxon_to_change = Taxon.objects.get(id=id_taxon)
         if taxon_to_change == taxon_to_change.id_ref:
@@ -179,6 +202,9 @@ def change_taxon_ref(request, id_taxon):
 
 
 def change_taxon_sup(request, id_taxon):
+    """
+    View for changing the validity, reference of a taxon
+    """
     if request.user.is_authenticated():
         taxon_to_change = Taxon.objects.get(id=id_taxon)
         # The user has finished changing the data  int the form and send it back
