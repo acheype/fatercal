@@ -66,8 +66,8 @@ class Iso6393(models.Model):
 class Localitee(models.Model):
     id_localitee = models.AutoField(primary_key=True)
     localite = models.CharField(max_length=250, verbose_name='Localité')
-    latitude = models.FloatField()
-    longitude = models.FloatField()
+    latitude = models.FloatField(blank=True, null=True,)
+    longitude = models.FloatField(blank=True, null=True,)
 
     class Meta:
         managed = True
@@ -189,7 +189,7 @@ class Taxon(models.Model):
     remarque = models.TextField(blank=True, null=True)
     sources = models.TextField(blank=True, null=True)
     id_espece = models.IntegerField(blank=True, null=True)
-    reference = models.TextField(blank=True, null=True)
+    reference_description = models.TextField(blank=True, null=True)
 
     def valide(self):
         """Return a boolean about whether or not it is a valid taxon"""

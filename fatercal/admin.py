@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.db.models import Q
+from django.db.models.signals import post_save
 
 from fatercal.views import ValidSpecialFilter
 from .models import Taxon, HabitatDetail, Localitee, Prelevement, Recolteur, Hote, PlanteHote, Vernaculaire, Iso6393
@@ -105,6 +106,7 @@ class TaxonModify(nested_admin.NestedModelAdmin):
         'cd_nom',
         'cd_ref',
         'cd_sup',
+        'old_db_id'
     )
 
     # A list of field displaying
@@ -137,10 +139,10 @@ class TaxonModify(nested_admin.NestedModelAdmin):
         }),
         ('Information complémentaires', {
             'classes': ('collapse',),
-            'fields': ('remarque', 'sources', 'reference',)
+            'fields': ('remarque', 'sources', 'reference_description',)
         }),
         ('Identifiants', {
-            'fields': ('id', 'id_ref_id', 'id_sup_id', 'cd_nom', 'cd_ref', 'cd_sup',)
+            'fields': ('id', 'id_ref_id', 'id_sup_id', 'cd_nom', 'cd_ref', 'cd_sup', 'old_db_id')
         })
     )
 
@@ -154,7 +156,7 @@ class TaxonModify(nested_admin.NestedModelAdmin):
         }),
         ('Information complémentaires', {
             'classes': ('collapse',),
-            'fields': ('remarque', 'sources', 'reference',)
+            'fields': ('remarque', 'sources', 'reference_description',)
         })
     )
 
@@ -177,7 +179,7 @@ class TaxonModify(nested_admin.NestedModelAdmin):
         obj.nom_complet = obj.lb_nom + ' ' + obj.lb_auteur
         super(TaxonModify, self).save_model(request, obj, form, change)
         # When a user want to create a new valid taxon to refer itself
-        if obj.id_ref is None and obj.id_sup is not None:
+        if obj.id_ref is None:
             obj.id_ref = obj
             obj.save()
 
@@ -190,7 +192,7 @@ class TaxonModify(nested_admin.NestedModelAdmin):
             <br/>
             """.format(obj.id, obj.id)
         else:
-            return "<p>Vous ne pouvez pas changez le supérieur ou le référent de ce taxon</p>"
+            return "<p>Vous ne pouvez pas changez le supérieur ou le référent de ce taxon.</p>"
 
     change_taxon.allow_tags = True
 
@@ -207,8 +209,9 @@ class TaxonModify(nested_admin.NestedModelAdmin):
             return string
 
         else:
-            return """Le taxon n'est pas un valide.<br/>Voici son référent: 
-            <a href='/fatercal/taxon/{}/'>{}</a>""".format(obj.id_ref.id, obj.id_ref.nom_complet)
+            return """Le taxon n'est pas un valide. <br/> Voici son référent: 
+            <a href='/fatercal/taxon/{}/'>{}</a> <br/> <br/> <a href="/fatercal/taxon_to_valid/{}">
+                   Cliquer ici pour le passer en valide.</a>""".format(obj.id_ref.id, obj.id_ref.nom_complet, obj.id)
 
     referent.allow_tags = True
 
@@ -273,6 +276,10 @@ class TaxonModify(nested_admin.NestedModelAdmin):
     def id_sup_id(obj):
         return obj.id_sup.id
 
+    @staticmethod
+    def old_db_id(obj):
+        return obj.id_espece
+
     # list of file to use for style or javascript function
     class Media:
         css = {
@@ -295,7 +302,12 @@ class LocaliteeModify(admin.ModelAdmin):
 class PrelevementModify(admin.ModelAdmin):
     list_display = (
         'id_taxref',
+        'toponyme',
         'date',
+    )
+
+    list_filter = (
+        'toponyme',
     )
 
     inlines = (RecolteurObj,)
@@ -311,7 +323,7 @@ class PrelevementModify(admin.ModelAdmin):
             'fields': ('id_taxref', 'collection_museum', 'code_specimen', 'nb_taxon_present', 'type_specimen',)
         }),
         ('Informations', {
-            'fields': ('type_enregistrement', 'mode_de_collecte', 'date',)
+            'fields': ('type_enregistrement', 'mode_de_collecte', 'date', 'information_complementaire')
         }),
         ('Localisation', {
             'fields': ('id_localitee', 'toponyme', 'toponymie_x', 'toponymie_y', 'altitude', 'old_x', 'old_y')
@@ -401,6 +413,24 @@ class Iso6393Modify(admin.ModelAdmin):
     ]
 
 
+def add_genre_to_name(sender, instance, created, **kwargs):
+        if created:
+            if instance.rang.rang == "ES":
+                if instance.id_sup is not None:
+                    if instance.id_sup.rang.rang == "GN":
+                        instance.lb_nom = "{} ".format(instance.id_sup.lb_nom) + instance.lb_nom
+                    elif instance.id_sup.rang.rang == "SSGN":
+                        instance.lb_nom = "{} ".format(instance.id_sup.id_sup.lb_nom) + instance.lb_nom
+            elif instance.rang.rang == "SSES":
+                if instance.id_sup is not None:
+                    if instance.id_sup.rang.rang == "ES":
+                        instance.lb_nom = "{} ".format(instance.id_sup.lb_nom) + instance.lb_nom
+            if instance.lb_auteur is not None:
+                instance.nom_complet = instance.lb_nom + " " +instance.lb_auteur
+            else:
+                instance.nom_complet = instance.lb_nom
+
+
 # the list of model to show to the user for modification
 admin.site.register(Taxon, TaxonModify)
 admin.site.register(Localitee, LocaliteeModify)
@@ -412,3 +442,5 @@ admin.site.register(Iso6393, Iso6393Modify)
 admin.site.site_header = 'Fatercal'
 admin.site.site_title = 'Fatercal'
 
+# list signals for different models
+post_save.connect(add_genre_to_name, sender=Taxon)

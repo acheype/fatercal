@@ -16,4 +16,4 @@ class TaxonChangeSup(forms.Form):
     class Meta:
         model = Taxon
 
-    taxon_superieur = AutoCompleteSelectField('valid', required=False, help_text=None)
+    taxon_superieur = AutoCompleteSelectField('valid', required=True, help_text=None)

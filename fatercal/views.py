@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.auth.decorators import login_required
 from django.db.models import F
 from django.http import HttpResponse
 from django.template import loader
@@ -86,6 +87,7 @@ def get_msg(tup):
     return (None, None, None, None)
 
 
+@login_required(redirect_field_name='login_required')
 def get_taxon():
     """
     This function get all Information needed from a taxon
@@ -126,6 +128,7 @@ def get_taxon():
     return list_taxon
 
 
+@login_required(redirect_field_name='login_required')
 def extract_taxon_taxref(request):
     """
     A view that streams a large CSV file. In this case the file in format
@@ -134,107 +137,169 @@ def extract_taxon_taxref(request):
     # Generate a sequence of rows. The range is based on the maximum number of
     # rows that can be handled by a single sheet in most spreadsheet
     # applications.
-    if request.user.is_authenticated():
-        rows = (idx for idx in get_taxon())
-        pseudo_buffer = Echo()
-        writer = csv.writer(pseudo_buffer,  delimiter=';')
-        response = StreamingHttpResponse((writer.writerow(row) for row in rows),
-                                         content_type="text/csv")
-        response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref.csv"'
-        return response
+
+    rows = (idx for idx in get_taxon())
+    pseudo_buffer = Echo()
+    writer = csv.writer(pseudo_buffer,  delimiter=';')
+    response = StreamingHttpResponse((writer.writerow(row) for row in rows),
+                                     content_type="text/csv")
+    response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref.csv"'
+    return response
 
 
+@login_required(redirect_field_name='login_required')
 def change_taxon_ref(request, id_taxon):
     """
     View for changing the superior of a taxon
     """
-    if request.user.is_authenticated():
-        taxon_to_change = Taxon.objects.get(id=id_taxon)
-        if taxon_to_change == taxon_to_change.id_ref:
-            # The user has finished changing the data  int the form and send it back
-            if request.method == 'POST':
-                form = TaxonChangeRef(request.POST)
-                message = "Le Taxon {} a bien été mis à jour".format(taxon_to_change.nom_complet)
-                if form.is_valid():
-                    if form.cleaned_data['referent'] is not None:
-                        # taxon_to_change.update(id_ref=form.cleaned_data['referent'])
-                        if taxon_to_change.id == taxon_to_change.id_ref.id:
-                            list_syn = Taxon.objects.filter(id_ref=taxon_to_change)
-                            list_son = Taxon.objects.filter(id_sup=taxon_to_change)
-                            for tup in list_son:
-                                tup.id_sup = form.cleaned_data['referent']
-                                tup.save()
-                            for tup in list_syn:
-                                tup.id_ref = form.cleaned_data['referent']
-                                tup.save()
-                            if form.cleaned_data['referent'] != form.cleaned_data['referent'].id_ref:
-                                form.cleaned_data['referent'].id_ref = form.cleaned_data['referent']
-                                form.cleaned_data['referent'].id_sup = taxon_to_change.id_sup
-                                form.cleaned_data['referent'].save()
-                            taxon_to_change.id_ref = form.cleaned_data['referent']
-                            taxon_to_change.id_sup = None
-                            taxon_to_change.save()
-                            template = loader.get_template('fatercal/return_change_taxon.html')
-                            context = {
-                                'taxon_to_change': taxon_to_change,
-                                'message': message,
-                                'user': request.user.__str__(),
-                            }
-                            return HttpResponse(template.render(context, request))
+
+    taxon_to_change = Taxon.objects.get(id=id_taxon)
+    if taxon_to_change == taxon_to_change.id_ref:
+        # The user has finished changing the data  int the form and send it back
+        if request.method == 'POST':
+            form = TaxonChangeRef(request.POST)
+            message = "Le Taxon {} a bien été mis à jour".format(taxon_to_change.nom_complet)
+            if form.is_valid():
+                # taxon_to_change.update(id_ref=form.cleaned_data['referent'])
+                list_syn = Taxon.objects.filter(id_ref=taxon_to_change)
+                list_son = Taxon.objects.filter(id_sup=taxon_to_change)
+                for tup in list_son:
+                    tup.id_sup = form.cleaned_data['referent']
+                    tup.save()
+                for tup in list_syn:
+                    tup.id_ref = form.cleaned_data['referent']
+                    tup.save()
+                if form.cleaned_data['referent'] != form.cleaned_data['referent'].id_ref:
+                    form.cleaned_data['referent'].id_ref = form.cleaned_data['referent']
+                    form.cleaned_data['referent'].id_sup = taxon_to_change.id_sup
+                    form.cleaned_data['referent'].save()
+                taxon_to_change.id_ref = form.cleaned_data['referent']
+                taxon_to_change.id_sup = None
+                taxon_to_change.save()
+                template = loader.get_template('fatercal/return_change_taxon.html')
+                context = {
+                    'taxon_to_change': taxon_to_change,
+                    'message': message,
+                    'user': request.user.__str__(),
+                }
+                return HttpResponse(template.render(context, request))
             else:
                 form = TaxonChangeRef()
                 template = loader.get_template('fatercal/change_taxon.html')
-                context ={
+                context = {
+                    'error': 'Veuillez choisir un taxon parmi ceux proposé !',
                     'taxon_to_change': taxon_to_change,
                     'form': form,
                     'user': request.user.__str__(),
                 }
                 return HttpResponse(template.render(context, request))
         else:
-            template = loader.get_template('fatercal/return_change_taxon.html')
-            message = 'Le taxon {} n\'est pas un taxon valide. Retour a la page du taxon.'.format(taxon_to_change.nom_complet)
-            context = {
+            form = TaxonChangeRef()
+            template = loader.get_template('fatercal/change_taxon.html')
+            context ={
+                'error': None,
                 'taxon_to_change': taxon_to_change,
-                'message': message,
+                'form': form,
                 'user': request.user.__str__(),
             }
             return HttpResponse(template.render(context, request))
+    else:
+        template = loader.get_template('fatercal/return_change_taxon.html')
+        message = 'Le taxon {} n\'est pas un taxon valide. Retour a la page du taxon.'.format(taxon_to_change.nom_complet)
+        context = {
+            'taxon_to_change': taxon_to_change,
+            'message': message,
+            'user': request.user.__str__(),
+        }
+        return HttpResponse(template.render(context, request))
 
 
+@login_required(redirect_field_name='login_required')
 def change_taxon_sup(request, id_taxon):
     """
     View for changing the validity, reference of a taxon
     """
-    if request.user.is_authenticated():
-        taxon_to_change = Taxon.objects.get(id=id_taxon)
-        # The user has finished changing the data  int the form and send it back
-        if taxon_to_change == taxon_to_change.id_ref:
-            if request.method == 'POST':
-                form = TaxonChangeSup(request.POST)
-                is_change_superior = False
-                message = "Le Taxon {} a bien été mis à jour".format(taxon_to_change.nom_complet)
-                if form.is_valid():
-                    if form.cleaned_data['taxon_superieur'] is not None:
-                        taxon_to_change.id_sup = form.cleaned_data['taxon_superieur']
-                        taxon_to_change.save()
-                    template = loader.get_template('fatercal/return_change_taxon.html')
-                    context = {
-                        'taxon_to_change': taxon_to_change,
-                        'message': message,
-                        'user': request.user.__str__(),
-                    }
-                    return HttpResponse(template.render(context, request))
+
+    taxon_to_change = Taxon.objects.get(id=id_taxon)
+    # The user has finished changing the data  int the form and send it back
+    if taxon_to_change == taxon_to_change.id_ref:
+        if request.method == 'POST':
+            form = TaxonChangeSup(request.POST)
+            message = "Le Taxon {} a bien été mis à jour".format(taxon_to_change.nom_complet)
+            if form.is_valid():
+                print(form.is_valid())
+                taxon_to_change.id_sup = form.cleaned_data['taxon_superieur']
+                taxon_to_change.save()
+                template = loader.get_template('fatercal/return_change_taxon.html')
+                context = {
+                    'error': None,
+                    'taxon_to_change': taxon_to_change,
+                    'message': message,
+                    'user': request.user.__str__(),
+                }
+                return HttpResponse(template.render(context, request))
             else:
                 form = TaxonChangeSup()
                 template = loader.get_template('fatercal/change_taxon.html')
-                context ={
+                context = {
+                    'error': 'Veuillez choisir un taxon parmi ceux proposé !',
                     'taxon_to_change': taxon_to_change,
                     'form': form,
                     'user': request.user.__str__(),
                 }
                 return HttpResponse(template.render(context, request))
         else:
-            return HttpResponse('Le taxon {} n\'est pas un valide. Retour a la page du taxon.'.format(taxon_to_change.nom_complet))
+            form = TaxonChangeSup()
+            template = loader.get_template('fatercal/change_taxon.html')
+            context ={
+                'taxon_to_change': taxon_to_change,
+                'form': form,
+                'user': request.user.__str__(),
+            }
+            return HttpResponse(template.render(context, request))
+    else:
+        template = loader.get_template('fatercal/return_change_taxon.html')
+        message = 'Le taxon {} n\'est pas un taxon valide. Retour a la page du taxon.' \
+                  ''.format(taxon_to_change.nom_complet)
+        context = {
+            'error': None,
+            'taxon_to_change': taxon_to_change,
+            'message': message,
+            'user': request.user.__str__(),
+        }
+        return HttpResponse(template.render(context, request))
+
+
+@login_required(redirect_field_name='login_required')
+def change_validity_to_valid(request, id_taxon):
+    """
+    View for changing a synonymous taxon to a valid one
+    """
+
+    taxon_to_change = Taxon.objects.get(id=id_taxon)
+    # The user has finished changing the data  int the form and send it back
+    if taxon_to_change != taxon_to_change.id_ref:
+        taxon_to_change.id_ref = taxon_to_change
+        taxon_to_change.save()
+        template = loader.get_template('fatercal/return_change_taxon.html')
+        message = 'Le taxon est devenu un taxon valide.'.format(
+           taxon_to_change.nom_complet)
+        context = {
+           'taxon_to_change': taxon_to_change,
+           'message': message,
+           'user': request.user.__str__(),
+        }
+        return HttpResponse(template.render(context, request))
+    else:
+        template = loader.get_template('fatercal/return_change_taxon.html')
+        message = 'Le taxon {} est déjà un taxon valide.'.format(
+           taxon_to_change.nom_complet)
+        context = {
+           'taxon_to_change': taxon_to_change,
+           'message': message,
+           'user': request.user.__str__(),
+        }
+        return HttpResponse(template.render(context, request))
 
 
 class ValidSpecialFilter(admin.SimpleListFilter):
