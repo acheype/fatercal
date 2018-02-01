@@ -120,7 +120,8 @@ class TaxonModify(nested_admin.NestedModelAdmin):
     # The list of filter the user can use
     list_filter = (
         'rang',
-        ValidSpecialFilter
+        ValidSpecialFilter,
+        'nc'
     )
 
     # The search field will be on these field to find a taxon

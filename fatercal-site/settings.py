@@ -74,6 +74,9 @@ TEMPLATES = [
     },
 ]
 
+# The url that the decorator login_required() will use for redirection when the user is not authentified
+LOGIN_URL = '/login/'
+
 WSGI_APPLICATION = 'fatercal-site.wsgi.application'
 
 

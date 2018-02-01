@@ -87,7 +87,6 @@ def get_msg(tup):
     return (None, None, None, None)
 
 
-@login_required(redirect_field_name='login_required')
 def get_taxon():
     """
     This function get all Information needed from a taxon
@@ -96,11 +95,12 @@ def get_taxon():
     list_not_proper = Taxon.objects.all()
     list_taxon = [(
         'REGNE', 'PHYLUM', 'CLASSE', 'ORDRE',
-        'FAMILLE', 'GROUP1_INPN',	'GROUP2_INPN', 'ID_',
+        'FAMILLE', 'GROUP1_INPN',	'GROUP2_INPN', 'ID',
         'ID_REF', 'ID_SUP', 'CD_NOM', 'CD_TAXSUP', 'CD_SUP',
         'CD_REF', 'RANG', 'LB_NOM',	'LB_AUTEUR', 'NOM_COMPLET',
         'NOM_COMPLET_HTML', 'NOM_VALIDE', 'NOM_VERN',
-        'NOM_VERN_ENG', 'HABITAT', 'NC', 'NOT IN TAXREF', 'CD_REF !=', 'CD_SUP !=', 'VALIDITY !=')
+        'NOM_VERN_ENG', 'HABITAT', 'NC', 'NON PRESENT DANS TAXREF',
+        'CD_REF DIFFERENT', 'CD_SUP DIFFERENT', 'VALIDITY DIFFERENT')
     ]
     for tup in list_not_proper:
         msg = get_msg(tup)
@@ -128,7 +128,7 @@ def get_taxon():
     return list_taxon
 
 
-@login_required(redirect_field_name='login_required')
+@login_required()
 def extract_taxon_taxref(request):
     """
     A view that streams a large CSV file. In this case the file in format
@@ -147,7 +147,7 @@ def extract_taxon_taxref(request):
     return response
 
 
-@login_required(redirect_field_name='login_required')
+@login_required()
 def change_taxon_ref(request, id_taxon):
     """
     View for changing the superior of a taxon
@@ -187,7 +187,7 @@ def change_taxon_ref(request, id_taxon):
                 form = TaxonChangeRef()
                 template = loader.get_template('fatercal/change_taxon.html')
                 context = {
-                    'error': 'Veuillez choisir un taxon parmi ceux proposé !',
+                    'error': 'Veuillez choisir un taxon parmi ceux proposés.',
                     'taxon_to_change': taxon_to_change,
                     'form': form,
                     'user': request.user.__str__(),
@@ -214,7 +214,7 @@ def change_taxon_ref(request, id_taxon):
         return HttpResponse(template.render(context, request))
 
 
-@login_required(redirect_field_name='login_required')
+@login_required()
 def change_taxon_sup(request, id_taxon):
     """
     View for changing the validity, reference of a taxon
@@ -227,22 +227,32 @@ def change_taxon_sup(request, id_taxon):
             form = TaxonChangeSup(request.POST)
             message = "Le Taxon {} a bien été mis à jour".format(taxon_to_change.nom_complet)
             if form.is_valid():
-                print(form.is_valid())
-                taxon_to_change.id_sup = form.cleaned_data['taxon_superieur']
-                taxon_to_change.save()
-                template = loader.get_template('fatercal/return_change_taxon.html')
-                context = {
-                    'error': None,
-                    'taxon_to_change': taxon_to_change,
-                    'message': message,
-                    'user': request.user.__str__(),
-                }
-                return HttpResponse(template.render(context, request))
+                if taxon_to_change != form.cleaned_data['taxon_superieur']:
+                    taxon_to_change.id_sup = form.cleaned_data['taxon_superieur']
+                    taxon_to_change.save()
+                    template = loader.get_template('fatercal/return_change_taxon.html')
+                    context = {
+                        'error': None,
+                        'taxon_to_change': taxon_to_change,
+                        'message': message,
+                        'user': request.user.__str__(),
+                    }
+                    return HttpResponse(template.render(context, request))
+                else:
+                    form = TaxonChangeSup()
+                    template = loader.get_template('fatercal/change_taxon.html')
+                    context = {
+                        'error': 'Veuillez choisir un taxon autre que lui même.',
+                        'taxon_to_change': taxon_to_change,
+                        'form': form,
+                        'user': request.user.__str__(),
+                    }
+                    return HttpResponse(template.render(context, request))
             else:
                 form = TaxonChangeSup()
                 template = loader.get_template('fatercal/change_taxon.html')
                 context = {
-                    'error': 'Veuillez choisir un taxon parmi ceux proposé !',
+                    'error': 'Veuillez choisir un taxon parmi ceux proposés.',
                     'taxon_to_change': taxon_to_change,
                     'form': form,
                     'user': request.user.__str__(),
@@ -251,6 +261,7 @@ def change_taxon_sup(request, id_taxon):
         else:
             form = TaxonChangeSup()
             template = loader.get_template('fatercal/change_taxon.html')
+            print(form)
             context ={
                 'taxon_to_change': taxon_to_change,
                 'form': form,
@@ -270,7 +281,7 @@ def change_taxon_sup(request, id_taxon):
         return HttpResponse(template.render(context, request))
 
 
-@login_required(redirect_field_name='login_required')
+@login_required()
 def change_validity_to_valid(request, id_taxon):
     """
     View for changing a synonymous taxon to a valid one
