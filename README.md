@@ -100,5 +100,12 @@ Then enable the start at startup :
 
     systemctl enable fatercal
 
+## From development to production
+
+To have the database set quicky, it's possible to use the same docker image than in production. For this, you can go to the directory `docker/test` and launch separately the service :
+
+    docker-compose up postgres
+    
+    
 
 
