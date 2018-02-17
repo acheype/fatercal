@@ -16,11 +16,6 @@ docker-compose ([cf. installation](https://docs.docker.com/compose/install/)).
     git clone https://github.com/acheype/fatercal.git fatercal.git
 
 
-**Adding a directory to store the database**
-
-    mkdir /data/postgresql
-
-
 **Configure the application**
 
 In the production environment, the compose configuration file is in the `docker/prod` directory.
@@ -49,7 +44,7 @@ And the `fatercal-web.env` must have this one (think about escape the '$' charac
 To let an access to the web interface, you must add one or several superusers. The followed command line ask the
 needed information to add a superuser.
 
-    docker exec fatercal-web python3 /app/manage.py createsuperuser
+    docker exec -it fatercal-web python3 /app/manage.py createsuperuser
 
 
 **Starting the server**
