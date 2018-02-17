@@ -101,6 +101,69 @@ To have the database set quicky, it's possible to use the same docker image than
 
     docker-compose up postgres
     
-    
+### TODO Write out this section
 
+launch the db in development
 
+    docker-compose up postgres
+
+build the web application docker image
+
+    cd docker/test
+    docker-compose build
+
+for the initialization, make sur the directory /data/fatercal/postgresql is empty
+
+    rm /data/fatercal/postgresql -rf
+
+launch the postgres service (as it's the first startup, it will create the database and the database user)
+
+    docker-compose up postgres
+
+launch the webapp service. As it's the fist startup, it will create all the tables (the django schema where there is
+the table managed by django and the public schema with the one managed by the fatercal webapp)
+
+    docker-compose up webapp
+
+test the application in development
+
+    python3 manage.py runserver
+
+create a superuser to test the web application
+
+    docker exec -it fatercal-web python3 /app/manage.py createsuperuser
+
+Then connect to localhost:8000 in a web navigator
+
+If you need to import some data, for a dump in a clear sql file, launch :
+
+    docker exec -i fatercal-db psql -h localhost -d fatercal -U fatercal < dump_to_import.sql
+
+After trying in development environement, you can update the docker image in production.
+
+First, tag the docker image to the version number you want (here, 1.0)
+
+    docker tag acheype/fatercal-web:latest acheype/fatercal-web:1.0
+
+Then, upload the image in the dockerhub repository :
+
+    docker push acheype/fatercal-web:latest
+    docker push acheype/fatercal-web:1.0
+
+Finally, change the version number of the web application for the production docker image in the
+``docker/prod/docker-compose.yml`` file (after 'fatercal-web:' at the fifth line as below)
+
+    version: '3'
+    services:
+        www:
+            container_name: fatercal-web
+            image: acheype/fatercal-web:1.0
+            ports:
+                - "80:80"
+    ...
+
+Then when you will start again the webapp service in the production environment, the new image will be downloaded
+before to start :
+
+    cd docker/prod
+    docker-compose up
