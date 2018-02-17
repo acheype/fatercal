@@ -167,3 +167,12 @@ before to start :
 
     cd docker/prod
     docker-compose up
+
+To import with the import script (operation to be done for each taxref revision, generally once a year), first copy the
+taxref file in the docker image then execute (the file need to be named ``taxref_animalia.csv`` and put in `` ):
+
+    docker cp file_to_import.csv fatercal-web:/app/script_import
+    docker exec -it fatercal-web python3 /app/script_import/updatedata.py
+
+(the first time, you need to set the user and password by editing the ``script_import/updatedata.py`` file)
+

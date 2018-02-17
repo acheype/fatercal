@@ -20,6 +20,7 @@ RUN mkdir /app
 COPY manage.py requirements.txt /app/
 COPY fatercal /app/fatercal
 COPY fatercal-site /app/fatercal-site
+COPY script_import /app/script_import
 
 # install python dependencies
 RUN pip3 install -r /app/requirements.txt
