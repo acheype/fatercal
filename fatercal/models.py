@@ -107,13 +107,7 @@ class Prelevement(models.Model):
     date = models.CharField(max_length=10, blank=True, null=True,
                             validators=[
                                 RegexValidator(
-                                    regex=
-                                    '''
-                                        (^\d{4}$)|
-                                        (^\d{4}-(0[1-9]|1[0-2])$)|
-                                        (^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)|
-                                        (^$)
-                                    ''',
+                                    regex=r"(^\d{4}$)|(^\d{4}-(0[1-9]|1[0-2])$)|(^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)|(^$)",
                                     message='La date doit être dans l\'une des formes suivantes: 1850, 1850-12, 1850-12-01',
                                     code='invalid_username'
                                 ),
