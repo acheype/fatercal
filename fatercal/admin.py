@@ -98,6 +98,8 @@ class TaxonModify(nested_admin.NestedModelAdmin):
     # a list of field that can't be modify
     readonly_fields = (
         'nom_complet',
+        'valid',
+        'syn',
         'hierarchy',
         'referent',
         'id',
@@ -130,10 +132,11 @@ class TaxonModify(nested_admin.NestedModelAdmin):
         'lb_auteur',
     )
 
-    # The field that will be showing to the user when we edit the object
-    fieldsets_edit = (
+    # The field that will be showing to the user when we edit a synonymous
+    fieldsets_edit_syn = (
         ('Taxonomie', {
-            'fields': ('lb_nom', 'lb_auteur', 'nom_complet', 'referent', 'id_sup', 'rang', 'change_taxon', 'hierarchy')
+            'fields': ('lb_nom', 'lb_auteur', 'nom_complet', 'valid',
+                       'referent', 'id_sup', 'rang', 'hierarchy')
         }),
         ('Statut et Habitat', {
             'fields': ('nc', 'habitat', 'grande_terre', 'iles_loyautee', 'autre',)
@@ -144,6 +147,30 @@ class TaxonModify(nested_admin.NestedModelAdmin):
         }),
         ('Identifiants', {
             'fields': ('id', 'id_ref_id', 'id_sup_id', 'cd_nom', 'cd_ref', 'cd_sup', 'old_db_id')
+        }),
+        ('Modification', {
+            'fields': ['change_taxon']
+        })
+    )
+
+    # The field that will be showing to the user when we edit a valid taxon
+    fieldsets_edit_valid = (
+        ('Taxonomie', {
+            'fields': ('lb_nom', 'lb_auteur', 'nom_complet', 'valid',
+                       'syn', 'id_sup', 'rang', 'hierarchy')
+        }),
+        ('Statut et Habitat', {
+            'fields': ('nc', 'habitat', 'grande_terre', 'iles_loyautee', 'autre',)
+        }),
+        ('Information complémentaires', {
+            'classes': ('collapse',),
+            'fields': ('remarque', 'sources', 'reference_description',)
+        }),
+        ('Identifiants', {
+            'fields': ('id', 'id_ref_id', 'id_sup_id', 'cd_nom', 'cd_ref', 'cd_sup', 'old_db_id')
+        }),
+        ('Modification', {
+            'fields':  ['change_taxon']
         })
     )
 
@@ -171,7 +198,10 @@ class TaxonModify(nested_admin.NestedModelAdmin):
     # Redefinition of the function to have different fieldsets when we edit or add a taxon
     def get_fieldsets(self, request, obj=None):
         if obj:
-            return self.fieldsets_edit
+            if obj.id == obj.id_ref.id:
+                return self.fieldsets_edit_valid
+            else:
+                return self.fieldsets_edit_syn
         else:
             return self.fieldsets_add
 
@@ -196,74 +226,98 @@ class TaxonModify(nested_admin.NestedModelAdmin):
             return "<p>Vous ne pouvez pas changez le supérieur ou le référent de ce taxon.</p>"
 
     change_taxon.allow_tags = True
+    change_taxon.short_description = 'Modification'
 
     # show if the taxon is valid or not whith is referent or synonymous
     def referent(self, obj):
-        if obj == obj.id_ref:
-            list_syn = Taxon.objects.filter(id_ref=obj.id).filter(~Q(id=obj.id))
-            if len(list_syn) != 0:
-                string = """Le taxon est valide.<br/>Voici ses synonymes:<br/>"""
-                for tup in list_syn:
-                    string += "<a href='/fatercal/taxon/{}/'>{}</a><br/>".format(tup.id, tup.nom_complet)
-            else:
-                string = """Le taxon est valide mais n'a pas de synonymes connues"""
-            return string
-
-        else:
-            return """Le taxon n'est pas un valide. <br/> Voici son référent: 
-            <a href='/fatercal/taxon/{}/'>{}</a> <br/> <br/> <a href="/fatercal/taxon_to_valid/{}">
+            return """<a href='/fatercal/taxon/{}/'>{}</a> <br/> <br/> <a href="/fatercal/taxon_to_valid/{}">
                    Cliquer ici pour le passer en valide.</a>""".format(obj.id_ref.id, obj.id_ref.nom_complet, obj.id)
-
     referent.allow_tags = True
 
-    # This function will construct the hierarchy tree of the taxon
-    def hierarchy(self, obj) :
-        """ It will construct the hierarchy tree of the taxon """
-        liste_hierarchy = []
-        q = obj.id_sup
-        liste_hierarchy.append(q)
-        if obj.id == obj.id_ref.id:
-            if q is not None:
-                while q.id_sup is not None:
-                    q = q.id_sup
-                    liste_hierarchy.append(q)
-                nb = len(liste_hierarchy)
-            else:
-                liste_hierarchy = None
-                nb = 0
-            str_hierarchy_begin = ''
-
-            nb2 = nb-1
-            str_hierarchy_end = '</ul>'
-            if liste_hierarchy is not None:
-                for tup in reversed(liste_hierarchy):
-                    str_hierarchy_begin = str_hierarchy_begin + '''<li><label class="tree_label" for="c{}">
-                    <strong>{} : </strong></al><a href="/fatercal/taxon/{}/">{}</a>
-                    </label><ul>'''.format(nb2, tup.rang, tup.id, tup)
-                    str_hierarchy_end = '</li></ul>' + str_hierarchy_end
-                    nb2 = nb2-1
-            son = Taxon.objects.filter(id_sup=obj.id).order_by('rang')
-            if len(son) > 0:
-                rang = son[0].rang
-                str_son = '<ul><li><label class="tree_label" for="c{}"/><strong>{} : </strong></label><ul>'.format(str(nb+1), rang)
-                for tup in son:
-                    if rang != tup.rang:
-                        str_son = str_son + '''</ul></li><li class="folder"><label for="c{}">
-                        <strong>{} : </strong></label><li><ul>
-                        <a href="/fatercal/taxon/{}/">{}</a>'''.format(str(nb+1), tup.rang, tup.id, tup)
-                        rang = tup.rang
-                    else:
-                        str_son = str_son + '<li><a href="/fatercal/taxon/{}/">{} {}</a></li>'.format(tup.id, tup.lb_nom, tup.lb_auteur)
-                str_son = str_son+'</ul></ul></li>'
-                str_hierarchy = '<ul><br/>' + str_hierarchy_begin+'''<li class="folder">
-                <strong>{} : </strong>{} {}<ul>'''.format(obj.rang, obj.lb_nom, obj.lb_auteur)+str_son+'</ul></li>'+str_hierarchy_end
-            else:
-                str_hierarchy = '<ul class="tree"><br/>' + str_hierarchy_begin + '''<li class="folder">
-                <label>{} : </label><a href="/fatercal/taxon/{}/">{} {}</a></li>'''.format(obj.rang, obj.id, obj.lb_nom, obj.lb_auteur) + str_hierarchy_end
-            return str_hierarchy
+    # Display the synonymous of the taxon
+    def syn(self, obj):
+        list_syn = Taxon.objects.filter(id_ref=obj.id).filter(~Q(id=obj.id))
+        if len(list_syn) != 0:
+            string = "</br>"
+            for tup in list_syn:
+                string += "<a href='/fatercal/taxon/{}/'>{}</a><br/>".format(tup.id, tup.nom_complet)
         else:
-            return "Il n'y a pas de hiérarchie pour ce taxon"
+            string = ""
+        return string
+    syn.allow_tags = True
+    syn.short_description = 'Autre(s) combinaison(s) et/ou synonyme(s)'
+
+    # Display the validity of the taxon
+    def valid(self, obj):
+        if obj.id == obj.id_ref.id:
+            return '<img src="/admin/img/icon-yes.gif" alt="True">'
+        else:
+            return '<img src="/admin/img/icon-no.gif" alt="False">'
+    valid.allow_tags = True
+    valid.short_description = 'Valide'
+
+    # This function will construct the hierarchy tree of the taxon
+    def hierarchy(self, obj):
+        """ It will construct the hierarchy tree of the taxon """
+        list_hierarchy = []
+
+        """ We verify the construction is for a taxon or synonymous"""
+        if obj.id == obj.id_ref.id:
+            superior = obj.id_sup
+            son = Taxon.objects.filter(id_sup=obj.id).order_by('rang')
+            is_valid = True
+        else:
+            superior = obj.id_ref.id_sup
+            son = Taxon.objects.filter(id_sup=obj.id_ref).order_by('rang')
+            is_valid = False
+        list_hierarchy.append(superior)
+
+        """ We browse the hierarchy of the taxon"""
+        if superior is not None:
+            while superior.id_sup is not None:
+                superior = superior.id_sup
+                list_hierarchy.append(superior)
+            nb = len(list_hierarchy)
+        else:
+            list_hierarchy = None
+            nb = 0
+        str_hierarchy_begin = ''
+
+        nb2 = nb-1
+        str_hierarchy_end = '</ul>'
+        if list_hierarchy is not None:
+            for tup in reversed(list_hierarchy):
+                str_hierarchy_begin = str_hierarchy_begin + '''<li><label class="tree_label" for="c{}">
+                <strong>{} : </strong></al><a href="/fatercal/taxon/{}/">{}</a>
+                </label><ul>'''.format(nb2, tup.rang, tup.id, tup)
+                str_hierarchy_end = '</li></ul>' + str_hierarchy_end
+                nb2 = nb2-1
+        if is_valid:
+            str_taxon = '<li class="folder"><label><strong>{} :</strong> {} {}</li></label>'\
+                .format(obj.rang, obj.lb_nom, obj.lb_auteur)
+        else:
+            str_taxon = '<li class="folder"><label><strong>{} :</strong><a href="/fatercal/taxon/{}/"> {} {}</a> ' \
+                .format(obj.id_ref.rang, obj.id_ref.lb_nom, obj.id_ref.lb_nom, obj.lb_auteur)
+        if len(son) > 0:
+            rang = son[0].rang
+            str_son = '<ul><li><label class="tree_label" for="c{}"/><strong>{} : </strong></label><ul>'\
+                .format(str(nb+1), rang)
+            for tup in son:
+                if rang != tup.rang:
+                    str_son = str_son + '''</ul></li><li class="folder"><label for="c{}">
+                    <strong>{} : </strong></label><li><ul>
+                    <a href="/fatercal/taxon/{}/">{}</a>'''.format(str(nb+1), tup.rang, tup.id, tup)
+                    rang = tup.rang
+                else:
+                    str_son = str_son + '<li><a href="/fatercal/taxon/{}/">{} {}</a></li>'\
+                        .format(tup.id, tup.lb_nom, tup.lb_auteur)
+            str_hierarchy_end = str_son+'</ul></ul></li>'
+            str_hierarchy = '<ul><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end
+        else:
+            str_hierarchy = '<ul class="tree"><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end
+        return str_hierarchy
     hierarchy.allow_tags = True
+    hierarchy.short_description = 'Hiérarchie'
 
     @staticmethod
     def id(obj):

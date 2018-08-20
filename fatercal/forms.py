@@ -1,6 +1,6 @@
 from django import forms
 from .models import Taxon
-from ajax_select.fields import AutoCompleteSelectField, AutoCompleteSelectMultipleField
+from ajax_select.fields import AutoCompleteSelectField
 
 
 class TaxonChangeRef(forms.Form):

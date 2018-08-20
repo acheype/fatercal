@@ -79,7 +79,7 @@ class Localitee(models.Model):
 
 
 class PlanteHote(models.Model):
-    id_plante_hote = models.AutoField(db_column='id_plante-hote', primary_key=True)  # Field renamed remove characters.
+    id_plante_hote = models.AutoField(db_column='id_plante-hote', primary_key=True) # Field renamed remove characters.
     id_taxref = models.ForeignKey('Taxon', db_column='id_taxref', verbose_name="Taxon")
     famille = models.CharField(max_length=100, blank=True, null=True, verbose_name="Famille")
     genre = models.CharField(max_length=100, blank=True, null=True, verbose_name="Genre")
@@ -100,15 +100,20 @@ class PlanteHote(models.Model):
 
 class Prelevement(models.Model):
     id_prelevement = models.AutoField(primary_key=True)
-    id_localitee = models.ForeignKey(Localitee, db_column='id_localitee', blank=True, null=True, verbose_name='Localité')
+    id_localitee = models.ForeignKey(Localitee, db_column='id_localitee',
+                                     blank=True, null=True, verbose_name='Localité')
     id_taxref = models.ForeignKey('Taxon', db_column='id_taxref', verbose_name='Taxon')
     type_enregistrement = models.ForeignKey('TypeEnregistrement', db_column='type_enregistrement',
                                             blank=True, null=True)
     date = models.CharField(max_length=10, blank=True, null=True,
                             validators=[
                                 RegexValidator(
-                                    regex=r"(^\d{4}$)|(^\d{4}-(0[1-9]|1[0-2])$)|(^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)|(^$)",
-                                    message='La date doit être dans l\'une des formes suivantes: 1850, 1850-12, 1850-12-01',
+                                    regex=r"(^\d{4}$)|"
+                                          r"(^\d{4}-(0[1-9]|1[0-2])$)|"
+                                          r"(^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)|"
+                                          r"(^$)",
+                                    message='La date doit être dans l\'une des formes suivantes: '
+                                            '1850, 1850-12, 1850-12-01',
                                     code='invalid_username'
                                 ),
                             ]
@@ -177,7 +182,7 @@ class Taxon(models.Model):
     nc = models.ForeignKey('TaxrefStatus', db_column='nc', blank=True, null=True,
                            verbose_name='Statut')
     grande_terre = models.NullBooleanField()
-    iles_loyautee = models.NullBooleanField()
+    iles_loyautee = models.NullBooleanField(verbose_name='Îles Loyauté')
     autre = models.NullBooleanField()
     territoire_fr = models.NullBooleanField()
     remarque = models.TextField(blank=True, null=True)

@@ -77,7 +77,8 @@ def get_msg(tup):
     """
     if tup.cd_nom is None:
         return 'x', None, None, None
-    elif (tup.id_ref != tup and tup.cd_ref == tup.id_ref.cd_nom) or (tup.id_ref == tup and tup.cd_ref != tup.id_ref.cd_nom):
+    elif (tup.id_ref != tup and tup.cd_ref == tup.id_ref.cd_nom) or \
+            (tup.id_ref == tup and tup.cd_ref != tup.id_ref.cd_nom):
         return None, None, None, 'x'
     elif tup.cd_ref != tup.id_ref.cd_nom:
         return None, 'x', None, None
@@ -205,7 +206,8 @@ def change_taxon_ref(request, id_taxon):
             return HttpResponse(template.render(context, request))
     else:
         template = loader.get_template('fatercal/return_change_taxon.html')
-        message = 'Le taxon {} n\'est pas un taxon valide. Retour a la page du taxon.'.format(taxon_to_change.nom_complet)
+        message = 'Le taxon {} n\'est pas un taxon valide. Retour a la page du taxon.'\
+            .format(taxon_to_change.nom_complet)
         context = {
             'taxon_to_change': taxon_to_change,
             'message': message,
