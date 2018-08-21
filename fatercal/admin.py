@@ -25,10 +25,10 @@ class HoteParasiteObj(admin.StackedInline):
         by the user
     """
     model = Hote
-    # How many empty line it will display for creating new object
     fk_name = 'id_hote'
     verbose_name = "Parasite du taxon"
     verbose_name_plural = "Parasites du taxon"
+    # How many empty line it will display for creating new object
     extra = 1
 
 
@@ -39,10 +39,10 @@ class HoteHoteObj(admin.StackedInline):
         by the user
     """
     model = Hote
-    # How many empty line it will display for creating new object
     fk_name = 'id_parasite'
     verbose_name = "Hote du taxon"
     verbose_name_plural = "Hotes du taxon"
+    # How many empty line it will display for creating new object
     extra = 1
 
 
@@ -264,11 +264,11 @@ class TaxonModify(nested_admin.NestedModelAdmin):
         """ We verify the construction is for a taxon or synonymous"""
         if obj.id == obj.id_ref.id:
             superior = obj.id_sup
-            son = Taxon.objects.filter(id_sup=obj.id).order_by('rang')
+            list_child = Taxon.objects.filter(id_sup=obj.id).order_by('rang')
             is_valid = True
         else:
             superior = obj.id_ref.id_sup
-            son = Taxon.objects.filter(id_sup=obj.id_ref).order_by('rang')
+            list_child = Taxon.objects.filter(id_sup=obj.id_ref).order_by('rang')
             is_valid = False
         list_hierarchy.append(superior)
 
@@ -286,31 +286,38 @@ class TaxonModify(nested_admin.NestedModelAdmin):
         nb2 = nb-1
         str_hierarchy_end = '</ul>'
         if list_hierarchy is not None:
-            for tup in reversed(list_hierarchy):
+            for parent in reversed(list_hierarchy):
                 str_hierarchy_begin = str_hierarchy_begin + '''<li><label class="tree_label" for="c{}">
                 <strong>{} : </strong></al><a href="/fatercal/taxon/{}/">{}</a>
-                </label><ul>'''.format(nb2, tup.rang, tup.id, tup)
+                </label><ul>'''.format(nb2, parent.rang, parent.id, parent)
                 str_hierarchy_end = '</li></ul>' + str_hierarchy_end
                 nb2 = nb2-1
         if is_valid:
-            str_taxon = '<li class="folder"><label><strong>{} :</strong> {} {}</li></label>'\
+            str_taxon = '<li class="folder"><label><strong>{} :</strong> {} {}</label></li>'\
                 .format(obj.rang, obj.lb_nom, obj.lb_auteur)
+            if obj.rang.rang == "ES" or obj.rang.rang == "SSES":
+                list_syn = Taxon.objects.filter(id_ref=obj.id).filter(~Q(id=obj.id))
+                if len(list_syn) > 0:
+                    str_taxon += '<li class="folder"><label><strong>Synonyme :</strong></br>'
+                    for syn in list_syn:
+                        str_taxon += '<a href="/fatercal/taxon/{}/">{} {}</a>'.format(syn.id, syn.lb_nom, syn.lb_auteur) + '</br>'
+                    str_taxon += '</label></li>'
         else:
             str_taxon = '<li class="folder"><label><strong>{} :</strong><a href="/fatercal/taxon/{}/"> {} {}</a> ' \
                 .format(obj.id_ref.rang, obj.id_ref.lb_nom, obj.id_ref.lb_nom, obj.lb_auteur)
-        if len(son) > 0:
-            rang = son[0].rang
+        if len(list_child) > 0:
+            rang = list_child[0].rang
             str_son = '<ul><li><label class="tree_label" for="c{}"/><strong>{} : </strong></label><ul>'\
                 .format(str(nb+1), rang)
-            for tup in son:
-                if rang != tup.rang:
+            for child in list_child:
+                if rang != child.rang:
                     str_son = str_son + '''</ul></li><li class="folder"><label for="c{}">
                     <strong>{} : </strong></label><li><ul>
-                    <a href="/fatercal/taxon/{}/">{}</a>'''.format(str(nb+1), tup.rang, tup.id, tup)
-                    rang = tup.rang
+                    <a href="/fatercal/taxon/{}/">{}</a>'''.format(str(nb+1), child.rang, child.id, child)
+                    rang = child.rang
                 else:
                     str_son = str_son + '<li><a href="/fatercal/taxon/{}/">{} {}</a></li>'\
-                        .format(tup.id, tup.lb_nom, tup.lb_auteur)
+                        .format(child.id, child.lb_nom, child.lb_auteur)
             str_hierarchy_end = str_son+'</ul></ul></li>'
             str_hierarchy = '<ul><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end
         else:
@@ -481,7 +488,7 @@ def add_genre_to_name(sender, instance, created, **kwargs):
                     if instance.id_sup.rang.rang == "ES":
                         instance.lb_nom = "{} ".format(instance.id_sup.lb_nom) + instance.lb_nom
             if instance.lb_auteur is not None:
-                instance.nom_complet = instance.lb_nom + " " +instance.lb_auteur
+                instance.nom_complet = instance.lb_nom + " " + instance.lb_auteur
             else:
                 instance.nom_complet = instance.lb_nom
 

@@ -79,7 +79,7 @@ class Localitee(models.Model):
 
 
 class PlanteHote(models.Model):
-    id_plante_hote = models.AutoField(db_column='id_plante-hote', primary_key=True) # Field renamed remove characters.
+    id_plante_hote = models.AutoField(db_column='id_plante-hote', primary_key=True)  # Field renamed remove characters.
     id_taxref = models.ForeignKey('Taxon', db_column='id_taxref', verbose_name="Taxon")
     famille = models.CharField(max_length=100, blank=True, null=True, verbose_name="Famille")
     genre = models.CharField(max_length=100, blank=True, null=True, verbose_name="Genre")
