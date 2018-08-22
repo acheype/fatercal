@@ -1,10 +1,11 @@
 from django.contrib import admin
 from django.db.models import Q
 from django.db.models.signals import post_save
+from itertools import chain
 
 from fatercal.views import ValidSpecialFilter
 from .models import Taxon, HabitatDetail, Localitee, Prelevement, Recolteur, Hote, PlanteHote, Vernaculaire, Iso6393
-import nested_admin
+from .function import get_Recolteur
 
 
 class PlanteHoteObj(admin.StackedInline):
@@ -18,6 +19,7 @@ class PlanteHoteObj(admin.StackedInline):
     extra = 1
 
 
+# This class serve to modify or add a Parasite for the Model Taxon
 class HoteParasiteObj(admin.StackedInline):
     """
         This Class will display the model of the table
@@ -32,6 +34,7 @@ class HoteParasiteObj(admin.StackedInline):
     extra = 1
 
 
+# This class serve to modify or add a Host for the Model Taxon
 class HoteHoteObj(admin.StackedInline):
     """
         This Class will display the model of the table
@@ -46,7 +49,8 @@ class HoteHoteObj(admin.StackedInline):
     extra = 1
 
 
-class HabitatDetailObj(nested_admin.NestedTabularInline):
+# This class serve to modify or add an habitat for the Model Taxon
+class HabitatDetailObj(admin.TabularInline):
     """
     This Class will the model of the table
     HabitatDetail to display all the object affected to the actual taxon selected
@@ -57,8 +61,8 @@ class HabitatDetailObj(nested_admin.NestedTabularInline):
     extra = 1
 
 
-# This class will be used to empack this inline in the  PrelevementObj nested_inline
-class RecolteurObj(nested_admin.NestedStackedInline):
+# This class serve to modify or add an Harvester for the Model Prelevement
+class RecolteurObj(admin.TabularInline):
     """
         This Class will display the model of the table
         Recolteur to display all parasite affected to the actual prelevement selected
@@ -69,19 +73,8 @@ class RecolteurObj(nested_admin.NestedStackedInline):
     extra = 1
 
 
-# The purpose of this class is to create new prelements for a taxon
-class PrelevementObj(nested_admin.NestedStackedInline):
-    """ This Class will display the model of the table Prelevement """
-    model = Prelevement
-
-    # The author who made the prelevement
-    inlines = [RecolteurObj]
-    # How many empty line it will display for creating a new object
-    extra = 1
-
-
 # This class serve to modify the admin look for the Model Taxon
-class TaxonModify(nested_admin.NestedModelAdmin):
+class TaxonModify(admin.ModelAdmin):
     """ This class will display the model Taxon for adding or modifying a taxon"""
 
     change_list_template = 'fatercal/taxon/change_list.html'
@@ -92,7 +85,6 @@ class TaxonModify(nested_admin.NestedModelAdmin):
         HoteParasiteObj,
         PlanteHoteObj,
         HabitatDetailObj,
-        PrelevementObj,
     )
 
     # a list of field that can't be modify
@@ -100,6 +92,7 @@ class TaxonModify(nested_admin.NestedModelAdmin):
         'nom_complet',
         'valid',
         'syn',
+        'prelevements',
         'hierarchy',
         'referent',
         'id',
@@ -150,6 +143,9 @@ class TaxonModify(nested_admin.NestedModelAdmin):
         }),
         ('Modification', {
             'fields': ['change_taxon']
+        }),
+        ('Prélevements', {
+            'fields': ['prelevements']
         })
     )
 
@@ -171,6 +167,9 @@ class TaxonModify(nested_admin.NestedModelAdmin):
         }),
         ('Modification', {
             'fields':  ['change_taxon']
+        }),
+        ('Prélevements', {
+            'fields': ['prelevements']
         })
     )
 
@@ -227,6 +226,41 @@ class TaxonModify(nested_admin.NestedModelAdmin):
 
     change_taxon.allow_tags = True
     change_taxon.short_description = 'Modification'
+
+    def prelevements(self, obj):
+        board_prelevement = """<table><tr>
+                                    <td><strong>Localité</strong></td> <td><strong>Type enregistrement</strong></td>
+                                    <td><strong>Date</strong></td><td> <strong>Nb taxon present</strong></td>
+                                    <td><strong>Collection museum</strong></td> <td><strong>Type specimen </strong></td>
+                                    <td><strong>Code specimen</strong></td> <td><strong>Altitude</strong></td>
+                                    <td><strong>Mode de collecte</strong></td> <td><strong>Toponyme</strong></td>
+                                    <td><strong>Toponymie x</strong></td> <td><strong>Toponymie y</strong></td>
+                                    <td><strong>Ancienne position x</strong></td>
+                                    <td><strong>Ancienne position y</strong></td> <td><strong>Récolteurs</strong></td>
+                                    <td><strong>Lien Modif</strong></td>
+                                </tr>"""
+        list_prelevement = Prelevement.objects.filter(id_taxref=obj.id)
+        if obj.id == obj.id_ref.id:
+            list_syn = Taxon.objects.filter(id_ref=obj.id).filter(~Q(id=obj.id))
+            for syn in list_syn:
+                list_prelevement_syn = Prelevement.objects.filter(id_taxref=syn.id)
+                list_prelevement = list(chain(list_prelevement, list_prelevement_syn))
+        for prelev in list_prelevement:
+            board_prelevement += '''<tr>
+                                    <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>
+                                    <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>
+                                    <td>{}</td> <td>{}</td> <td>{}</td> 
+                                    <td><a href='/fatercal/prelevement/{}/'>Modification</a></td>
+                                    </tr>
+                                '''\
+                .format(prelev.id_localitee, prelev.type_enregistrement, prelev.date, prelev.nb_taxon_present,
+                        prelev.collection_museum, prelev.type_specimen, prelev.code_specimen, prelev.altitude,
+                        prelev.mode_de_collecte, prelev.toponyme, prelev.toponymie_x, prelev.toponymie_y,
+                        prelev.old_x, prelev.old_y, get_Recolteur(prelev), prelev.id_prelevement)
+        board_prelevement += "</table></br><a href='/fatercal/prelevement/add?id_taxref={}'>Ajouter un Prelevement</a>"\
+            .format(obj.id)
+        return board_prelevement
+    prelevements.allow_tags = True
 
     # show if the taxon is valid or not whith is referent or synonymous
     def referent(self, obj):
@@ -295,16 +329,9 @@ class TaxonModify(nested_admin.NestedModelAdmin):
         if is_valid:
             str_taxon = '<li class="folder"><label><strong>{} :</strong> {} {}</label></li>'\
                 .format(obj.rang, obj.lb_nom, obj.lb_auteur)
-            if obj.rang.rang == "ES" or obj.rang.rang == "SSES":
-                list_syn = Taxon.objects.filter(id_ref=obj.id).filter(~Q(id=obj.id))
-                if len(list_syn) > 0:
-                    str_taxon += '<li class="folder"><label><strong>Synonyme :</strong></br>'
-                    for syn in list_syn:
-                        str_taxon += '<a href="/fatercal/taxon/{}/">{} {}</a>'.format(syn.id, syn.lb_nom, syn.lb_auteur) + '</br>'
-                    str_taxon += '</label></li>'
         else:
             str_taxon = '<li class="folder"><label><strong>{} :</strong><a href="/fatercal/taxon/{}/"> {} {}</a> ' \
-                .format(obj.id_ref.rang, obj.id_ref.lb_nom, obj.id_ref.lb_nom, obj.lb_auteur)
+                .format(obj.id_ref.rang, obj.id_ref.id, obj.id_ref.lb_nom, obj.lb_auteur)
         if len(list_child) > 0:
             rang = list_child[0].rang
             str_son = '<ul><li><label class="tree_label" for="c{}"/><strong>{} : </strong></label><ul>'\
