@@ -7,6 +7,7 @@ from .models import Taxon
 from .forms import TaxonChangeRef, TaxonChangeSup
 import csv
 from django.http import StreamingHttpResponse
+from .function import get_taxon
 
 
 class Echo(object):
@@ -16,117 +17,6 @@ class Echo(object):
     def write(self, value):
         """ Write the value by returning it, instead of storing in a buffer. """
         return value
-
-
-def get_info(tup):
-    """
-    This function get all information of superior
-    and miscellaneous info
-    """
-    sup = tup.id_sup
-    if sup is None:
-        sup = tup
-    list_sup = [sup]
-    while sup.id_sup is not None:
-        list_sup.append(sup.id_sup)
-        sup = sup.id_sup
-    if tup.rang.lb_rang != 'Règne':
-        regne = next((tupp.lb_nom for tupp in list_sup if tupp.rang.lb_rang == 'Règne'), None)
-    else:
-        regne = tup.lb_nom
-    if tup.rang.lb_rang != "Phylum/Embranchement":
-        phylum = next((tupp.lb_nom for tupp in list_sup if tupp.rang.lb_rang == "Phylum/Embranchement"), None)
-    else:
-        phylum = tup.lb_nom
-    if tup.rang.lb_rang != "Classe":
-        classe = next((tupp.lb_nom for tupp in list_sup if tupp.rang.lb_rang == "Classe"), None)
-    else:
-        classe = tup.lb_nom
-    if tup.rang.lb_rang != "Ordre":
-        ordre = next((tupp.lb_nom for tupp in list_sup if tupp.rang.lb_rang == "Ordre"), None)
-    else:
-        ordre = tup.lb_nom
-    if tup.rang.lb_rang != "Famille":
-        famille = next((tupp.lb_nom for tupp in list_sup if tupp.rang.lb_rang == "Famille"), None)
-    else:
-        famille = tup.lb_nom
-    if tup.habitat is None:
-        habitat = None
-    else:
-        habitat = tup.habitat.habitat
-    if tup.nc is None:
-        nc = None
-    else:
-        nc = tup.nc.status
-    return {
-        'regne': regne,
-        'phylum': phylum,
-        'class': classe,
-        'order': ordre,
-        'famille': famille,
-        'habitat': habitat,
-        'nc': nc,
-    }
-
-
-def get_msg(tup):
-    """
-    This function aim to get a message for taxref if it's != or not
-    :param tup: the object from the Taxon model
-    :return a tupple:
-    """
-    if tup.cd_nom is None:
-        return 'x', None, None, None
-    elif (tup.id_ref != tup and tup.cd_ref == tup.id_ref.cd_nom) or \
-            (tup.id_ref == tup and tup.cd_ref != tup.id_ref.cd_nom):
-        return None, None, None, 'x'
-    elif tup.cd_ref != tup.id_ref.cd_nom:
-        return None, 'x', None, None
-    elif tup.cd_sup is not None:
-        if tup.cd_sup != tup.id_sup.cd_nom:
-            return None, None, 'x', None
-    return (None, None, None, None)
-
-
-def get_taxon():
-    """
-    This function get all Information needed from a taxon
-    """
-
-    list_not_proper = Taxon.objects.all()
-    list_taxon = [(
-        'REGNE', 'PHYLUM', 'CLASSE', 'ORDRE',
-        'FAMILLE', 'GROUP1_INPN',	'GROUP2_INPN', 'ID',
-        'ID_REF', 'ID_SUP', 'CD_NOM', 'CD_TAXSUP', 'CD_SUP',
-        'CD_REF', 'RANG', 'LB_NOM',	'LB_AUTEUR', 'NOM_COMPLET',
-        'NOM_COMPLET_HTML', 'NOM_VALIDE', 'NOM_VERN',
-        'NOM_VERN_ENG', 'HABITAT', 'NC', 'NON PRESENT DANS TAXREF',
-        'CD_REF DIFFERENT', 'CD_SUP DIFFERENT', 'VALIDITY DIFFERENT')
-    ]
-    for tup in list_not_proper:
-        msg = get_msg(tup)
-        if 'sp.' not in tup.lb_nom:
-            if tup == tup.id_ref:
-                if tup.id_sup is None:
-                    id_sup = None
-                else:
-                    id_sup = tup.id_sup_id
-                dict_taxon = get_info(tup)
-                tupple = (dict_taxon['regne'], dict_taxon['phylum'], dict_taxon['class'],
-                           dict_taxon['order'], dict_taxon['famille'], None, None, tup.id, tup.id_ref.id,
-                           id_sup, tup.cd_nom, None, tup.cd_sup, tup.cd_ref, tup.rang.rang,
-                           tup.lb_nom, tup.lb_auteur, tup.nom_complet, None, tup.lb_nom, None, None,
-                           dict_taxon['habitat'], dict_taxon['nc']) + msg
-                list_taxon.append(tupple)
-            else:
-                dict_taxon = get_info(tup.id_ref)
-                tupple = (dict_taxon['regne'], dict_taxon['phylum'], dict_taxon['class'],
-                          dict_taxon['order'], dict_taxon['famille'], None, None, tup.id, tup.id_ref.id,
-                          None, tup.cd_nom, None, tup.cd_sup, tup.cd_ref, tup.rang.rang,
-                          tup.lb_nom, tup.lb_auteur, tup.nom_complet, None, tup.id_ref.lb_nom, None, None, None, None) + msg
-                list_taxon.append(tupple)
-
-    return list_taxon
 
 
 @login_required()
@@ -139,7 +29,7 @@ def extract_taxon_taxref(request):
     # rows that can be handled by a single sheet in most spreadsheet
     # applications.
 
-    rows = (idx for idx in get_taxon())
+    rows = (idx for idx in get_taxon(Taxon))
     pseudo_buffer = Echo()
     writer = csv.writer(pseudo_buffer,  delimiter=';')
     response = StreamingHttpResponse((writer.writerow(row) for row in rows),
@@ -163,13 +53,13 @@ def change_taxon_ref(request, id_taxon):
             if form.is_valid():
                 # taxon_to_change.update(id_ref=form.cleaned_data['referent'])
                 list_syn = Taxon.objects.filter(id_ref=taxon_to_change)
-                list_son = Taxon.objects.filter(id_sup=taxon_to_change)
-                for tup in list_son:
-                    tup.id_sup = form.cleaned_data['referent']
-                    tup.save()
-                for tup in list_syn:
-                    tup.id_ref = form.cleaned_data['referent']
-                    tup.save()
+                list_child = Taxon.objects.filter(id_sup=taxon_to_change)
+                for child in list_child:
+                    child.id_sup = form.cleaned_data['referent']
+                    child.save()
+                for syn in list_syn:
+                    syn.id_ref = form.cleaned_data['referent']
+                    syn.save()
                 if form.cleaned_data['referent'] != form.cleaned_data['referent'].id_ref:
                     form.cleaned_data['referent'].id_ref = form.cleaned_data['referent']
                     form.cleaned_data['referent'].id_sup = taxon_to_change.id_sup
@@ -263,7 +153,6 @@ def change_taxon_sup(request, id_taxon):
         else:
             form = TaxonChangeSup()
             template = loader.get_template('fatercal/change_taxon.html')
-            print(form)
             context ={
                 'taxon_to_change': taxon_to_change,
                 'form': form,

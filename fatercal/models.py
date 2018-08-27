@@ -170,14 +170,14 @@ class Taxon(models.Model):
     id_ref = models.ForeignKey('self', db_column='id_ref', blank=True, null=True,
                                related_name='id_ref+', verbose_name='Référent')
     id_sup = models.ForeignKey('self', db_column='id_sup', blank=True, null=True,
-                               related_name='id_sup+',verbose_name='Rang Supérieur')
+                               related_name='id_sup+', verbose_name='Rang Supérieur')
     cd_nom = models.IntegerField(unique=True, blank=True, null=True)
     cd_ref = models.IntegerField(blank=True, null=True)
     cd_sup = models.IntegerField(blank=True, null=True)
     lb_nom = models.CharField(max_length=250, verbose_name='Nom')
     lb_auteur = models.CharField(max_length=250, blank=True, null=True, verbose_name='Auteur')
     nom_complet = models.CharField(max_length=250, blank=True, null=True)
-    rang = models.ForeignKey('TaxrefRang', db_column='rang', verbose_name='rang', )
+    rang = models.ForeignKey('TaxrefRang', db_column='rang', verbose_name='rang')
     habitat = models.ForeignKey('TaxrefHabitat', db_column='habitat', blank=True, null=True)
     nc = models.ForeignKey('TaxrefStatus', db_column='nc', blank=True, null=True,
                            verbose_name='Statut')
@@ -195,6 +195,21 @@ class Taxon(models.Model):
         return self == self.id_ref
 
     valide.boolean = True
+
+    def get_hierarchy(self):
+        """ We browse the hierarchy of the taxon"""
+        list_hierarchy = []
+        superior = self.id_sup
+        list_hierarchy.append(superior)
+        if superior is not None:
+            while superior.id_sup is not None:
+                superior = superior.id_sup
+                list_hierarchy.append(superior)
+            nb = len(list_hierarchy)
+        else:
+            list_hierarchy = None
+            nb = 0
+        return list_hierarchy, nb
 
     def __str__(self):
         if self.lb_auteur is not None:

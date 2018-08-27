@@ -5,7 +5,7 @@ from itertools import chain
 
 from fatercal.views import ValidSpecialFilter
 from .models import Taxon, HabitatDetail, Localitee, Prelevement, Recolteur, Hote, PlanteHote, Vernaculaire, Iso6393
-from .function import get_Recolteur
+from .function import get_recolteur
 
 
 class PlanteHoteObj(admin.StackedInline):
@@ -166,7 +166,7 @@ class TaxonModify(admin.ModelAdmin):
             'fields': ('id', 'id_ref_id', 'id_sup_id', 'cd_nom', 'cd_ref', 'cd_sup', 'old_db_id')
         }),
         ('Modification', {
-            'fields':  ['change_taxon']
+            'fields': ['change_taxon']
         }),
         ('Prélevements', {
             'fields': ['prelevements']
@@ -252,20 +252,22 @@ class TaxonModify(admin.ModelAdmin):
                                     <td>{}</td> <td>{}</td> <td>{}</td> 
                                     <td><a href='/fatercal/prelevement/{}/'>Modification</a></td>
                                     </tr>
-                                '''\
+                                ''' \
                 .format(prelev.id_localitee, prelev.type_enregistrement, prelev.date, prelev.nb_taxon_present,
                         prelev.collection_museum, prelev.type_specimen, prelev.code_specimen, prelev.altitude,
                         prelev.mode_de_collecte, prelev.toponyme, prelev.toponymie_x, prelev.toponymie_y,
-                        prelev.old_x, prelev.old_y, get_Recolteur(prelev), prelev.id_prelevement)
-        board_prelevement += "</table></br><a href='/fatercal/prelevement/add?id_taxref={}'>Ajouter un Prelevement</a>"\
+                        prelev.old_x, prelev.old_y, get_recolteur(Recolteur, prelev), prelev.id_prelevement)
+        board_prelevement += "</table></br><a href='/fatercal/prelevement/add?id_taxref={}'>Ajouter un Prelevement</a>" \
             .format(obj.id)
         return board_prelevement
+
     prelevements.allow_tags = True
 
     # show if the taxon is valid or not whith is referent or synonymous
     def referent(self, obj):
-            return """<a href='/fatercal/taxon/{}/'>{}</a> <br/> <br/> <a href="/fatercal/taxon_to_valid/{}">
+        return """<a href='/fatercal/taxon/{}/'>{}</a> <br/> <br/> <a href="/fatercal/taxon_to_valid/{}">
                    Cliquer ici pour le passer en valide.</a>""".format(obj.id_ref.id, obj.id_ref.nom_complet, obj.id)
+
     referent.allow_tags = True
 
     # Display the synonymous of the taxon
@@ -273,51 +275,38 @@ class TaxonModify(admin.ModelAdmin):
         list_syn = Taxon.objects.filter(id_ref=obj.id).filter(~Q(id=obj.id))
         if len(list_syn) != 0:
             string = "</br>"
-            for tup in list_syn:
-                string += "<a href='/fatercal/taxon/{}/'>{}</a><br/>".format(tup.id, tup.nom_complet)
+            for syn in list_syn:
+                string += "<a href='/fatercal/taxon/{}/'>{}</a><br/>".format(syn.id, syn.nom_complet)
         else:
             string = ""
         return string
+
     syn.allow_tags = True
     syn.short_description = 'Autre(s) combinaison(s) et/ou synonyme(s)'
 
     # Display the validity of the taxon
     def valid(self, obj):
         if obj.id == obj.id_ref.id:
-            return '<img src="/admin/img/icon-yes.gif" alt="True">'
+            return '<img src="/static/admin/img/icon-yes.gif" alt="True">'
         else:
-            return '<img src="/admin/img/icon-no.gif" alt="False">'
+            return '<img src="/static/admin/img/icon-no.gif" alt="False">'
+
     valid.allow_tags = True
     valid.short_description = 'Valide'
 
     # This function will construct the hierarchy tree of the taxon
     def hierarchy(self, obj):
-        """ It will construct the hierarchy tree of the taxon """
-        list_hierarchy = []
-
         """ We verify the construction is for a taxon or synonymous"""
         if obj.id == obj.id_ref.id:
-            superior = obj.id_sup
+            list_hierarchy, nb = obj.get_hierarchy()
             list_child = Taxon.objects.filter(id_sup=obj.id).order_by('rang')
             is_valid = True
         else:
-            superior = obj.id_ref.id_sup
+            list_hierarchy, nb = obj.id_ref.get_hierarchy()
             list_child = Taxon.objects.filter(id_sup=obj.id_ref).order_by('rang')
             is_valid = False
-        list_hierarchy.append(superior)
-
-        """ We browse the hierarchy of the taxon"""
-        if superior is not None:
-            while superior.id_sup is not None:
-                superior = superior.id_sup
-                list_hierarchy.append(superior)
-            nb = len(list_hierarchy)
-        else:
-            list_hierarchy = None
-            nb = 0
         str_hierarchy_begin = ''
-
-        nb2 = nb-1
+        nb2 = nb - 1
         str_hierarchy_end = '</ul>'
         if list_hierarchy is not None:
             for parent in reversed(list_hierarchy):
@@ -325,27 +314,27 @@ class TaxonModify(admin.ModelAdmin):
                 <strong>{} : </strong></al><a href="/fatercal/taxon/{}/">{}</a>
                 </label><ul>'''.format(nb2, parent.rang, parent.id, parent)
                 str_hierarchy_end = '</li></ul>' + str_hierarchy_end
-                nb2 = nb2-1
+                nb2 = nb2 - 1
         if is_valid:
-            str_taxon = '<li class="folder"><label><strong>{} :</strong> {} {}</label></li>'\
+            str_taxon = '<li class="folder"><label><strong>{} :</strong> {} {}</label></li>' \
                 .format(obj.rang, obj.lb_nom, obj.lb_auteur)
         else:
             str_taxon = '<li class="folder"><label><strong>{} :</strong><a href="/fatercal/taxon/{}/"> {} {}</a> ' \
                 .format(obj.id_ref.rang, obj.id_ref.id, obj.id_ref.lb_nom, obj.lb_auteur)
         if len(list_child) > 0:
             rang = list_child[0].rang
-            str_son = '<ul><li><label class="tree_label" for="c{}"/><strong>{} : </strong></label><ul>'\
-                .format(str(nb+1), rang)
+            str_child = '<ul><li><label class="tree_label" for="c{}"/><strong>{} : </strong></label><ul>' \
+                .format(str(nb + 1), rang)
             for child in list_child:
                 if rang != child.rang:
-                    str_son = str_son + '''</ul></li><li class="folder"><label for="c{}">
+                    str_child = str_child + '''</ul></li><li class="folder"><label for="c{}">
                     <strong>{} : </strong></label><li><ul>
-                    <a href="/fatercal/taxon/{}/">{}</a>'''.format(str(nb+1), child.rang, child.id, child)
+                    <a href="/fatercal/taxon/{}/">{}</a>'''.format(str(nb + 1), child.rang, child.id, child)
                     rang = child.rang
                 else:
-                    str_son = str_son + '<li><a href="/fatercal/taxon/{}/">{} {}</a></li>'\
+                    str_child = str_child + '<li><a href="/fatercal/taxon/{}/">{} {}</a></li>' \
                         .format(child.id, child.lb_nom, child.lb_auteur)
-            str_hierarchy_end = str_son+'</ul></ul></li>'
+            str_hierarchy_end = str_child + '</ul></ul></li>'
             str_hierarchy = '<ul><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end
         else:
             str_hierarchy = '<ul class="tree"><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end
@@ -479,6 +468,7 @@ class VernaculaireModify(admin.ModelAdmin):
 
 class Iso6393Modify(admin.ModelAdmin):
     """ This class will display the model Taxon for adding or modifying a iso6393"""
+
     def get_readonly_fields(self, request, obj=None):
         if obj:  # editing an existing object
             return self.readonly_fields + ('iso639_3',)
@@ -503,21 +493,21 @@ class Iso6393Modify(admin.ModelAdmin):
 
 
 def add_genre_to_name(sender, instance, created, **kwargs):
-        if created:
-            if instance.rang.rang == "ES":
-                if instance.id_sup is not None:
-                    if instance.id_sup.rang.rang == "GN":
-                        instance.lb_nom = "{} ".format(instance.id_sup.lb_nom) + instance.lb_nom
-                    elif instance.id_sup.rang.rang == "SSGN":
-                        instance.lb_nom = "{} ".format(instance.id_sup.id_sup.lb_nom) + instance.lb_nom
-            elif instance.rang.rang == "SSES":
-                if instance.id_sup is not None:
-                    if instance.id_sup.rang.rang == "ES":
-                        instance.lb_nom = "{} ".format(instance.id_sup.lb_nom) + instance.lb_nom
-            if instance.lb_auteur is not None:
-                instance.nom_complet = instance.lb_nom + " " + instance.lb_auteur
-            else:
-                instance.nom_complet = instance.lb_nom
+    if created:
+        if instance.rang.rang == "ES":
+            if instance.id_sup is not None:
+                if instance.id_sup.rang.rang == "GN":
+                    instance.lb_nom = "{} ".format(instance.id_sup.lb_nom) + instance.lb_nom
+                elif instance.id_sup.rang.rang == "SSGN":
+                    instance.lb_nom = "{} ".format(instance.id_sup.id_sup.lb_nom) + instance.lb_nom
+        elif instance.rang.rang == "SSES":
+            if instance.id_sup is not None:
+                if instance.id_sup.rang.rang == "ES":
+                    instance.lb_nom = "{} ".format(instance.id_sup.lb_nom) + instance.lb_nom
+        if instance.lb_auteur is not None:
+            instance.nom_complet = instance.lb_nom + " " + instance.lb_auteur
+        else:
+            instance.nom_complet = instance.lb_nom
 
 
 # the list of model to show to the user for modification

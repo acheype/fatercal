@@ -1,6 +1,5 @@
 Django==1.8
 django-jet==1.0.6
 psycopg2==2.4.5
-django-nested-admin==3.0.21
 django-ajax-selects==1.7.0
 numpy==1.14.0
