@@ -204,6 +204,21 @@ def change_validity_to_valid(request, id_taxon):
         return HttpResponse(template.render(context, request))
 
 
+@login_required()
+def advanced_search(request):
+    """
+    View for changing the superior of a taxon
+    """
+    template = loader.get_template('fatercal/advanced_search/change_form.html')
+    if request.method == 'POST':
+        context = {}
+        return HttpResponse(template.render(context, request))
+    else:
+        template = loader.get_template('fatercal/advanced_search/change_form.html')
+        context = {}
+        return HttpResponse(template.render(context, request))
+
+
 class ValidSpecialFilter(admin.SimpleListFilter):
     """
     This filter will always return a subset

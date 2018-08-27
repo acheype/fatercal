@@ -1,0 +1,36 @@
+{% extends 'admin/base_site.html' %}
+
+{% load static %}
+
+{% block branding %}
+    <div class="head">
+        <h1 id="site-name">
+            <a href="/">Fatercal</a>
+        </h1>
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="breadcrumbs initialized">
+    <a href="/">Accueil</a>
+    <span class="icon-arrow-right breadcrumbs-separator"></span> <a href="/fatercal/">Fatercal</a>
+    <span class="icon-arrow-right breadcrumbs-separator"></span> Recherche Avancée
+</div><br>
+<div>
+    <h5 >Cette page vous affichera, pour un taxon donnée, ses enfants ainsi que leurs enfants sous la forme
+        d'un arbre hiérarchique complet
+    </h5><br>
+    <form action="" method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <label for="searchbar"><img src="/static/admin/img/icon_searchbox.png" alt="Search"></label>
+        <input type="text" size="40" name="q" value="" id="searchbar" placeholder="Rechercher">
+        <input type="submit" value="Rechercher">
+    </form>
+</div><br><br>
+<fieldset class="module aligned ">
+    <div class="form-row field-lb_nom">
+
+    </div>
+</fieldset>
+{% endblock %}
