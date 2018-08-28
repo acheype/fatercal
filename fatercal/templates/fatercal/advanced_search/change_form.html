@@ -22,15 +22,18 @@
     </h5><br>
     <form action="" method="post">
         {% csrf_token %}
-        {{ form.as_p }}
-        <label for="searchbar"><img src="/static/admin/img/icon_searchbox.png" alt="Search"></label>
-        <input type="text" size="40" name="q" value="" id="searchbar" placeholder="Rechercher">
-        <input type="submit" value="Rechercher">
+        {{ form }}
+        <input type="submit" value="Recherche!" />
     </form>
 </div><br><br>
 <fieldset class="module aligned ">
     <div class="form-row field-lb_nom">
-
+    <p>
+        Nombre d'Espece Trouvée(s) : {{count_es}}
+    </p>
+    <p>
+        {{list_taxon}}
+    </p>
     </div>
 </fieldset>
 {% endblock %}

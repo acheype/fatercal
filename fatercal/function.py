@@ -1,3 +1,9 @@
+from django.http import HttpResponse
+from django.template import loader
+from .forms import TaxonChangeRef, TaxonChangeSup, SearchAdvanced
+from django.db.models import Q
+
+
 def get_recolteur(recolteur, prelev):
     """
     Get the Harvesteur's for a specific sample
@@ -131,23 +137,76 @@ def get_taxon(taxon):
     return list_taxon
 
 
-def get_new_taxon(taxon, list_new_taxon, queryset, child):
+def get_new_taxon(taxon, queryset, child, count_es):
     """
     This function will give us all the child of the child of a taxon and returning it into a list
     For that we have to do a recursive function
     :param taxon: The model which is connected to the table Taxon in the database
-    :param list_new_taxon:
     :param queryset: its a queryset we use to know if the child we want to append isn't already added
     :param child: the current taxon from who we want the child
+    :param count_es:
     :return: the new list of taxon we want
     """
-    list_child = taxon.objects.filter(id_sup=child.id)
-    if list_child:
-        for child2 in list_child:
-            get_new_taxon(list_new_taxon, queryset, child2)
-            if len(queryset.filter(id=child2.id)) == 0 and child2 not in list_new_taxon:
-                list_new_taxon.append(child2)
-        return list_new_taxon
+    lchild = taxon.objects.filter(id_sup=child.id)
+    if lchild:
+        list_child = []
+        for child2 in lchild:
+            list_child_temp, count_es = get_new_taxon(taxon, queryset, child2, count_es)
+            list_child.append([child2, list_child_temp])
+        if child.rang.lb_rang == 'Espèce' or child.rang.lb_rang == 'Sous-Espèce':
+            count_es = count_es + 1
+        return list_child, count_es
     else:
-        return list_new_taxon
+        if child.rang.lb_rang == 'Espèce' or child.rang.lb_rang == 'Sous-Espèce':
+            count_es = count_es + 1
+        return None, count_es
 
+
+def get_search_results(taxons, search_term):
+    """
+    The goal of this function is to retun in a list of list all the children of a specific taxon
+    :param taxons: The model which is connected to the table Taxon in the database
+    :param search_term: the term the user entered
+    :return: the list of children
+    """
+    if search_term != '':
+        queryset = taxons.objects.filter(Q(lb_nom=search_term) | Q(lb_auteur=search_term))
+        list_taxon = []
+        count_es = 0
+        if len(queryset) == 1:
+            taxon = queryset.first()
+            if taxon.id_ref.id == taxon.id:
+                list_child = taxons.objects.filter(id_sup=taxon.id)
+                list_temp_taxon = []
+                for child in list_child:
+                    list_temp_child, count_temp_es = get_new_taxon(taxons, queryset, child, count_es)
+                    list_temp_taxon.append([child, list_temp_child])
+                    count_es = count_es + count_temp_es
+            list_taxon.append(taxon)
+            list_taxon.append(list_temp_taxon)
+        return list_taxon, count_es
+    else:
+        return '<p> Veuillez remplir le champ de recherche </p>'
+
+
+def constr_hierarchy_tree_adv_search(taxons, search_term):
+    """
+    From a search term, we get the taxonomic rank, then we search for its children. Finally we construct the
+    hierarchy tree from these data. Also we return the number of species and of sub-species inherited from the taxon
+    entered by the user
+    :param taxons: The model which is connected to the table Taxon in the database
+    :param search_term: the term the user entered
+    :return: a tree in html
+    """
+    list_taxon, count_es = get_search_results(taxons, search_term)
+    print(list_taxon[0])
+    return list_taxon, count_es
+
+
+def get_form_advanced_search(request):
+    template = loader.get_template('fatercal/advanced_search/change_form.html')
+    form = SearchAdvanced()
+    context = {
+        'form': form,
+    }
+    return HttpResponse(template.render(context, request))

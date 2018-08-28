@@ -17,3 +17,7 @@ class TaxonChangeSup(forms.Form):
         model = Taxon
 
     taxon_superieur = AutoCompleteSelectField('valid', required=True, help_text=None)
+
+
+class SearchAdvanced(forms.Form):
+    search_term = forms.CharField(label='Nom taxonomique ou Auteur', max_length=40)

@@ -4,10 +4,10 @@ from django.db.models import F
 from django.http import HttpResponse
 from django.template import loader
 from .models import Taxon
-from .forms import TaxonChangeRef, TaxonChangeSup
+from .forms import TaxonChangeRef, TaxonChangeSup, SearchAdvanced
 import csv
 from django.http import StreamingHttpResponse
-from .function import get_taxon
+from .function import get_taxon, get_form_advanced_search, constr_hierarchy_tree_adv_search
 
 
 class Echo(object):
@@ -211,12 +211,22 @@ def advanced_search(request):
     """
     template = loader.get_template('fatercal/advanced_search/change_form.html')
     if request.method == 'POST':
-        context = {}
-        return HttpResponse(template.render(context, request))
+        form = SearchAdvanced(request.POST)
+        if form.is_valid():
+            search_term = form.cleaned_data['search_term']
+            form = SearchAdvanced()
+            list_taxon, count_es = constr_hierarchy_tree_adv_search(Taxon, search_term)
+            context = {
+                'list_taxon': list_taxon,
+                'count_es': count_es,
+                'search_term': search_term,
+                'form': form,
+            }
+            return HttpResponse(template.render(context, request))
+        else:
+            return get_form_advanced_search()
     else:
-        template = loader.get_template('fatercal/advanced_search/change_form.html')
-        context = {}
-        return HttpResponse(template.render(context, request))
+        return get_form_advanced_search(request)
 
 
 class ValidSpecialFilter(admin.SimpleListFilter):
