@@ -176,6 +176,9 @@ def change_taxon_sup(request, id_taxon):
 def change_validity_to_valid(request, id_taxon):
     """
     View for changing a synonymous taxon to a valid one
+    :param request:
+    :param id_taxon:
+    :return:
     """
 
     taxon_to_change = Taxon.objects.get(id=id_taxon)
@@ -213,9 +216,10 @@ def advanced_search(request):
     if request.method == 'POST':
         form = SearchAdvanced(request.POST)
         if form.is_valid():
+            auteur = form.cleaned_data['par_auteur']
             search_term = form.cleaned_data['search_term']
-            form = SearchAdvanced()
-            list_taxon, count_es = constr_hierarchy_tree_adv_search(Taxon, search_term)
+            form = SearchAdvanced(initial={'search_term': search_term, 'par_auteur': auteur})
+            list_taxon, count_es = constr_hierarchy_tree_adv_search(Taxon, search_term, auteur)
             context = {
                 'list_taxon': list_taxon,
                 'count_es': count_es,
@@ -224,7 +228,7 @@ def advanced_search(request):
             }
             return HttpResponse(template.render(context, request))
         else:
-            return get_form_advanced_search()
+            return get_form_advanced_search(request)
     else:
         return get_form_advanced_search(request)
 

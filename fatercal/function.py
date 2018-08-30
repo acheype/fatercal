@@ -103,7 +103,6 @@ def get_taxon(taxon):
     :param taxon: The model which is connected to the table Taxon in the database
     :return: all the taxon with the information we want
     """
-
     list_not_proper = taxon.objects.all()
     list_taxon = [
         ('REGNE', 'PHYLUM', 'CLASSE', 'ORDRE', 'FAMILLE', 'GROUP1_INPN', 'GROUP2_INPN', 'ID', 'ID_REF', 'ID_SUP',
@@ -153,11 +152,11 @@ def get_new_taxon(taxon, queryset, child, count_es):
         for child2 in lchild:
             list_child_temp, count_es = get_new_taxon(taxon, queryset, child2, count_es)
             list_child.append([child2, list_child_temp])
-        if child.rang.lb_rang == 'Espèce' or child.rang.lb_rang == 'Sous-Espèce':
+        if child.rang.rang == 'ES' or child.rang.rang == 'SSES':
             count_es = count_es + 1
         return list_child, count_es
     else:
-        if child.rang.lb_rang == 'Espèce' or child.rang.lb_rang == 'Sous-Espèce':
+        if child.rang.rang == 'ES' or child.rang.rang == 'SSES':
             count_es = count_es + 1
         return None, count_es
 
@@ -169,27 +168,57 @@ def get_search_results(taxons, search_term):
     :param search_term: the term the user entered
     :return: the list of children
     """
-    if search_term != '':
-        queryset = taxons.objects.filter(Q(lb_nom=search_term) | Q(lb_auteur=search_term))
-        list_taxon = []
-        count_es = 0
-        if len(queryset) == 1:
-            taxon = queryset.first()
-            if taxon.id_ref.id == taxon.id:
-                list_child = taxons.objects.filter(id_sup=taxon.id)
-                list_temp_taxon = []
-                for child in list_child:
-                    list_temp_child, count_temp_es = get_new_taxon(taxons, queryset, child, count_es)
-                    list_temp_taxon.append([child, list_temp_child])
-                    count_es = count_es + count_temp_es
+    queryset = taxons.objects.filter(Q(lb_nom__icontains=search_term))
+    list_taxon = []
+    count_es = 0
+    if len(queryset) == 1:
+        taxon = queryset.first()
+        if taxon.id_ref.id == taxon.id:
+            list_child = taxons.objects.filter(id_sup=taxon.id)
+            list_temp_taxon = []
+            for child in list_child:
+                list_temp_child, count_es = get_new_taxon(taxons, queryset, child, count_es)
+                list_temp_taxon.append([child, list_temp_child])
             list_taxon.append(taxon)
             list_taxon.append(list_temp_taxon)
         return list_taxon, count_es
     else:
-        return '<p> Veuillez remplir le champ de recherche </p>'
+        if len(queryset) == 0:
+            error = 'Aucun résultat trouvé.'
+            return error, 0
+        else:
+            error = 'Trop de résultats. Vous voulez dire ?'
+            for taxon in queryset:
+                error += '</br>' + taxon.__str__()
+            return error, 0
 
 
-def constr_hierarchy_tree_adv_search(taxons, search_term):
+def get_search_results_auteur(taxons, search_term):
+    """
+    The goal of this function is to retun a list of genus related by a author
+    :param taxons: The model which is connected to the table Taxon in the database
+    :param search_term: the term the user entered
+    :return: the list of children
+    """
+    queryset = taxons.objects.filter(Q(lb_auteur__icontains=search_term) & Q(rang='GN'))
+    list_taxon = []
+    count_es = 0
+    if len(queryset) > 0:
+        for taxon in queryset:
+            if taxon.id_ref.id == taxon.id:
+                list_child = taxons.objects.filter(id_sup=taxon.id)
+                list_temp_taxon = []
+                for child in list_child:
+                    list_temp_child, count_es = get_new_taxon(taxons, queryset, child, count_es)
+                    list_temp_taxon.append([child, list_temp_child])
+                list_taxon.append([taxon, list_temp_taxon])
+        return list_taxon, count_es
+    else:
+        error = 'Aucun résultat trouvé.'
+        return error, 0
+
+
+def constr_hierarchy_tree_adv_search(taxons, search_term, auteur):
     """
     From a search term, we get the taxonomic rank, then we search for its children. Finally we construct the
     hierarchy tree from these data. Also we return the number of species and of sub-species inherited from the taxon
@@ -198,15 +227,89 @@ def constr_hierarchy_tree_adv_search(taxons, search_term):
     :param search_term: the term the user entered
     :return: a tree in html
     """
-    list_taxon, count_es = get_search_results(taxons, search_term)
-    print(list_taxon[0])
-    return list_taxon, count_es
+    if search_term == '':
+        return 'Veuillez remplir le champ de recherche !', 0
+    else:
+        if auteur:
+            list_taxon, count_es = get_search_results_auteur(taxons, search_term)
+            if type(list_taxon) is str:
+                return list_taxon, 0
+            html_hierarchy = '<div>'
+            for l_taxon in list_taxon:
+                list_hierarchy, count = l_taxon[0].get_hierarchy()
+                html_hierarchy_begin, html_hierarchy_end = constr_hierarchy_tree_branch_parents(list_hierarchy)
+                html_hierarchy_child = ''
+                html_hierarchy_child = contr_hierarchy_tree_branch_adv_search_child(l_taxon[1],
+                                                                                    count + 1, html_hierarchy_child)
+                html_taxon = '<li class="folder"><label><strong>{} :</strong> {} {}</label></li>' \
+                    .format(l_taxon[0].rang, l_taxon[0].lb_nom, l_taxon[0].lb_auteur)
+                html_hierarchy_end = html_hierarchy_child + '</ul></ul></li>'
+                html_hierarchy += html_hierarchy_begin + html_taxon + html_hierarchy_end + '</div>'
+        else:
+            list_taxon, count_es = get_search_results(taxons, search_term)
+            if type(list_taxon) is str:
+                return list_taxon, 0
+            list_hierarchy, count = list_taxon[0].get_hierarchy()
+            html_hierarchy_begin, html_hierarchy_end = constr_hierarchy_tree_branch_parents(list_hierarchy)
+            html_hierarchy_child = ''
+            html_hierarchy_child = contr_hierarchy_tree_branch_adv_search_child(list_taxon[1],
+                                                                                count + 1, html_hierarchy_child)
+            html_taxon = '<li class="folder"><label><strong>{} :</strong> {} {}</label></li>' \
+                .format(list_taxon[0].rang, list_taxon[0].lb_nom, list_taxon[0].lb_auteur)
+            html_hierarchy_end = html_hierarchy_child + '</ul></ul></li>'
+            html_hierarchy = html_hierarchy_begin + html_taxon + html_hierarchy_end
+
+        return html_hierarchy, count_es
+
+
+def constr_hierarchy_tree_branch_parents(list_hierarchy):
+    """
+    Construct the beginning of the tree
+    :param list_hierarchy:
+    :return: a string
+    """
+    count_parent = 1
+    html_hierarchy_begin = '<ul class="tree"><br/>'
+    html_hierarchy_end = '</ul>'
+    if list_hierarchy is not None:
+        for parent in reversed(list_hierarchy):
+            html_hierarchy_begin = html_hierarchy_begin + '''<li><label class="tree_label" for="c{}">
+            <strong>{} : </strong></al><a href="/fatercal/taxon/{}/">{}</a>
+            </label><ul>'''.format(count_parent, parent.rang, parent.id, parent)
+            html_hierarchy_end = '</ul></li>' + html_hierarchy_end
+            count_parent = count_parent + 1
+    return html_hierarchy_begin, html_hierarchy_end
+
+
+def contr_hierarchy_tree_branch_adv_search_child(list_taxon, count, hierarchy_child):
+    """
+    Construct the end of the hierarchy tree
+    :param list_taxon:
+    :param count:
+    :param hierarchy_child:
+    :return: a string
+    """
+    for l_taxon in list_taxon:
+        hierarchy_child = hierarchy_child + \
+            '<ul><li><label class="tree_label" for="c{}"/><strong>{} : </strong></al>' \
+            '<a href="/fatercal/taxon/{}/">{}</a></label>   '''\
+            .format(count, l_taxon[0].rang, l_taxon[0].id, l_taxon[0])
+        if l_taxon[1] is not None:
+            hierarchy_child = contr_hierarchy_tree_branch_adv_search_child(l_taxon[1], count + 1, hierarchy_child)
+        hierarchy_child = hierarchy_child + '</li></ul>'
+    return hierarchy_child
 
 
 def get_form_advanced_search(request):
+    """
+
+    :param request:
+    :return:
+    """
     template = loader.get_template('fatercal/advanced_search/change_form.html')
     form = SearchAdvanced()
     context = {
         'form': form,
+        'count_es': -1
     }
     return HttpResponse(template.render(context, request))

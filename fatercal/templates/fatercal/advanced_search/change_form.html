@@ -26,14 +26,17 @@
         <input type="submit" value="Recherche!" />
     </form>
 </div><br><br>
+{% if count_es != -1 %}
 <fieldset class="module aligned ">
     <div class="form-row field-lb_nom">
     <p>
         Nombre d'Espece Trouvée(s) : {{count_es}}
     </p>
     <p>
-        {{list_taxon}}
+        {{list_taxon |safe }}
     </p>
     </div>
 </fieldset>
+{% endif %}
 {% endblock %}
+

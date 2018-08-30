@@ -4,20 +4,19 @@ from ajax_select.fields import AutoCompleteSelectField
 
 
 class TaxonChangeRef(forms.Form):
+    referent = AutoCompleteSelectField("valid_and_syn", required=True, help_text=None)
 
     class Meta:
         model = Taxon
-
-    referent = AutoCompleteSelectField("valid_and_syn", required=True, help_text=None)
 
 
 class TaxonChangeSup(forms.Form):
+    taxon_superieur = AutoCompleteSelectField('valid', required=True, help_text=None)
 
     class Meta:
         model = Taxon
 
-    taxon_superieur = AutoCompleteSelectField('valid', required=True, help_text=None)
-
 
 class SearchAdvanced(forms.Form):
-    search_term = forms.CharField(label='Nom taxonomique ou Auteur', max_length=40)
+    par_auteur = forms.BooleanField(required=False)
+    search_term = forms.CharField(required=False, label='Champ de recherche', max_length=40)
