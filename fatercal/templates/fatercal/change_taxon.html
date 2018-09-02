@@ -1,4 +1,14 @@
-{% extends "fatercal/header.html" %}
+{% extends 'admin/base_site.html' %}
+
+{% load static %}
+
+{% block branding %}
+    <div class="head">
+        <h1 id="site-name">
+            <a href="/">Fatercal</a>
+        </h1>
+    </div>
+{% endblock %}
 {% block content %}
 <fieldset class="module aligned ">
     <div class="form-row field-lb_nom">

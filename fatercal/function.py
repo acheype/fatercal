@@ -234,8 +234,9 @@ def constr_hierarchy_tree_adv_search(taxons, search_term, auteur):
             list_taxon, count_es = get_search_results_auteur(taxons, search_term)
             if type(list_taxon) is str:
                 return list_taxon, 0
-            html_hierarchy = '<div>'
+            html_hierarchy = ''
             for l_taxon in list_taxon:
+                html_hierarchy += '<div>'
                 list_hierarchy, count = l_taxon[0].get_hierarchy()
                 html_hierarchy_begin, html_hierarchy_end = constr_hierarchy_tree_branch_parents(list_hierarchy)
                 html_hierarchy_child = ''
