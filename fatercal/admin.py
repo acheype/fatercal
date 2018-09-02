@@ -5,7 +5,7 @@ from itertools import chain
 
 from fatercal.views import ValidSpecialFilter
 from .models import Taxon, HabitatDetail, Localitee, Prelevement, Recolteur, Hote, PlanteHote, Vernaculaire, Iso6393
-from .function import get_recolteur
+from .function import get_recolteur, constr_hierarchy_tree_branch_parents
 
 
 class PlanteHoteObj(admin.StackedInline):
@@ -305,16 +305,7 @@ class TaxonModify(admin.ModelAdmin):
             list_hierarchy, nb = obj.id_ref.get_hierarchy()
             list_child = Taxon.objects.filter(id_sup=obj.id_ref).order_by('rang')
             is_valid = False
-        str_hierarchy_begin = ''
-        nb2 = nb - 1
-        str_hierarchy_end = '</ul>'
-        if list_hierarchy is not None:
-            for parent in reversed(list_hierarchy):
-                str_hierarchy_begin = str_hierarchy_begin + '''<li><label class="tree_label" for="c{}">
-                <strong>{} : </strong></al><a href="/fatercal/taxon/{}/">{}</a>
-                </label><ul>'''.format(nb2, parent.rang, parent.id, parent)
-                str_hierarchy_end = '</li></ul>' + str_hierarchy_end
-                nb2 = nb2 - 1
+        str_hierarchy_begin, str_hierarchy_end = constr_hierarchy_tree_branch_parents(list_hierarchy)
         if is_valid:
             str_taxon = '<li class="folder"><label><strong>{} :</strong> {} {}</label></li>' \
                 .format(obj.rang, obj.lb_nom, obj.lb_auteur)
