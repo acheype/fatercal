@@ -228,9 +228,9 @@ def advanced_search(request):
             }
             return HttpResponse(template.render(context, request))
         else:
-            return get_form_advanced_search(request)
+            return get_form_advanced_search(SearchAdvanced, request)
     else:
-        return get_form_advanced_search(request)
+        return get_form_advanced_search(SearchAdvanced, request)
 
 
 class ValidSpecialFilter(admin.SimpleListFilter):

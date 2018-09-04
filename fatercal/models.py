@@ -6,6 +6,7 @@
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
 from __future__ import unicode_literals
+from .function import regex
 
 from django.db import models
 
@@ -105,13 +106,10 @@ class Prelevement(models.Model):
     id_taxref = models.ForeignKey('Taxon', db_column='id_taxref', verbose_name='Taxon')
     type_enregistrement = models.ForeignKey('TypeEnregistrement', db_column='type_enregistrement',
                                             blank=True, null=True)
-    date = models.CharField(max_length=10, blank=True, null=True,
+    date = models.CharField(max_length=23, blank=True, null=True,
                             validators=[
                                 RegexValidator(
-                                    regex=r"(^\d{4}$)|"
-                                          r"(^\d{4}-(0[1-9]|1[0-2])$)|"
-                                          r"(^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)|"
-                                          r"(^$)",
+                                    regex=regex,
                                     message='La date doit être dans l\'une des formes suivantes: '
                                             '1850, 1850-12, 1850-12-01',
                                     code='invalid_username'
@@ -135,7 +133,7 @@ class Prelevement(models.Model):
         if self.date is None:
             return self.id_taxref.__str__()
         else:
-            return "{} {}".format(self.id_taxref.__str__(), self.date)
+            return "{}, Date prélèvement: {}".format(self.id_taxref.__str__(), self.date)
 
     class Meta:
         managed = True

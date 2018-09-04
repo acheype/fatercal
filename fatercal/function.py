@@ -1,7 +1,13 @@
 from django.http import HttpResponse
 from django.template import loader
-from .forms import TaxonChangeRef, TaxonChangeSup, SearchAdvanced
 from django.db.models import Q
+
+""" Variable for regular expression"""
+regex = r"(^\d{4}$)|"
+r"(^\d{4}-(0[1-9]|1[0-2])$)|"
+r"(^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)|"
+r"(^$)|"
+r"(^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])\/\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)"
 
 
 def get_recolteur(recolteur, prelev):
@@ -301,14 +307,14 @@ def contr_hierarchy_tree_branch_adv_search_child(list_taxon, count, hierarchy_ch
     return hierarchy_child
 
 
-def get_form_advanced_search(request):
+def get_form_advanced_search(search_advanced, request):
     """
 
     :param request:
     :return:
     """
     template = loader.get_template('fatercal/advanced_search/change_form.html')
-    form = SearchAdvanced()
+    form = search_advanced()
     context = {
         'form': form,
         'count_es': -1

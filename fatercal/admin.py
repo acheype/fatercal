@@ -369,6 +369,9 @@ class LocaliteeModify(admin.ModelAdmin):
 
 
 class PrelevementModify(admin.ModelAdmin):
+    readonly_fields = (
+        'button_modal_date',
+    )
     list_display = (
         'id_taxref',
         'toponyme',
@@ -392,12 +395,28 @@ class PrelevementModify(admin.ModelAdmin):
             'fields': ('id_taxref', 'collection_museum', 'code_specimen', 'nb_taxon_present', 'type_specimen',)
         }),
         ('Informations', {
-            'fields': ('type_enregistrement', 'mode_de_collecte', 'date', 'information_complementaire')
+            'fields': ('type_enregistrement', 'mode_de_collecte', 'date',
+                       'button_modal_date', 'information_complementaire')
         }),
         ('Localisation', {
             'fields': ('id_localitee', 'toponyme', 'toponymie_x', 'toponymie_y', 'altitude', 'old_x', 'old_y')
         }),
     ]
+
+    # an url path to change referent or superior
+    def button_modal_date(self, obj):
+        return '''
+        Ces champs ne sont pas obligatoires ils vous aident juste à remplir le champ date au-dessus.<br><br>
+        Date unique: <input type="date" oninput=Date_update('unique') id="date_1"><br><br>
+        Période: <input type="date" id="date_periode_1" oninput=Date_update('periode')>
+        <input type="date" id="date_periode_2" oninput=Date_update('periode')>
+        '''
+    button_modal_date.allow_tags = True
+    button_modal_date.short_description = 'Date Calendrier'
+
+    # list of file to use for style or javascript function
+    class Media:
+        js = ('admin/fatercal/prelevement/prelev.js',)
 
 
 class HoteModify(admin.ModelAdmin):
@@ -458,7 +477,7 @@ class VernaculaireModify(admin.ModelAdmin):
 
 
 class Iso6393Modify(admin.ModelAdmin):
-    """ This class will display the model Taxon for adding or modifying a iso6393"""
+    """ This class will display the model Taxon for adding or modifying a iso6393 """
 
     def get_readonly_fields(self, request, obj=None):
         if obj:  # editing an existing object
