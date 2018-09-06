@@ -5,7 +5,7 @@ from itertools import chain
 
 from fatercal.views import ValidSpecialFilter
 from .models import Taxon, HabitatDetail, Localitee, Prelevement, Recolteur, Hote, PlanteHote, Vernaculaire, Iso6393
-from .function import get_recolteur, constr_hierarchy_tree_branch_parents
+from .function import get_recolteur, constr_hierarchy_tree_branch_parents, constr_hierarchy_tree_branch_child
 
 
 class PlanteHoteObj(admin.StackedInline):
@@ -312,24 +312,7 @@ class TaxonModify(admin.ModelAdmin):
         else:
             str_taxon = '<li class="folder"><label><strong>{} :</strong><a href="/fatercal/taxon/{}/"> {} {}</a> ' \
                 .format(obj.id_ref.rang, obj.id_ref.id, obj.id_ref.lb_nom, obj.lb_auteur)
-        if len(list_child) > 0:
-            rang = list_child[0].rang
-            str_child = '<ul><li><label class="tree_label" for="c{}"/><strong>{} : </strong></label><ul>' \
-                .format(str(nb + 1), rang)
-            for child in list_child:
-                if rang != child.rang:
-                    str_child = str_child + '''</ul></li><li class="folder"><label for="c{}">
-                    <strong>{} : </strong></label><li><ul>
-                    <a href="/fatercal/taxon/{}/">{}</a>'''.format(str(nb + 1), child.rang, child.id, child)
-                    rang = child.rang
-                else:
-                    str_child = str_child + '<li><a href="/fatercal/taxon/{}/">{} {}</a></li>' \
-                        .format(child.id, child.lb_nom, child.lb_auteur)
-            str_hierarchy_end = str_child + '</ul></ul></li>'
-            str_hierarchy = '<ul><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end
-        else:
-            str_hierarchy = '<ul class="tree"><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end
-        return str_hierarchy
+        return constr_hierarchy_tree_branch_child(str_hierarchy_begin, str_taxon, str_hierarchy_end, list_child, nb)
     hierarchy.allow_tags = True
     hierarchy.short_description = 'Hiérarchie'
 

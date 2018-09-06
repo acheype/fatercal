@@ -1,13 +1,14 @@
 from django.http import HttpResponse
 from django.template import loader
-from django.db.models import Q
+from django.db.models import F, Q
 
-""" Variable for regular expression"""
+""" Variable for the application"""
 regex = r"(^\d{4}$)|"
 r"(^\d{4}-(0[1-9]|1[0-2])$)|"
 r"(^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)|"
 r"(^$)|"
 r"(^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])\/\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)"
+params_search = ['q', 'nc__status__exact', 'rang__rang__exact', 'valide']
 
 
 def get_recolteur(recolteur, prelev):
@@ -103,13 +104,17 @@ def get_msg(tup):
     return (None, None, None, None)
 
 
-def get_taxon(taxon):
+def get_taxon(taxon, param):
     """
     This function get all Information needed from all taxon
     :param taxon: The model which is connected to the table Taxon in the database
+    :param param: the parameter's if the user want to export his research
     :return: all the taxon with the information we want
     """
-    list_not_proper = taxon.objects.all()
+    if param is None:
+        list_not_proper = taxon.objects.all()
+    else:
+        list_not_proper = get_specific_search(taxon, param)
     list_taxon = [
         ('REGNE', 'PHYLUM', 'CLASSE', 'ORDRE', 'FAMILLE', 'GROUP1_INPN', 'GROUP2_INPN', 'ID', 'ID_REF', 'ID_SUP',
          'CD_NOM', 'CD_TAXSUP', 'CD_SUP', 'CD_REF', 'RANG', 'LB_NOM', 'LB_AUTEUR', 'NOM_COMPLET', 'NOM_COMPLET_HTML',
@@ -140,6 +145,36 @@ def get_taxon(taxon):
                           None) + msg
                 list_taxon.append(tupple)
     return list_taxon
+
+
+def get_specific_search(taxon, param):
+    list_not_proper = taxon.objects.all()
+    list_param = {}
+    for params in params_search:
+        if params in param:
+            first = param.find(params)
+            part_param = param[first:]
+            if part_param.find('&') == -1:
+                list_param[params] = part_param[part_param.find('=')+1:]
+            else:
+                list_param[params] = part_param[part_param.find('=')+1:part_param.find('&')]
+    if 'q' in list_param:
+        if list_param['q'] != '':
+            list_not_proper = list_not_proper.filter(Q(lb_auteur__icontains=list_param['q']) |
+                                                     Q(lb_nom__icontains=list_param['q']))
+    if 'nc__status__exact' in list_param:
+        if list_param['nc__status__exact'] != '':
+            list_not_proper = list_not_proper.filter(nc__status=list_param['nc__status__exact'])
+    if 'rang__rang__exact' in list_param:
+        if list_param['rang__rang__exact'] != '':
+            list_not_proper = list_not_proper.filter(rang__rang=list_param['rang__rang__exact'])
+    if 'valide' in list_param:
+        if list_param['valide'] != '':
+            if list_param['valide'] == 'valide':
+                list_not_proper = list_not_proper.filter(id=F('id_ref'))
+            else:
+                list_not_proper = list_not_proper.filter(~Q(id=F('id_ref')))
+    return list_not_proper
 
 
 def get_new_taxon(taxon, queryset, child, count_es):
@@ -231,7 +266,7 @@ def constr_hierarchy_tree_adv_search(taxons, search_term, auteur):
     entered by the user
     :param taxons: The model which is connected to the table Taxon in the database
     :param search_term: the term the user entered
-    :return: a tree in html
+    :return: a tree in a string with html tag
     """
     if search_term == '':
         return 'Veuillez remplir le champ de recherche !', 0
@@ -273,7 +308,7 @@ def constr_hierarchy_tree_branch_parents(list_hierarchy):
     """
     Construct the beginning of the tree
     :param list_hierarchy:
-    :return: a string
+    :return: a string with html tag
     """
     count_parent = 1
     html_hierarchy_begin = '<ul class="tree"><br/>'
@@ -291,10 +326,10 @@ def constr_hierarchy_tree_branch_parents(list_hierarchy):
 def contr_hierarchy_tree_branch_adv_search_child(list_taxon, count, hierarchy_child):
     """
     Construct the end of the hierarchy tree
-    :param list_taxon:
-    :param count:
-    :param hierarchy_child:
-    :return: a string
+    :param list_taxon: a list which contains different taxon
+    :param count: an int
+    :param hierarchy_child: a string with html tag
+    :return: a string with html tag
     """
     for l_taxon in list_taxon:
         hierarchy_child = hierarchy_child + \
@@ -307,11 +342,42 @@ def contr_hierarchy_tree_branch_adv_search_child(list_taxon, count, hierarchy_ch
     return hierarchy_child
 
 
+def constr_hierarchy_tree_branch_child(str_hierarchy_begin, str_taxon, str_hierarchy_end, list_child, nb):
+    """
+    Construct the child branch of the hierarchy tree
+    :param str_hierarchy_begin: The beginning of the tree
+    :param str_taxon: the initial from which we construct the tree around it
+    :param str_hierarchy_end: The end of the tree
+    :param list_child: the list of child from which we construct the child branch of the tree
+    :param nb:
+    :return:
+    """
+    if len(list_child) > 0:
+        rang = list_child[0].rang
+        str_child = '<ul><li><label class="tree_label" for="c{}"/><strong>{} : </strong></label><ul>' \
+            .format(str(nb + 1), rang)
+        for child in list_child:
+            if rang != child.rang:
+                str_child = str_child + '''</ul></li><li class="folder"><label for="c{}">
+                <strong>{} : </strong></label><li><ul>
+                <a href="/fatercal/taxon/{}/">{}</a>'''.format(str(nb + 1), child.rang, child.id, child)
+                rang = child.rang
+            else:
+                str_child = str_child + '<li><a href="/fatercal/taxon/{}/">{} {}</a></li>' \
+                    .format(child.id, child.lb_nom, child.lb_auteur)
+        str_hierarchy_end = str_child + '</ul></ul></li>'
+        str_hierarchy = '<ul><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end
+    else:
+        str_hierarchy = '<ul class="tree"><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end
+    return str_hierarchy
+
+
 def get_form_advanced_search(search_advanced, request):
     """
-
-    :param request:
-    :return:
+    Construct the default form for advanced search
+    :param search_advanced: a form (Django doc)
+    :param request: a request (Django doc)
+    :return: an HttpResponse (Django doc)
     """
     template = loader.get_template('fatercal/advanced_search/change_form.html')
     form = search_advanced()

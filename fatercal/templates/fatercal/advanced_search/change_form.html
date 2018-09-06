@@ -17,15 +17,15 @@
         <span class="icon-arrow-right breadcrumbs-separator"></span> Recherche Avancée
     </div><br>
     <div>
-        <h5>Cette page vous affichera, pour un taxon donné, ses enfants ainsi que leurs enfants sous la forme
-            d'un arbre hiérarchique complet. Si l'option "Par Auteur" est cochée, il vous affichera tous les Taxon genre
-            relié à l'auteur rentré par l'utilisateur
-        </h5><br>
         <form action="" method="post">
             {% csrf_token %}
             {{ form }}
             <input type="submit" value="Recherche!" />
-        </form>
+        </form><br>
+        <h5>Cette page vous affichera, pour un taxon donné, ses enfants ainsi que leurs enfants sous la forme
+            d'un arbre hiérarchique complet. Si l'option "Par Auteur" est cochée, il vous affichera tous les Taxon genre
+            relié à l'auteur rentré par l'utilisateur
+        </h5>
     </div><br><br>
     {% if count_es != -1 %}
         <fieldset class="module aligned ">
