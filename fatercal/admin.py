@@ -312,7 +312,12 @@ class TaxonModify(admin.ModelAdmin):
         else:
             str_taxon = '<li class="folder"><label><strong>{} :</strong><a href="/fatercal/taxon/{}/"> {} {}</a> ' \
                 .format(obj.id_ref.rang, obj.id_ref.id, obj.id_ref.lb_nom, obj.lb_auteur)
-        return constr_hierarchy_tree_branch_child(str_hierarchy_begin, str_taxon, str_hierarchy_end, list_child, nb)
+        str_child = constr_hierarchy_tree_branch_child(list_child, nb)
+        if str_child == '':
+            return '<ul class="tree"><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end
+        else:
+            str_hierarchy_end = str_child + '</ul></ul></li>'
+            return '<ul><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end
     hierarchy.allow_tags = True
     hierarchy.short_description = 'Hiérarchie'
 

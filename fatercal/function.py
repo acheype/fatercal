@@ -342,12 +342,9 @@ def contr_hierarchy_tree_branch_adv_search_child(list_taxon, count, hierarchy_ch
     return hierarchy_child
 
 
-def constr_hierarchy_tree_branch_child(str_hierarchy_begin, str_taxon, str_hierarchy_end, list_child, nb):
+def constr_hierarchy_tree_branch_child(list_child, nb):
     """
     Construct the child branch of the hierarchy tree
-    :param str_hierarchy_begin: The beginning of the tree
-    :param str_taxon: the initial from which we construct the tree around it
-    :param str_hierarchy_end: The end of the tree
     :param list_child: the list of child from which we construct the child branch of the tree
     :param nb:
     :return:
@@ -365,11 +362,9 @@ def constr_hierarchy_tree_branch_child(str_hierarchy_begin, str_taxon, str_hiera
             else:
                 str_child = str_child + '<li><a href="/fatercal/taxon/{}/">{} {}</a></li>' \
                     .format(child.id, child.lb_nom, child.lb_auteur)
-        str_hierarchy_end = str_child + '</ul></ul></li>'
-        str_hierarchy = '<ul><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end
     else:
-        str_hierarchy = '<ul class="tree"><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end
-    return str_hierarchy
+        str_child = ''
+    return str_child
 
 
 def get_form_advanced_search(search_advanced, request):
