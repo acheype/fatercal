@@ -1,3 +1,4 @@
+from django.http import Http404
 from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.db.models import F
@@ -242,18 +243,21 @@ def extract_search_taxon_taxref(request):
     # Generate a sequence of rows. The range is based on the maximum number of
     # rows that can be handled by a single sheet in most spreadsheet
     # applications.
-    nb = request.META.get('HTTP_REFERER').find('?')
-    if nb != -1:
-        param = request.META.get('HTTP_REFERER')[nb + 1:]
-    else:
-        param = None
-    rows = (idx for idx in get_taxon(Taxon, param))
-    pseudo_buffer = Echo()
-    writer = csv.writer(pseudo_buffer,  delimiter=';')
-    response = StreamingHttpResponse((writer.writerow(row) for row in rows),
-                                     content_type="text/csv")
-    response['Content-Disposition'] = 'attachment; filename="fatercal_version_search_taxref.csv"'
-    return response
+    try:
+        nb = request.META.get('HTTP_REFERER').find('?')
+        if nb != -1:
+            param = request.META.get('HTTP_REFERER')[nb + 1:]
+        else:
+            param = None
+        rows = (idx for idx in get_taxon(Taxon, param))
+        pseudo_buffer = Echo()
+        writer = csv.writer(pseudo_buffer,  delimiter=';')
+        response = StreamingHttpResponse((writer.writerow(row) for row in rows),
+                                         content_type="text/csv")
+        response['Content-Disposition'] = 'attachment; filename="fatercal_version_search_taxref.csv"'
+        return response
+    except AttributeError:
+        raise Http404("Poll does not exist")
 
 
 class ValidSpecialFilter(admin.SimpleListFilter):
