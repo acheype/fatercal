@@ -8,7 +8,8 @@ r"(^\d{4}-(0[1-9]|1[0-2])$)|"
 r"(^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)|"
 r"(^$)|"
 r"(^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])\/\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)"
-params_search = ['q', 'nc__status__exact', 'rang__rang__exact', 'valide']
+params_search_taxon = ['q', 'nc__status__exact', 'rang__rang__exact', 'valide']
+params_search_sample = ['q', 'toponyme']
 
 
 def get_recolteur(recolteur, prelev):
@@ -104,17 +105,17 @@ def get_msg(tup):
     return (None, None, None, None)
 
 
-def get_taxon(taxon, param):
+def get_taxon(taxons, param):
     """
     This function get all Information needed from all taxon
-    :param taxon: The model which is connected to the table Taxon in the database
+    :param taxons: The model which is connected to the table Taxon in the database
     :param param: the parameter's if the user want to export his research
     :return: all the taxon with the information we want
     """
     if param is None:
-        list_not_proper = taxon.objects.all()
+        list_not_proper = taxons.objects.all()
     else:
-        list_not_proper = get_specific_search(taxon, param)
+        list_not_proper = get_specific_search_taxon(taxons, param)
     list_taxon = [
         ('REGNE', 'PHYLUM', 'CLASSE', 'ORDRE', 'FAMILLE', 'GROUP1_INPN', 'GROUP2_INPN', 'ID', 'ID_REF', 'ID_SUP',
          'CD_NOM', 'CD_TAXSUP', 'CD_SUP', 'CD_REF', 'RANG', 'LB_NOM', 'LB_AUTEUR', 'NOM_COMPLET', 'NOM_COMPLET_HTML',
@@ -147,10 +148,31 @@ def get_taxon(taxon, param):
     return list_taxon
 
 
-def get_specific_search(taxon, param):
+def get_sample(samples, param):
+    """
+    This function get all Information needed from all or specific sample
+    :param samples: The model which is connected to the table Prelevement in the database
+    :param param: the parameter's if the user want to export his research
+    :return: all the taxon with the information we want
+    """
+    if param is None:
+        list_not_proper = samples.objects.all()
+    else:
+        list_not_proper = get_specific_search_sample(samples, param)
+    list_sample = [
+        ('NOM', 'AUTEUR', 'LOCALITE', 'TOPONYME', 'ALTITUDE', 'COORDONNEE X', 'COORDONNEE Y', 'DATE', 'TYPE SPECIMEN')
+    ]
+    for sample in list_not_proper:
+        tupple = (sample.id_taxref.lb_nom, sample.id_taxref.lb_auteur, sample.id_localitee, sample.toponyme,
+                  sample.altitude, sample.toponymie_x, sample.toponymie_y, sample.date, sample.type_specimen)
+        list_sample.append(tupple)
+    return list_sample
+
+
+def get_specific_search_taxon(taxon, param):
     list_not_proper = taxon.objects.all()
     list_param = {}
-    for params in params_search:
+    for params in params_search_taxon:
         if params in param:
             first = param.find(params)
             part_param = param[first:]
@@ -177,7 +199,24 @@ def get_specific_search(taxon, param):
     return list_not_proper
 
 
-def get_new_taxon(taxon, queryset, child, count_es):
+def get_specific_search_sample(taxon, param):
+    list_not_proper = taxon.objects.all()
+    list_param_sample = {}
+    for params in params_search_sample:
+        if params in param:
+            first = param.find(params)
+            part_param = param[first:]
+            if part_param.find('&') == -1:
+                list_param_sample[params] = part_param[part_param.find('=')+1:]
+            else:
+                list_param_sample[params] = part_param[part_param.find('=')+1:part_param.find('&')]
+    if 'q' in list_param_sample:
+        if list_param_sample['q'] != '':
+            list_not_proper = list_not_proper.filter(id_taxref__lb_nom__icontains=list_param_sample['q'])
+    return list_not_proper
+
+
+def get_taxon_child(taxon, queryset, child, count_es):
     """
     This function will give us all the child of the child of a taxon and returning it into a list
     For that we have to do a recursive function
@@ -191,7 +230,7 @@ def get_new_taxon(taxon, queryset, child, count_es):
     if lchild:
         list_child = []
         for child2 in lchild:
-            list_child_temp, count_es = get_new_taxon(taxon, queryset, child2, count_es)
+            list_child_temp, count_es = get_taxon_child(taxon, queryset, child2, count_es)
             list_child.append([child2, list_child_temp])
         if child.rang.rang == 'ES' or child.rang.rang == 'SSES':
             count_es = count_es + 1
@@ -218,7 +257,7 @@ def get_search_results(taxons, search_term):
             list_child = taxons.objects.filter(id_sup=taxon.id)
             list_temp_taxon = []
             for child in list_child:
-                list_temp_child, count_es = get_new_taxon(taxons, queryset, child, count_es)
+                list_temp_child, count_es = get_taxon_child(taxons, queryset, child, count_es)
                 list_temp_taxon.append([child, list_temp_child])
             list_taxon.append(taxon)
             list_taxon.append(list_temp_taxon)
@@ -250,7 +289,7 @@ def get_search_results_auteur(taxons, search_term):
                 list_child = taxons.objects.filter(id_sup=taxon.id)
                 list_temp_taxon = []
                 for child in list_child:
-                    list_temp_child, count_es = get_new_taxon(taxons, queryset, child, count_es)
+                    list_temp_child, count_es = get_taxon_child(taxons, queryset, child, count_es)
                     list_temp_taxon.append([child, list_temp_child])
                 list_taxon.append([taxon, list_temp_taxon])
         return list_taxon, count_es
@@ -346,7 +385,7 @@ def constr_hierarchy_tree_branch_child(list_child, nb):
     """
     Construct the child branch of the hierarchy tree
     :param list_child: the list of child from which we construct the child branch of the tree
-    :param nb:
+    :param nb: an indicator for html use
     :return:
     """
     if len(list_child) > 0:

@@ -4,17 +4,19 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import F
 from django.http import HttpResponse
 from django.template import loader
-from .models import Taxon
+from .models import Taxon, Prelevement
 from .forms import TaxonChangeRef, TaxonChangeSup, SearchAdvanced
 import csv
+import datetime
 from django.http import StreamingHttpResponse
-from .function import get_taxon, get_form_advanced_search, constr_hierarchy_tree_adv_search
+from .function import get_taxon, get_form_advanced_search, constr_hierarchy_tree_adv_search, get_sample
 
 
 class Echo(object):
     """ An object that implements just the write method of the file-like
     interface.
     """
+
     def write(self, value):
         """ Write the value by returning it, instead of storing in a buffer. """
         return value
@@ -24,6 +26,9 @@ class Echo(object):
 def change_taxon_ref(request, id_taxon):
     """
     View for changing the superior of a taxon
+    :param request: an request object (see Django doc)
+    :param id_taxon: The id specific to one taxon
+    :return: an HttpResponse Object (see Django doc)
     """
 
     taxon_to_change = Taxon.objects.get(id=id_taxon)
@@ -69,7 +74,7 @@ def change_taxon_ref(request, id_taxon):
         else:
             form = TaxonChangeRef()
             template = loader.get_template('fatercal/change_taxon.html')
-            context ={
+            context = {
                 'error': None,
                 'taxon_to_change': taxon_to_change,
                 'form': form,
@@ -78,7 +83,7 @@ def change_taxon_ref(request, id_taxon):
             return HttpResponse(template.render(context, request))
     else:
         template = loader.get_template('fatercal/return_change_taxon.html')
-        message = 'Le taxon {} n\'est pas un taxon valide. Retour a la page du taxon.'\
+        message = 'Le taxon {} n\'est pas un taxon valide. Retour a la page du taxon.' \
             .format(taxon_to_change.nom_complet)
         context = {
             'taxon_to_change': taxon_to_change,
@@ -92,6 +97,9 @@ def change_taxon_ref(request, id_taxon):
 def change_taxon_sup(request, id_taxon):
     """
     View for changing the validity, reference of a taxon
+    :param request: an request object (see Django doc)
+    :param id_taxon: The id specific to one taxon
+    :return: an HttpResponse Object (see Django doc)
     """
 
     taxon_to_change = Taxon.objects.get(id=id_taxon)
@@ -135,7 +143,7 @@ def change_taxon_sup(request, id_taxon):
         else:
             form = TaxonChangeSup()
             template = loader.get_template('fatercal/change_taxon.html')
-            context ={
+            context = {
                 'taxon_to_change': taxon_to_change,
                 'form': form,
                 'user': request.user.__str__(),
@@ -158,9 +166,9 @@ def change_taxon_sup(request, id_taxon):
 def change_validity_to_valid(request, id_taxon):
     """
     View for changing a synonymous taxon to a valid one
-    :param request:
-    :param id_taxon:
-    :return:
+    :param request: an request object (see Django doc)
+    :param id_taxon: The id specific to one taxon
+    :return: an HttpResponse Object (see Django doc)
     """
 
     taxon_to_change = Taxon.objects.get(id=id_taxon)
@@ -170,21 +178,21 @@ def change_validity_to_valid(request, id_taxon):
         taxon_to_change.save()
         template = loader.get_template('fatercal/return_change_taxon.html')
         message = 'Le taxon est devenu un taxon valide.'.format(
-           taxon_to_change.nom_complet)
+            taxon_to_change.nom_complet)
         context = {
-           'taxon_to_change': taxon_to_change,
-           'message': message,
-           'user': request.user.__str__(),
+            'taxon_to_change': taxon_to_change,
+            'message': message,
+            'user': request.user.__str__(),
         }
         return HttpResponse(template.render(context, request))
     else:
         template = loader.get_template('fatercal/return_change_taxon.html')
         message = 'Le taxon {} est déjà un taxon valide.'.format(
-           taxon_to_change.nom_complet)
+            taxon_to_change.nom_complet)
         context = {
-           'taxon_to_change': taxon_to_change,
-           'message': message,
-           'user': request.user.__str__(),
+            'taxon_to_change': taxon_to_change,
+            'message': message,
+            'user': request.user.__str__(),
         }
         return HttpResponse(template.render(context, request))
 
@@ -193,6 +201,8 @@ def change_validity_to_valid(request, id_taxon):
 def advanced_search(request):
     """
     View for changing the superior of a taxon
+    :param request: an request object (see Django doc)
+    :return: an HttpResponse Object (see Django doc)
     """
     template = loader.get_template('fatercal/advanced_search/change_form.html')
     if request.method == 'POST':
@@ -220,17 +230,20 @@ def extract_taxon_taxref(request):
     """
     A view that streams a large CSV file. In this case the file in format
     for the organization taxref
+    :param request: an request object (see Django doc)
+    :return: a csv file
     """
     # Generate a sequence of rows. The range is based on the maximum number of
     # rows that can be handled by a single sheet in most spreadsheet
     # applications.
-
-    rows = (idx for idx in get_taxon(Taxon))
+    param = None
+    rows = (idx for idx in get_taxon(Taxon, param))
     pseudo_buffer = Echo()
-    writer = csv.writer(pseudo_buffer,  delimiter=';')
+    writer = csv.writer(pseudo_buffer, delimiter=';')
     response = StreamingHttpResponse((writer.writerow(row) for row in rows),
                                      content_type="text/csv")
-    response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref.csv"'
+    response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref.csv' + \
+                                      str(datetime.datetime.now()) + '.csv"'
     return response
 
 
@@ -239,6 +252,8 @@ def extract_search_taxon_taxref(request):
     """
     A view that streams a large CSV file. In this case the file in format
     for the organization taxref
+    :param request: an request object (see Django doc)
+    :return: a csv file
     """
     # Generate a sequence of rows. The range is based on the maximum number of
     # rows that can be handled by a single sheet in most spreadsheet
@@ -251,13 +266,42 @@ def extract_search_taxon_taxref(request):
             param = None
         rows = (idx for idx in get_taxon(Taxon, param))
         pseudo_buffer = Echo()
-        writer = csv.writer(pseudo_buffer,  delimiter=';')
+        writer = csv.writer(pseudo_buffer, delimiter=';')
         response = StreamingHttpResponse((writer.writerow(row) for row in rows),
                                          content_type="text/csv")
-        response['Content-Disposition'] = 'attachment; filename="fatercal_version_search_taxref.csv"'
+        response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref_search' + \
+                                          str(datetime.datetime.now()) + '.csv"'
         return response
     except AttributeError:
-        raise Http404("Poll does not exist")
+        raise Http404("This page doesn't exist.")
+
+
+def extract_search_sample(request):
+    """
+    A view that streams a large CSV file. In this case the file in format
+    for the organization taxref
+    :param request: request: an request object (see Django doc)
+    :return: a csv file
+    """
+    # Generate a sequence of rows. The range is based on the maximum number of
+    # rows that can be handled by a single sheet in most spreadsheet
+    # applications.
+    try:
+        nb = request.META.get('HTTP_REFERER').find('?')
+        if nb != -1:
+            param = request.META.get('HTTP_REFERER')[nb + 1:]
+        else:
+            param = None
+        rows = (idx for idx in get_sample(Prelevement, param))
+        pseudo_buffer = Echo()
+        writer = csv.writer(pseudo_buffer, delimiter=';')
+        response = StreamingHttpResponse((writer.writerow(row) for row in rows),
+                                         content_type="text/csv")
+        response['Content-Disposition'] = 'attachment; filename="fatercal_search_sample_' +\
+                                          str(datetime.datetime.now()) + '.csv"'
+        return response
+    except AttributeError:
+        raise Http404("This page doesn't exist.")
 
 
 class ValidSpecialFilter(admin.SimpleListFilter):

@@ -37,9 +37,9 @@ class HoteParasiteObj(admin.StackedInline):
 # This class serve to modify or add a Host for the Model Taxon
 class HoteHoteObj(admin.StackedInline):
     """
-        This Class will display the model of the table
-        Hote to display all hote affected to the actual taxon selected
-        by the user
+    This Class will display the model of the table
+    Hote to display all hote affected to the actual taxon selected
+    by the user
     """
     model = Hote
     fk_name = 'id_parasite'
@@ -189,6 +189,12 @@ class TaxonModify(admin.ModelAdmin):
 
     # Redefinition of the function to have a readonly only when whe modify the object
     def get_readonly_fields(self, request, obj=None):
+        """
+        Return a list of readonly fields when a taxon is valid or not
+        :param request: an request object (see Django doc)
+        :param obj: an Taxon object (see models.py)
+        :return: the readonly field
+        """
         if obj:  # editing an existing object
             return self.readonly_fields + ('id_sup', 'id_ref', 'change_taxon',)
         else:
@@ -196,6 +202,12 @@ class TaxonModify(admin.ModelAdmin):
 
     # Redefinition of the function to have different fieldsets when we edit or add a taxon
     def get_fieldsets(self, request, obj=None):
+        """
+        Change field when a taxon is valid or not
+        :param request: an request object (see Django doc)
+        :param obj: an Taxon object (see models.py)
+        :return: the fieldsets
+        """
         if obj:
             if obj.id == obj.id_ref.id:
                 return self.fieldsets_edit_valid
@@ -206,6 +218,14 @@ class TaxonModify(admin.ModelAdmin):
 
     # redefinition of the method save_model
     def save_model(self, request, obj, form, change):
+        """
+        Add specific change when adding a new taxon
+        :param request: an request object (see Django doc)
+        :param obj: an Taxon object (see models.py)
+        :param form: the used when creating the taxon
+        :param change:
+        :return: nothing
+        """
         obj.nom_complet = obj.lb_nom + ' ' + obj.lb_auteur
         super(TaxonModify, self).save_model(request, obj, form, change)
         # When a user want to create a new valid taxon to refer itself
@@ -213,8 +233,12 @@ class TaxonModify(admin.ModelAdmin):
             obj.id_ref = obj
             obj.save()
 
-    # an url path to change referent or superior
     def change_taxon(self, obj):
+        """
+        Give the url path to change referent or superior
+        :param obj: an Taxon object (see models.py)
+        :return: a link to another page
+        """
         if obj == obj.id_ref:
             return """<br/>
             <p><a href='/fatercal/change_ref/{}/'>Changez le référent</a></p>
@@ -228,6 +252,11 @@ class TaxonModify(admin.ModelAdmin):
     change_taxon.short_description = 'Modification'
 
     def prelevements(self, obj):
+        """
+        Return the list of sample of a taxon, and of its synonymous if its a valid taxon, in a synthetic html table
+        :param obj: an Taxon object (see models.py)
+        :return: an html table
+        """
         board_prelevement = """<table><tr>
                                     <td><strong>Localité</strong></td> <td><strong>Type enregistrement</strong></td>
                                     <td><strong>Date</strong></td><td> <strong>Nb taxon present</strong></td>
@@ -265,13 +294,22 @@ class TaxonModify(admin.ModelAdmin):
 
     # show if the taxon is valid or not whith is referent or synonymous
     def referent(self, obj):
+        """
+        Shown if the taxon is valid or not
+        :param obj: an Taxon object (see models.py)
+        :return: the validity in html tag
+        """
         return """<a href='/fatercal/taxon/{}/'>{}</a> <br/> <br/> <a href="/fatercal/taxon_to_valid/{}">
                    Cliquer ici pour le passer en valide.</a>""".format(obj.id_ref.id, obj.id_ref.nom_complet, obj.id)
 
     referent.allow_tags = True
 
-    # Display the synonymous of the taxon
     def syn(self, obj):
+        """
+        Display the synonymous of the taxon
+        :param obj: an Taxon object (see models.py)
+        :return: The list of synonymous in html tag
+        """
         list_syn = Taxon.objects.filter(id_ref=obj.id).filter(~Q(id=obj.id))
         if len(list_syn) != 0:
             string = "</br>"
@@ -284,8 +322,12 @@ class TaxonModify(admin.ModelAdmin):
     syn.allow_tags = True
     syn.short_description = 'Autre(s) combinaison(s) et/ou synonyme(s)'
 
-    # Display the validity of the taxon
     def valid(self, obj):
+        """
+        Give an icon whether or not it is a valid taxon
+        :param obj: an Taxon object (see models.py)
+        :return: an image
+        """
         if obj.id == obj.id_ref.id:
             return '<img src="/static/admin/img/icon-yes.gif" alt="True">'
         else:
@@ -296,7 +338,11 @@ class TaxonModify(admin.ModelAdmin):
 
     # This function will construct the hierarchy tree of the taxon
     def hierarchy(self, obj):
-        """ We verify the construction is for a taxon or synonymous"""
+        """
+        We verify the construction is for a taxon or synonymous
+        :param obj: an Taxon object (see models.py)
+        :return: an html tree
+        """
         if obj.id == obj.id_ref.id:
             list_hierarchy, nb = obj.get_hierarchy()
             list_child = Taxon.objects.filter(id_sup=obj.id).order_by('rang')
@@ -357,6 +403,8 @@ class LocaliteeModify(admin.ModelAdmin):
 
 
 class PrelevementModify(admin.ModelAdmin):
+    change_list_template = 'fatercal/prelevement/change_list.html'
+
     readonly_fields = (
         'button_modal_date',
     )

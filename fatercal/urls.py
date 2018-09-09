@@ -9,4 +9,5 @@ urlpatterns = [
     url(r'^advanced_search/$', views.advanced_search, name='Advanced Search'),
     url(r'^export_taxref/$', views.extract_taxon_taxref, name='Export Taxref version'),
     url(r'^export_search_taxref/$', views.extract_search_taxon_taxref, name='Export version Taxref search'),
+    url(r'^export_search_sample/$', views.extract_search_sample, name='Export sample search'),
 ]

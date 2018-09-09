@@ -45,7 +45,6 @@ class Hote(models.Model):
         return 'id_hote__lb_nom', 'id_hote__lb_auteur',
 
     def __str__(self):
-
         return "{}".format(self.id_hote,)
 
 
@@ -60,7 +59,6 @@ class Iso6393(models.Model):
         db_table = 'iso639-3'
 
     def __str__(self):
-
         return "{}".format(self.iso639_3,)
 
 
@@ -75,7 +73,6 @@ class Localitee(models.Model):
         db_table = 'localitee'
 
     def __str__(self):
-
         return self.localite
 
 
@@ -95,7 +92,6 @@ class PlanteHote(models.Model):
         db_table = 'plante_hote'
 
     def __str__(self):
-
         return "{} {}".format(self.genre, self.espece)
 
 
@@ -189,13 +185,19 @@ class Taxon(models.Model):
     reference_description = models.TextField(blank=True, null=True)
 
     def valide(self):
-        """Return a boolean about whether or not it is a valid taxon"""
+        """
+        Return a boolean about whether or not it is a valid taxon
+        :return: a boolean
+        """
         return self == self.id_ref
 
     valide.boolean = True
 
     def get_hierarchy(self):
-        """ We browse the hierarchy of the taxon"""
+        """
+         We browse the hierarchy of the taxon
+        :return: the parent of a taxon in a list
+        """
         list_hierarchy = []
         superior = self.id_sup
         list_hierarchy.append(superior)
@@ -219,6 +221,10 @@ class Taxon(models.Model):
         return str_lb
 
     def info(self):
+        """
+        Some info when creating a new taxon
+        :return:
+        """
         return '''<strong>Si vous voulez créer un nouveau taxon
         ne mettez rien dans référent et mettez
         un supérieur à votre nouveau taxon</strong>'''
