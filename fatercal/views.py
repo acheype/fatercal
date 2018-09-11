@@ -1,15 +1,13 @@
 from django.http import Http404
 from django.contrib import admin
 from django.contrib.auth.decorators import login_required
-from django.db.models import F
-from django.http import HttpResponse
-from django.template import loader
 from .models import Taxon, Prelevement
-from .forms import TaxonChangeRef, TaxonChangeSup, SearchAdvanced
+from .forms import TaxonChangeRef, TaxonChangeSup, SearchAdvanced, ChooseData
 import csv
+import codecs
 import datetime
 from django.http import StreamingHttpResponse
-from .function import get_taxon, get_form_advanced_search, constr_hierarchy_tree_adv_search, get_sample
+from .function import *
 
 
 class Echo(object):
@@ -259,6 +257,7 @@ def extract_search_taxon_taxref(request):
     # rows that can be handled by a single sheet in most spreadsheet
     # applications.
     try:
+        print(54545)
         nb = request.META.get('HTTP_REFERER').find('?')
         if nb != -1:
             param = request.META.get('HTTP_REFERER')[nb + 1:]
@@ -274,6 +273,50 @@ def extract_search_taxon_taxref(request):
         return response
     except AttributeError:
         raise Http404("This page doesn't exist.")
+
+
+def choose_search_data(request):
+    template = loader.get_template('fatercal/taxon/export_data_choose.html')
+    if request.method == 'POST':
+        form = ChooseData(request.POST)
+        if form.is_valid():
+            rows = (idx for idx in get_taxon_personal(Taxon, form))
+            pseudo_buffer = Echo()
+            writer = csv.writer(pseudo_buffer, delimiter=';')
+            response = StreamingHttpResponse((writer.writerow(row) for row in rows),
+                                             content_type="text/csv")
+            response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref.csv' + \
+                                              str(datetime.datetime.now()) + '.csv"'
+            return response
+        else:
+            form = ChooseData()
+            template = loader.get_template('fatercal/change_taxon.html')
+            context = {
+                'error': 'Veuillez choisir un taxon parmi ceux proposés.',
+                'form': form,
+                'user': request.user.__str__(),
+            }
+        return HttpResponse(template.render(context, request))
+    try:
+        nb = request.META.get('HTTP_REFERER').find('?')
+        if nb != -1:
+            param = request.META.get('HTTP_REFERER')[nb + 1:]
+        else:
+            param = None
+        list_param = inspect_url_variable(param, params_search_taxon)
+    except AttributeError:
+        raise Http404("This page doesn't exist.")
+    if list_param is None:
+        form = ChooseData()
+    else:
+        form = ChooseData(initial={key: value for (key, value) in list_param.items()})
+    context = {
+        'error': '',
+        'form': form,
+        'list_param': list_param,
+        'user': request.user.__str__(),
+    }
+    return HttpResponse(template.render(context, request))
 
 
 def extract_search_sample(request):

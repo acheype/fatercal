@@ -17,7 +17,7 @@ def get_recolteur(recolteur, prelev):
     Get the Harvesteur's for a specific sample
     :param recolteur:
     :param prelev: the object
-    :return: In each case we retuen a string
+    :return: In each case we return a string
     """
     list_recolt = recolteur.objects.filter(id_prelevement=prelev.id_prelevement)
     if len(list_recolt) > 0:
@@ -115,7 +115,8 @@ def get_taxon(taxons, param):
     if param is None:
         list_not_proper = taxons.objects.all()
     else:
-        list_not_proper = get_specific_search_taxon(taxons, param)
+        list_param = inspect_url_variable(param, params_search_taxon)
+        list_not_proper = get_specific_search_taxon(taxons, list_param)
     list_taxon = [
         ('REGNE', 'PHYLUM', 'CLASSE', 'ORDRE', 'FAMILLE', 'GROUP1_INPN', 'GROUP2_INPN', 'ID', 'ID_REF', 'ID_SUP',
          'CD_NOM', 'CD_TAXSUP', 'CD_SUP', 'CD_REF', 'RANG', 'LB_NOM', 'LB_AUTEUR', 'NOM_COMPLET', 'NOM_COMPLET_HTML',
@@ -148,6 +149,90 @@ def get_taxon(taxons, param):
     return list_taxon
 
 
+def get_taxon_personal(taxons, form):
+    """
+    Get the list of taxon the user get from its search
+    :param taxons: The model which is connected to the table Taxon in the database
+    :param form: an form object (See Django doc)
+    :return: a list
+    """
+    list_not_proper = get_specific_search_taxon(taxons, form.cleaned_data)
+    print(list_not_proper)
+    if 'q' in form.cleaned_data:
+        del form.cleaned_data['q']
+    if 'nc__status__exact' in form.cleaned_data:
+        del form.cleaned_data['nc__status__exact']
+    if 'rang__rang__exact' in form.cleaned_data:
+        del form.cleaned_data['rang__rang__exact']
+    if 'valide' in form.cleaned_data:
+        del form.cleaned_data['valide']
+    return construct_list_taxon(list_not_proper, form.cleaned_data)
+
+
+def construct_list_taxon(list_not_proper, cleaned_data):
+    """
+    Construct the list of taxon for the csv
+    :param list_not_proper: a queryset object (see Django doc)
+    :param cleaned_data: a dict from the form object (see Django doc)
+    :return: a list
+    """
+    cleaned_list = ()
+    for (key, value) in cleaned_data.items():
+        if cleaned_data[key]:
+            cleaned_list += (key,)
+    list_taxon = [cleaned_list, ]
+    if tuple == ():
+        return list_taxon
+    else:
+        for taxon in list_not_proper:
+            cleaned_taxon = construct_cleaned_taxon_search(taxon, cleaned_data)
+            list_taxon.append(cleaned_taxon)
+    return list_taxon
+
+
+def construct_cleaned_taxon_search(taxon, cleaned_data):
+    """
+    Construct a tuple with field requested by the user
+    :param taxon: The model which is connected to the table Taxon in the database
+    :param cleaned_data: a dict from the form object (see Django doc)
+    :return: a tuple
+    """
+    cleaned_taxon = ()
+    if cleaned_data['id']: cleaned_taxon += (taxon.id,)
+    if taxon.id == taxon.id_ref.id:
+        if taxon.id_sup is None: cleaned_taxon += (None,)
+        else:
+            if cleaned_data['id_sup']: cleaned_taxon += (taxon.id_sup.id,)
+    else: cleaned_taxon += (None,)
+    if cleaned_data['id_ref']: cleaned_taxon += (taxon.id_ref.id,)
+    if cleaned_data['name']: cleaned_taxon += (taxon.lb_nom,)
+    if cleaned_data['author']: cleaned_taxon += (taxon.lb_auteur,)
+    if cleaned_data['rank']: cleaned_taxon += (taxon.rang.lb_rang,)
+    if taxon.id == taxon.id_ref.id:
+        if cleaned_data['rank_sup']: cleaned_taxon += (taxon.id_sup,)
+    else: cleaned_taxon += (None,)
+    if taxon.nc is None:
+        cleaned_taxon += (None,)
+    else:
+        if cleaned_data['status']: cleaned_taxon += (taxon.nc.lb_status,)
+    if taxon.habitat is None: cleaned_taxon += (None,)
+    else:
+        if cleaned_data['habitat']: cleaned_taxon += (taxon.habitat.lb_habitat,)
+    if cleaned_data['grande_terre']: cleaned_taxon += (taxon.grande_terre,)
+    if cleaned_data['loyalty_island']: cleaned_taxon += (taxon.iles_loyautee,)
+    if cleaned_data['other']: cleaned_taxon += (taxon.autre,)
+    if taxon.remarque is None: cleaned_taxon += (None,)
+    else:
+        if cleaned_data['remark']: cleaned_taxon += (taxon.remarque.replace('\n', ''),)
+    if taxon.sources is None: cleaned_taxon += (None,)
+    else:
+        if cleaned_data['source']: cleaned_taxon += (taxon.sources.replace('\n', ''),)
+    if taxon.reference_description is None: cleaned_taxon += (None,)
+    else:
+        if cleaned_data['description_reference']: cleaned_taxon += (taxon.reference_description.replace('\n', ''),)
+    return cleaned_taxon
+
+
 def get_sample(samples, param):
     """
     This function get all Information needed from all or specific sample
@@ -169,17 +254,36 @@ def get_sample(samples, param):
     return list_sample
 
 
-def get_specific_search_taxon(taxon, param):
-    list_not_proper = taxon.objects.all()
+def inspect_url_variable(param, params_search):
+    """
+    Get the get parameter's from the past url
+    :param param: the user's parameter if the user want to export his research
+    :param params_search: a dict which contain's the default parameter's name
+    :return: a dict
+    """
     list_param = {}
-    for params in params_search_taxon:
-        if params in param:
-            first = param.find(params)
-            part_param = param[first:]
-            if part_param.find('&') == -1:
-                list_param[params] = part_param[part_param.find('=')+1:]
-            else:
-                list_param[params] = part_param[part_param.find('=')+1:part_param.find('&')]
+    if param is None:
+        return None
+    else:
+        for params in params_search:
+            if params in param:
+                first = param.find(params)
+                part_param = param[first:]
+                if part_param.find('&') == -1:
+                    list_param[params] = part_param[part_param.find('=') + 1:]
+                else:
+                    list_param[params] = part_param[part_param.find('=') + 1:part_param.find('&')]
+        return list_param
+
+
+def get_specific_search_taxon(taxons, list_param):
+    """
+    Filter from the user's parameter
+    :param taxons: The model which is connected to the table Taxon in the database
+    :param list_param:
+    :return: a list of taxon
+    """
+    list_not_proper = taxons.objects.all()
     if 'q' in list_param:
         if list_param['q'] != '':
             list_not_proper = list_not_proper.filter(Q(lb_auteur__icontains=list_param['q']) |
@@ -199,17 +303,15 @@ def get_specific_search_taxon(taxon, param):
     return list_not_proper
 
 
-def get_specific_search_sample(taxon, param):
-    list_not_proper = taxon.objects.all()
-    list_param_sample = {}
-    for params in params_search_sample:
-        if params in param:
-            first = param.find(params)
-            part_param = param[first:]
-            if part_param.find('&') == -1:
-                list_param_sample[params] = part_param[part_param.find('=')+1:]
-            else:
-                list_param_sample[params] = part_param[part_param.find('=')+1:part_param.find('&')]
+def get_specific_search_sample(taxons, param):
+    """
+    Filter from the user's parameter's
+    :param taxons: The model which is connected to the table Taxon in the database
+    :param param: the user's parameter if the user want to export his research
+    :return: a list filtered
+    """
+    list_not_proper = taxons.objects.all()
+    list_param_sample = inspect_url_variable(param, params_search_sample)
     if 'q' in list_param_sample:
         if list_param_sample['q'] != '':
             list_not_proper = list_not_proper.filter(id_taxref__lb_nom__icontains=list_param_sample['q'])
@@ -305,7 +407,8 @@ def constr_hierarchy_tree_adv_search(taxons, search_term, auteur):
     entered by the user
     :param taxons: The model which is connected to the table Taxon in the database
     :param search_term: the term the user entered
-    :return: a tree in a string with html tag
+    :param auteur: a boolean if the user want to search by author or not
+    :return: a string with html tag
     """
     if search_term == '':
         return 'Veuillez remplir le champ de recherche !', 0
@@ -372,9 +475,9 @@ def contr_hierarchy_tree_branch_adv_search_child(list_taxon, count, hierarchy_ch
     """
     for l_taxon in list_taxon:
         hierarchy_child = hierarchy_child + \
-            '<ul><li><label class="tree_label" for="c{}"/><strong>{} : </strong></al>' \
-            '<a href="/fatercal/taxon/{}/">{}</a></label>   '''\
-            .format(count, l_taxon[0].rang, l_taxon[0].id, l_taxon[0])
+                          '<ul><li><label class="tree_label" for="c{}"/><strong>{} : </strong></al>' \
+                          '<a href="/fatercal/taxon/{}/">{}</a></label>   ''' \
+                              .format(count, l_taxon[0].rang, l_taxon[0].id, l_taxon[0])
         if l_taxon[1] is not None:
             hierarchy_child = contr_hierarchy_tree_branch_adv_search_child(l_taxon[1], count + 1, hierarchy_child)
         hierarchy_child = hierarchy_child + '</li></ul>'
@@ -386,7 +489,7 @@ def constr_hierarchy_tree_branch_child(list_child, nb):
     Construct the child branch of the hierarchy tree
     :param list_child: the list of child from which we construct the child branch of the tree
     :param nb: an indicator for html use
-    :return:
+    :return: a string with html tag
     """
     if len(list_child) > 0:
         rang = list_child[0].rang

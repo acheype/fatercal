@@ -16,7 +16,7 @@
         <h1>{{ taxon_to_change }}</h1>
         <ul>
         {% if taxon_to_change.id_sup != None %}
-            <li> <a href="/fatercal/taxon/{{ taxon_to_change.id }}"/>Supérieur : {{ taxon_to_change.id_sup }}</a></li>
+            <li> <a href="/fatercal/taxon/{{ taxon_to_change.id }}">Supérieur : {{ taxon_to_change.id_sup }}</a></li>
         {% else %}
                 {% if taxon_to_change.id_ref.id == taxon_to_change.id %}
                 Il n'a pas de supérieur Hiérarchique
