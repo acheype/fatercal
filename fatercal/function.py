@@ -107,20 +107,20 @@ def construct_cleaned_taxon(taxon):
         statut = None
     else:
         statut = taxon.nc.status
-    if taxon == taxon.id_ref:
+    if taxon.id == taxon.id_ref_id:
         if taxon.id_sup is None:
             id_sup = None
         else:
             id_sup = taxon.id_sup_id
         dict_parent = get_superior(taxon)
         tupple = (dict_parent.get('KD'), dict_parent.get('PH'), dict_parent.get('CL'), dict_parent.get('OR'),
-                  dict_parent.get('CL'), dict_parent.get('FM'), None, None, taxon.id, taxon.id_ref.id, id_sup,
+                  dict_parent.get('CL'), dict_parent.get('FM'), None, None, taxon.id, taxon.id_ref_id, id_sup,
                   taxon.cd_nom, None, taxon.cd_sup, taxon.cd_ref, taxon.rang.rang, taxon.lb_nom, taxon.lb_auteur,
                   taxon.nom_complet, None, taxon.lb_nom, None, None, habitat, statut) + msg
     else:
         dict_parent = get_superior(taxon.id_ref)
         tupple = (dict_parent.get('KD'), dict_parent.get('PH'), dict_parent.get('CL'), dict_parent.get('OR'),
-                  dict_parent.get('CL'), dict_parent.get('FM'), None, None, taxon.id, taxon.id_ref.id, None,
+                  dict_parent.get('CL'), dict_parent.get('FM'), None, None, taxon.id, taxon.id_ref_id, None,
                   taxon.cd_nom, None, taxon.cd_sup, taxon.cd_ref, taxon.rang.rang, taxon.lb_nom, taxon.lb_auteur,
                   taxon.nom_complet, None, taxon.id_ref.lb_nom, None, None, habitat, statut) + msg
     return tupple
@@ -176,16 +176,16 @@ def construct_cleaned_taxon_search(taxon, cleaned_data):
     """
     cleaned_taxon = ()
     if cleaned_data['id']: cleaned_taxon += (taxon.id,)
-    if taxon.id == taxon.id_ref.id:
+    if taxon.id == taxon.id_ref_id:
         if taxon.id_sup is None: cleaned_taxon += (None,)
         else:
-            if cleaned_data['id_sup']: cleaned_taxon += (taxon.id_sup.id,)
+            if cleaned_data['id_sup']: cleaned_taxon += (taxon.id_sup_id,)
     else: cleaned_taxon += (None,)
-    if cleaned_data['id_ref']: cleaned_taxon += (taxon.id_ref.id,)
+    if cleaned_data['id_ref']: cleaned_taxon += (taxon.id_ref_id,)
     if cleaned_data['name']: cleaned_taxon += (taxon.lb_nom,)
     if cleaned_data['author']: cleaned_taxon += (taxon.lb_auteur,)
     if cleaned_data['rank']: cleaned_taxon += (taxon.rang.lb_rang,)
-    if taxon.id == taxon.id_ref.id:
+    if taxon.id == taxon.id_ref_id:
         if cleaned_data['rank_sup']: cleaned_taxon += (taxon.id_sup,)
     else: cleaned_taxon += (None,)
     if taxon.nc is None:
@@ -332,7 +332,7 @@ def get_search_results(taxons, search_term):
     count_es = 0
     if len(queryset) == 1:
         taxon = queryset.first()
-        if taxon.id_ref.id == taxon.id:
+        if taxon.id_ref_id == taxon.id:
             list_child = taxons.objects.filter(id_sup=taxon.id)
             list_temp_taxon = []
             for child in list_child:
@@ -364,7 +364,7 @@ def get_search_results_auteur(taxons, search_term):
     count_es = 0
     if len(queryset) > 0:
         for taxon in queryset:
-            if taxon.id_ref.id == taxon.id:
+            if taxon.id_ref_id == taxon.id:
                 list_child = taxons.objects.filter(id_sup=taxon.id)
                 list_temp_taxon = []
                 for child in list_child:

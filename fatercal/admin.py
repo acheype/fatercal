@@ -209,7 +209,7 @@ class TaxonModify(admin.ModelAdmin):
         :return: the fieldsets
         """
         if obj:
-            if obj.id == obj.id_ref.id:
+            if obj.id == obj.id_ref_id:
                 return self.fieldsets_edit_valid
             else:
                 return self.fieldsets_edit_syn
@@ -269,7 +269,7 @@ class TaxonModify(admin.ModelAdmin):
                                     <td><strong>Lien Modif</strong></td>
                                 </tr>"""
         list_prelevement = Prelevement.objects.filter(id_taxref=obj.id)
-        if obj.id == obj.id_ref.id:
+        if obj.id == obj.id_ref_id:
             list_syn = Taxon.objects.filter(id_ref=obj.id).filter(~Q(id=obj.id))
             for syn in list_syn:
                 list_prelevement_syn = Prelevement.objects.filter(id_taxref=syn.id)
@@ -300,7 +300,7 @@ class TaxonModify(admin.ModelAdmin):
         :return: the validity in html tag
         """
         return """<a href='/fatercal/taxon/{}/'>{}</a> <br/> <br/> <a href="/fatercal/taxon_to_valid/{}">
-                   Cliquer ici pour le passer en valide.</a>""".format(obj.id_ref.id, obj.id_ref.nom_complet, obj.id)
+                   Cliquer ici pour le passer en valide.</a>""".format(obj.id_ref_id, obj.id_ref.nom_complet, obj.id)
 
     referent.allow_tags = True
 
@@ -328,7 +328,7 @@ class TaxonModify(admin.ModelAdmin):
         :param obj: an Taxon object (see models.py)
         :return: an image
         """
-        if obj.id == obj.id_ref.id:
+        if obj.id == obj.id_ref_id:
             return '<img src="/static/admin/img/icon-yes.gif" alt="True">'
         else:
             return '<img src="/static/admin/img/icon-no.gif" alt="False">'
@@ -343,7 +343,7 @@ class TaxonModify(admin.ModelAdmin):
         :param obj: an Taxon object (see models.py)
         :return: an html tree
         """
-        if obj.id == obj.id_ref.id:
+        if obj.id == obj.id_ref_id:
             list_hierarchy, nb = obj.get_hierarchy()
             list_child = Taxon.objects.filter(id_sup=obj.id).order_by('rang')
             is_valid = True
@@ -357,7 +357,7 @@ class TaxonModify(admin.ModelAdmin):
                 .format(obj.rang, obj.lb_nom, obj.lb_auteur)
         else:
             str_taxon = '<li class="folder"><label><strong>{} :</strong><a href="/fatercal/taxon/{}/"> {} {}</a> ' \
-                .format(obj.id_ref.rang, obj.id_ref.id, obj.id_ref.lb_nom, obj.lb_auteur)
+                .format(obj.id_ref.rang, obj.id_ref_id, obj.id_ref.lb_nom, obj.lb_auteur)
         str_child = constr_hierarchy_tree_branch_child(list_child, nb)
         if str_child == '':
             return '<ul class="tree"><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end
@@ -373,11 +373,11 @@ class TaxonModify(admin.ModelAdmin):
 
     @staticmethod
     def id_ref_id(obj):
-        return obj.id_ref.id
+        return obj.id_ref_id
 
     @staticmethod
     def id_sup_id(obj):
-        return obj.id_sup.id
+        return obj.id_sup_id
 
     @staticmethod
     def old_db_id(obj):
