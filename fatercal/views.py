@@ -4,7 +4,6 @@ from django.contrib.auth.decorators import login_required
 from .models import Taxon, Prelevement
 from .forms import TaxonChangeRef, TaxonChangeSup, SearchAdvanced, ChooseData
 import csv
-import codecs
 import datetime
 from django.http import StreamingHttpResponse
 from .function import *
@@ -257,7 +256,6 @@ def extract_search_taxon_taxref(request):
     # rows that can be handled by a single sheet in most spreadsheet
     # applications.
     try:
-        print(54545)
         nb = request.META.get('HTTP_REFERER').find('?')
         if nb != -1:
             param = request.META.get('HTTP_REFERER')[nb + 1:]
@@ -276,6 +274,11 @@ def extract_search_taxon_taxref(request):
 
 
 def choose_search_data(request):
+    """
+    View for choosing the field to export
+    :param request: an request object (see Django doc)
+    :return: the view for choosing the field to export or a csv
+    """
     template = loader.get_template('fatercal/taxon/export_data_choose.html')
     if request.method == 'POST':
         form = ChooseData(request.POST)

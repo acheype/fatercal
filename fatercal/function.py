@@ -34,56 +34,18 @@ def get_recolteur(recolteur, prelev):
         return 'Récolteur inconnu'
 
 
-def get_info(taxon):
+def get_superior(taxon):
     """
-    This function get all information of superior and miscellaneous info
+    This function get name of superior
     :param taxon: The object Taxon from which we want the information we need
     :return: a list containing a summary of the different info on the taxon
     """
-    sup = taxon.id_sup
-    if sup is None:
-        sup = taxon
-    list_sup = [sup]
-    while sup.id_sup is not None:
-        list_sup.append(sup.id_sup)
-        sup = sup.id_sup
-    if taxon.rang.lb_rang != 'Règne':
-        regne = next((tupp.lb_nom for tupp in list_sup if tupp.rang.lb_rang == 'Règne'), None)
-    else:
-        regne = taxon.lb_nom
-    if taxon.rang.lb_rang != "Phylum/Embranchement":
-        phylum = next((tupp.lb_nom for tupp in list_sup if tupp.rang.lb_rang == "Phylum/Embranchement"), None)
-    else:
-        phylum = taxon.lb_nom
-    if taxon.rang.lb_rang != "Classe":
-        classe = next((tupp.lb_nom for tupp in list_sup if tupp.rang.lb_rang == "Classe"), None)
-    else:
-        classe = taxon.lb_nom
-    if taxon.rang.lb_rang != "Ordre":
-        ordre = next((tupp.lb_nom for tupp in list_sup if tupp.rang.lb_rang == "Ordre"), None)
-    else:
-        ordre = taxon.lb_nom
-    if taxon.rang.lb_rang != "Famille":
-        famille = next((tupp.lb_nom for tupp in list_sup if tupp.rang.lb_rang == "Famille"), None)
-    else:
-        famille = taxon.lb_nom
-    if taxon.habitat is None:
-        habitat = None
-    else:
-        habitat = taxon.habitat.habitat
-    if taxon.nc is None:
-        nc = None
-    else:
-        nc = taxon.nc.status
-    return {
-        'regne': regne,
-        'phylum': phylum,
-        'class': classe,
-        'order': ordre,
-        'famille': famille,
-        'habitat': habitat,
-        'nc': nc,
-    }
+    parent_taxon, nb = taxon.get_hierarchy()
+    dict_parent = {}
+    if parent_taxon is not None:
+        for parent in parent_taxon:
+            dict_parent[parent.rang.rang] = parent.lb_nom
+    return dict_parent
 
 
 def get_msg(tup):
@@ -110,7 +72,7 @@ def get_taxon(taxons, param):
     This function get all Information needed from all taxon
     :param taxons: The model which is connected to the table Taxon in the database
     :param param: the parameter's if the user want to export his research
-    :return: all the taxon with the information we want
+    :return: a list of tuple
     """
     if param is None:
         list_not_proper = taxons.objects.all()
@@ -124,29 +86,44 @@ def get_taxon(taxons, param):
          'CD_REF DIFFERENT', 'CD_SUP DIFFERENT', 'VALIDITY DIFFERENT')
     ]
     for taxon in list_not_proper:
-        msg = get_msg(taxon)
         if 'sp.' not in taxon.lb_nom:
-            if taxon == taxon.id_ref:
-                if taxon.id_sup is None:
-                    id_sup = None
-                else:
-                    id_sup = taxon.id_sup_id
-                dict_taxon = get_info(taxon)
-                tupple = (dict_taxon['regne'], dict_taxon['phylum'], dict_taxon['class'],
-                          dict_taxon['order'], dict_taxon['famille'], None, None, taxon.id, taxon.id_ref.id,
-                          id_sup, taxon.cd_nom, None, taxon.cd_sup, taxon.cd_ref, taxon.rang.rang,
-                          taxon.lb_nom, taxon.lb_auteur, taxon.nom_complet, None, taxon.lb_nom, None, None,
-                          dict_taxon['habitat'], dict_taxon['nc']) + msg
-                list_taxon.append(tupple)
-            else:
-                dict_taxon = get_info(taxon.id_ref)
-                tupple = (dict_taxon['regne'], dict_taxon['phylum'], dict_taxon['class'],
-                          dict_taxon['order'], dict_taxon['famille'], None, None, taxon.id, taxon.id_ref.id,
-                          None, taxon.cd_nom, None, taxon.cd_sup, taxon.cd_ref, taxon.rang.rang,
-                          taxon.lb_nom, taxon.lb_auteur, taxon.nom_complet, None, taxon.id_ref.lb_nom, None, None, None,
-                          None) + msg
-                list_taxon.append(tupple)
+            tupple = construct_cleaned_taxon(taxon)
+            list_taxon.append(tupple)
     return list_taxon
+
+
+def construct_cleaned_taxon(taxon):
+    """
+    Construct a tuple in the form we want for the csv
+    :param taxon: a taxon object
+    :return: a tuple
+    """
+    msg = get_msg(taxon)
+    if taxon.habitat is None:
+        habitat = None
+    else:
+        habitat = taxon.habitat.habitat
+    if taxon.nc is None:
+        statut = None
+    else:
+        statut = taxon.nc.status
+    if taxon == taxon.id_ref:
+        if taxon.id_sup is None:
+            id_sup = None
+        else:
+            id_sup = taxon.id_sup_id
+        dict_parent = get_superior(taxon)
+        tupple = (dict_parent.get('KD'), dict_parent.get('PH'), dict_parent.get('CL'), dict_parent.get('OR'),
+                  dict_parent.get('CL'), dict_parent.get('FM'), None, None, taxon.id, taxon.id_ref.id, id_sup,
+                  taxon.cd_nom, None, taxon.cd_sup, taxon.cd_ref, taxon.rang.rang, taxon.lb_nom, taxon.lb_auteur,
+                  taxon.nom_complet, None, taxon.lb_nom, None, None, habitat, statut) + msg
+    else:
+        dict_parent = get_superior(taxon.id_ref)
+        tupple = (dict_parent.get('KD'), dict_parent.get('PH'), dict_parent.get('CL'), dict_parent.get('OR'),
+                  dict_parent.get('CL'), dict_parent.get('FM'), None, None, taxon.id, taxon.id_ref.id, None,
+                  taxon.cd_nom, None, taxon.cd_sup, taxon.cd_ref, taxon.rang.rang, taxon.lb_nom, taxon.lb_auteur,
+                  taxon.nom_complet, None, taxon.id_ref.lb_nom, None, None, habitat, statut) + msg
+    return tupple
 
 
 def get_taxon_personal(taxons, form):
