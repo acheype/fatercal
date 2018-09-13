@@ -17,13 +17,13 @@ def get_recolteur(recolteur, prelev):
     Get the Harvesteur's for a specific sample
     :param recolteur:
     :param prelev: the object
-    :return: In each case we return a string
+    :return: a string
     """
     list_recolt = recolteur.objects.filter(id_prelevement=prelev.id_prelevement)
     if len(list_recolt) > 0:
         str_recolt = ''
         first = True
-        for recolt in list_recolt:
+        for recolt in list_recolt.iterator():
             if first:
                 first = False
             else:
@@ -85,7 +85,8 @@ def get_taxon(taxons, param):
          'NOM_VALIDE', 'NOM_VERN', 'NOM_VERN_ENG', 'HABITAT', 'NC', 'NON PRESENT DANS TAXREF',
          'CD_REF DIFFERENT', 'CD_SUP DIFFERENT', 'VALIDITY DIFFERENT')
     ]
-    for taxon in list_not_proper:
+    for taxon in list_not_proper.iterator():
+        # Taxref don't want unamed Taxon so we append it to the list
         if 'sp.' not in taxon.lb_nom:
             tupple = construct_cleaned_taxon(taxon)
             list_taxon.append(tupple)
@@ -134,7 +135,6 @@ def get_taxon_personal(taxons, form):
     :return: a list
     """
     list_not_proper = get_specific_search_taxon(taxons, form.cleaned_data)
-    print(list_not_proper)
     if 'q' in form.cleaned_data:
         del form.cleaned_data['q']
     if 'nc__status__exact' in form.cleaned_data:
@@ -161,7 +161,7 @@ def construct_list_taxon(list_not_proper, cleaned_data):
     if tuple == ():
         return list_taxon
     else:
-        for taxon in list_not_proper:
+        for taxon in list_not_proper.iterator():
             cleaned_taxon = construct_cleaned_taxon_search(taxon, cleaned_data)
             list_taxon.append(cleaned_taxon)
     return list_taxon
@@ -224,7 +224,7 @@ def get_sample(samples, param):
     list_sample = [
         ('NOM', 'AUTEUR', 'LOCALITE', 'TOPONYME', 'ALTITUDE', 'COORDONNEE X', 'COORDONNEE Y', 'DATE', 'TYPE SPECIMEN')
     ]
-    for sample in list_not_proper:
+    for sample in list_not_proper.iterator():
         tupple = (sample.id_taxref.lb_nom, sample.id_taxref.lb_auteur, sample.id_localitee, sample.toponyme,
                   sample.altitude, sample.toponymie_x, sample.toponymie_y, sample.date, sample.type_specimen)
         list_sample.append(tupple)
