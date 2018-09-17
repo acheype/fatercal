@@ -239,7 +239,7 @@ def extract_taxon_taxref(request):
     writer = csv.writer(pseudo_buffer, delimiter=';')
     response = StreamingHttpResponse((writer.writerow(row) for row in rows),
                                      content_type="text/csv")
-    response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref.csv' + \
+    response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref' + \
                                       str(datetime.datetime.now()) + '.csv"'
     return response
 
@@ -288,7 +288,7 @@ def choose_search_data(request):
             writer = csv.writer(pseudo_buffer, delimiter=';')
             response = StreamingHttpResponse((writer.writerow(row) for row in rows),
                                              content_type="text/csv")
-            response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref.csv' + \
+            response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref' + \
                                               str(datetime.datetime.now()) + '.csv"'
             return response
         else:

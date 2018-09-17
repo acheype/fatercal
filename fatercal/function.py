@@ -86,7 +86,7 @@ def get_taxon(taxons, param):
          'CD_REF DIFFERENT', 'CD_SUP DIFFERENT', 'VALIDITY DIFFERENT')
     ]
     for taxon in list_not_proper.iterator():
-        # Taxref don't want unamed Taxon so we append it to the list
+        # Taxref don't want unamed Taxon so we don't append it to the list
         if 'sp.' not in taxon.lb_nom:
             tupple = construct_cleaned_taxon(taxon)
             list_taxon.append(tupple)
