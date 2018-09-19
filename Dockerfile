@@ -1,5 +1,5 @@
 FROM ubuntu:17.10
-MAINTAINER adrien.cheype@ird.fr
+LABEL authors="adrien.cheype@ird.fr, laurent.schaeffer313@gmail.com"
 
 # apache-httpd environment variables
 ENV APACHE_UID 33
