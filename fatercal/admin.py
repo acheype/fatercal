@@ -92,6 +92,7 @@ class TaxonModify(admin.ModelAdmin):
         'nom_complet',
         'valid',
         'syn',
+        'vernaculaires',
         'prelevements',
         'hierarchy',
         'referent',
@@ -128,7 +129,7 @@ class TaxonModify(admin.ModelAdmin):
     # The field that will be showing to the user when we edit a synonymous
     fieldsets_edit_syn = (
         ('Taxonomie', {
-            'fields': ('lb_nom', 'lb_auteur', 'nom_complet', 'valid',
+            'fields': ('lb_nom', 'lb_auteur', 'nom_complet', 'valid', 'vernaculaires',
                        'referent', 'id_sup', 'rang', 'hierarchy')
         }),
         ('Statut et Habitat', {
@@ -152,7 +153,7 @@ class TaxonModify(admin.ModelAdmin):
     # The field that will be showing to the user when we edit a valid taxon
     fieldsets_edit_valid = (
         ('Taxonomie', {
-            'fields': ('lb_nom', 'lb_auteur', 'nom_complet', 'valid',
+            'fields': ('lb_nom', 'lb_auteur', 'nom_complet', 'valid', 'vernaculaires',
                        'syn', 'id_sup', 'rang', 'hierarchy')
         }),
         ('Statut et Habitat', {
@@ -248,8 +249,25 @@ class TaxonModify(admin.ModelAdmin):
         else:
             return "<p>Vous ne pouvez pas changez le supérieur ou le référent de ce taxon.</p>"
 
-    change_taxon.allow_tags = True
-    change_taxon.short_description = 'Modification'
+    def vernaculaires(self, obj):
+        """
+        Return the list of vern's name of a taxon, and of its synonymous if its a valid taxon
+        :param obj:
+        :return:
+        """
+        list_vernaculaire = Vernaculaire.objects.filter(id_taxref=obj.id)
+        string = "</br>"
+        if obj.id == obj.id_ref_id:
+            list_syn = Taxon.objects.filter(id_ref=obj.id).filter(~Q(id=obj.id))
+            for syn in list_syn:
+                list_vernaculaire_syn = Prelevement.objects.filter(id_taxref=syn.id)
+                list_vernaculaire = list(chain(list_vernaculaire, list_vernaculaire_syn))
+        if len(list_vernaculaire) == 0:
+            string += "Aucun nom vernaculaire"
+        else:
+            for vern in list_vernaculaire:
+                string += vern.nom_vern + "</br>"
+        return string
 
     def prelevements(self, obj):
         """
@@ -290,9 +308,6 @@ class TaxonModify(admin.ModelAdmin):
             .format(obj.id)
         return board_prelevement
 
-    prelevements.allow_tags = True
-
-    # show if the taxon is valid or not whith is referent or synonymous
     def referent(self, obj):
         """
         Shown if the taxon is valid or not
@@ -301,8 +316,6 @@ class TaxonModify(admin.ModelAdmin):
         """
         return """<a href='/fatercal/taxon/{}/'>{}</a> <br/> <br/> <a href="/fatercal/taxon_to_valid/{}">
                    Cliquer ici pour le passer en valide.</a>""".format(obj.id_ref_id, obj.id_ref.nom_complet, obj.id)
-
-    referent.allow_tags = True
 
     def syn(self, obj):
         """
@@ -319,9 +332,6 @@ class TaxonModify(admin.ModelAdmin):
             string = ""
         return string
 
-    syn.allow_tags = True
-    syn.short_description = 'Autre(s) combinaison(s) et/ou synonyme(s)'
-
     def valid(self, obj):
         """
         Give an icon whether or not it is a valid taxon
@@ -332,9 +342,6 @@ class TaxonModify(admin.ModelAdmin):
             return '<img src="/static/admin/img/icon-yes.gif" alt="True">'
         else:
             return '<img src="/static/admin/img/icon-no.gif" alt="False">'
-
-    valid.allow_tags = True
-    valid.short_description = 'Valide'
 
     # This function will construct the hierarchy tree of the taxon
     def hierarchy(self, obj):
@@ -364,8 +371,6 @@ class TaxonModify(admin.ModelAdmin):
         else:
             str_hierarchy_end = str_child + '</ul></ul></li>'
             return '<ul><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end
-    hierarchy.allow_tags = True
-    hierarchy.short_description = 'Hiérarchie'
 
     @staticmethod
     def id(obj):
@@ -388,6 +393,20 @@ class TaxonModify(admin.ModelAdmin):
         css = {
             'all': ('admin/fatercal/taxon/css.css',)
         }
+
+    # Override attribute in Model Admin
+    change_taxon.allow_tags = True
+    change_taxon.short_description = 'Modification'
+    prelevements.allow_tags = True
+    vernaculaires.allow_tags = True
+    vernaculaires.short_description = 'Vernaculaire'
+    referent.allow_tags = True
+    syn.allow_tags = True
+    syn.short_description = 'Autre(s) combinaison(s) et/ou synonyme(s)'
+    valid.allow_tags = True
+    valid.short_description = 'Valide'
+    hierarchy.allow_tags = True
+    hierarchy.short_description = 'Hiérarchie'
 
 
 class LocaliteeModify(admin.ModelAdmin):
