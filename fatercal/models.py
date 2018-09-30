@@ -115,7 +115,7 @@ class Prelevement(models.Model):
     nb_taxon_present = models.SmallIntegerField(blank=True, null=True)
     collection_museum = models.CharField(max_length=250, blank=True, null=True)
     type_specimen = models.CharField(max_length=250, blank=True, null=True)
-    code_specimen = models.BigIntegerField(blank=True, null=True)
+    code_specimen = models.CharField(max_length=250, blank=True, null=True)
     altitude = models.BigIntegerField(blank=True, null=True)
     mode_de_collecte = models.CharField(max_length=250, blank=True, null=True)
     toponyme = models.CharField(max_length=250, blank=True, null=True)
