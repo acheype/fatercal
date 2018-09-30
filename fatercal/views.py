@@ -385,3 +385,40 @@ class ValidSpecialFilter(admin.SimpleListFilter):
             return queryset.filter(id=F('id_ref'))
         if self.value() == 'synonyme':
             return queryset.exclude(id=F('id_ref'))
+
+
+class AltitudeSpecialFilter(admin.SimpleListFilter):
+    """
+    This filter will always return a subset
+    of the instances in a Model, either filtering by the
+    user choice or by a default value.
+    """
+    # Human-readable title which will be displayed in the
+    # right admin sidebar just above the filter options.
+    title = 'Altitude'
+
+    # Parameter for the filter that will be used in the URL query.
+    parameter_name = 'altitude'
+
+    default_value = None
+
+    def lookups(self, request, model_admin):
+        """
+        Returns a list of tuples. The first element in each
+        tuple is the coded value for the option that will
+        appear in the URL query. The second element is the
+        human-readable name for the option that will appear
+        in the right sidebar.
+        """
+        return ('max', 'Haut'), ('min', 'Bas')
+
+    def queryset(self, request, queryset):
+        """
+        Returns the filtered queryset based on the value
+        provided in the query string and retrievable via
+        `self.value()`.
+        """
+        if self.value() == 'max':
+            return queryset.order_by('altitude_max')
+        if self.value() == 'min':
+            return queryset.order_by('altitude_min')

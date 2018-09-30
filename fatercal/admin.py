@@ -3,7 +3,7 @@ from django.db.models import Q
 from django.db.models.signals import post_save
 from itertools import chain
 
-from fatercal.views import ValidSpecialFilter
+from fatercal.views import ValidSpecialFilter, AltitudeSpecialFilter
 from .models import Taxon, HabitatDetail, Localitee, Prelevement, Recolteur, Hote, PlanteHote, Vernaculaire, Iso6393
 from .function import get_recolteur, constr_hierarchy_tree_branch_parents, constr_hierarchy_tree_branch_child
 
@@ -431,11 +431,14 @@ class PrelevementModify(admin.ModelAdmin):
     list_display = (
         'id_taxref',
         'toponyme',
+        'altitude_min',
+        'altitude_max',
         'date',
     )
 
     list_filter = (
         'toponyme',
+        AltitudeSpecialFilter
     )
 
     inlines = (RecolteurObj,)
@@ -455,7 +458,8 @@ class PrelevementModify(admin.ModelAdmin):
                        'button_modal_date', 'information_complementaire')
         }),
         ('Localisation', {
-            'fields': ('id_localitee', 'toponyme', 'toponymie_x', 'toponymie_y', 'gps', 'altitude', 'old_x', 'old_y')
+            'fields': ('id_localitee', 'toponyme', 'toponymie_x', 'toponymie_y', 'gps',
+                       'altitude_min', 'altitude_max', 'old_x', 'old_y')
         }),
     ]
 
