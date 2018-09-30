@@ -267,6 +267,7 @@ class TaxonModify(admin.ModelAdmin):
         else:
             for vern in list_vernaculaire:
                 string += vern.nom_vern + "</br>"
+        string += "</br><a href='/fatercal/vernaculaire/add?id_taxref={}'>Ajouter un Vernaculaire</a>".format(obj.id)
         return string
 
     def prelevements(self, obj):
