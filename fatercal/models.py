@@ -121,6 +121,7 @@ class Prelevement(models.Model):
     toponyme = models.CharField(max_length=250, blank=True, null=True)
     toponymie_x = models.FloatField(blank=True, null=True)
     toponymie_y = models.FloatField(blank=True, null=True)
+    gps = models.NullBooleanField(verbose_name='GPS')
     old_x = models.CharField(max_length=250, blank=True, null=True, verbose_name='Ancienne position x')
     old_y = models.CharField(max_length=250, blank=True, null=True, verbose_name='Ancienne position y')
     information_complementaire = models.TextField(blank=True, null=True)

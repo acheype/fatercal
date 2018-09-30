@@ -455,7 +455,7 @@ class PrelevementModify(admin.ModelAdmin):
                        'button_modal_date', 'information_complementaire')
         }),
         ('Localisation', {
-            'fields': ('id_localitee', 'toponyme', 'toponymie_x', 'toponymie_y', 'altitude', 'old_x', 'old_y')
+            'fields': ('id_localitee', 'toponyme', 'toponymie_x', 'toponymie_y', 'gps', 'altitude', 'old_x', 'old_y')
         }),
     ]
 
