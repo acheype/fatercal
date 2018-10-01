@@ -3,7 +3,7 @@ services:
     webapp:
         container_name: fatercal-web
         build: ../..
-        image: acheype/fatercal-web
+        image: lschaeffer/fatercal-web
         ports:
             - "80:80"
         links:
