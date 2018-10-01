@@ -280,11 +280,10 @@ class TaxonModify(admin.ModelAdmin):
                                     <td><strong>Localité</strong></td> <td><strong>Type enregistrement</strong></td>
                                     <td><strong>Date</strong></td><td> <strong>Nb taxon present</strong></td>
                                     <td><strong>Collection museum</strong></td> <td><strong>Type specimen </strong></td>
-                                    <td><strong>Code specimen</strong></td> <td><strong>Altitude</strong></td>
+                                    <td><strong>Code specimen</strong></td> <td><strong>Altitude Minimum</strong></td>
+                                    <td><strong>Altitude Maximum</strong></td> 
                                     <td><strong>Mode de collecte</strong></td> <td><strong>Toponyme</strong></td>
                                     <td><strong>Toponymie x</strong></td> <td><strong>Toponymie y</strong></td>
-                                    <td><strong>Ancienne position x</strong></td>
-                                    <td><strong>Ancienne position y</strong></td> <td><strong>Récolteurs</strong></td>
                                     <td><strong>Lien Modif</strong></td>
                                 </tr>"""
         list_prelevement = Prelevement.objects.filter(id_taxref=obj.id)
@@ -297,15 +296,15 @@ class TaxonModify(admin.ModelAdmin):
             board_prelevement += '''<tr>
                                     <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>
                                     <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>
-                                    <td>{}</td> <td>{}</td> <td>{}</td> 
+                                    <td>{}</td> <td>{}</td>
                                     <td><a href='/fatercal/prelevement/{}/'>Modification</a></td>
                                     </tr>
                                 ''' \
                 .format(prelev.id_localitee, prelev.type_enregistrement, prelev.date, prelev.nb_taxon_present,
-                        prelev.collection_museum, prelev.type_specimen, prelev.code_specimen, prelev.altitude,
-                        prelev.mode_de_collecte, prelev.toponyme, prelev.toponymie_x, prelev.toponymie_y,
-                        prelev.old_x, prelev.old_y, get_recolteur(Recolteur, prelev), prelev.id_prelevement)
-        board_prelevement += "</table></br><a href='/fatercal/prelevement/add?id_taxref={}'>Ajouter un Prelevement</a>" \
+                        prelev.collection_museum, prelev.type_specimen, prelev.code_specimen, prelev.altitude_min,
+                        prelev.altitude_max, prelev.mode_de_collecte, prelev.toponyme, prelev.toponymie_x,
+                        prelev.toponymie_y, get_recolteur(Recolteur, prelev), prelev.id_prelevement)
+        board_prelevement += "</table></br><a href='/fatercal/prelevement/add?id_taxref={}'>Ajouter un Prelevement</a>"\
             .format(obj.id)
         return board_prelevement
 
