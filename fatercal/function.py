@@ -222,11 +222,13 @@ def get_sample(samples, param):
     else:
         list_not_proper = get_specific_search_sample(samples, param)
     list_sample = [
-        ('NOM', 'AUTEUR', 'LOCALITE', 'TOPONYME', 'ALTITUDE', 'COORDONNEE X', 'COORDONNEE Y', 'DATE', 'TYPE SPECIMEN')
+        ('NOM', 'AUTEUR', 'LOCALITE', 'TOPONYME', 'ALTITUDE MIN', 'ALTITUDE MAX', 'COORDONNEE X', 'COORDONNEE Y',
+         'DATE', 'TYPE SPECIMEN')
     ]
     for sample in list_not_proper.iterator():
         tupple = (sample.id_taxref.lb_nom, sample.id_taxref.lb_auteur, sample.id_localitee, sample.toponyme,
-                  sample.altitude, sample.toponymie_x, sample.toponymie_y, sample.date, sample.type_specimen)
+                  sample.altitude_min, sample.altitude_max, sample.toponymie_x, sample.toponymie_y, sample.date,
+                  sample.type_specimen)
         list_sample.append(tupple)
     return list_sample
 
