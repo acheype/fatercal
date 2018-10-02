@@ -225,7 +225,6 @@ def get_sample(samples, param):
         ('NOM', 'AUTEUR', 'LOCALISATION', 'TOPONYME', 'ALTITUDE MIN', 'ALTITUDE MAX', 'COORDONNEE X', 'COORDONNEE Y',
          'DATE', 'TYPE SPECIMEN')
     ]
-    print(list_not_proper)
     for sample in list_not_proper.iterator():
         tupple = (sample.id_taxref.lb_nom, sample.id_taxref.lb_auteur, sample.id_loc, sample.toponyme,
                   sample.altitude_min, sample.altitude_max, sample.toponymie_x, sample.toponymie_y, sample.date,
@@ -294,7 +293,8 @@ def get_specific_search_sample(taxons, param):
     list_param_sample = inspect_url_variable(param, params_search_sample)
     if 'q' in list_param_sample:
         if list_param_sample['q'] != '':
-            list_not_proper = list_not_proper.filter(id_taxref__lb_nom__icontains=list_param_sample['q'])
+            list_not_proper = list_not_proper.filter(
+                id_taxref__lb_nom__icontains=list_param_sample['q'].replace("+", " "))
     return list_not_proper
 
 
