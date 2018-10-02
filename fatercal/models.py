@@ -128,7 +128,7 @@ class Prelevement(models.Model):
     information_complementaire = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        if self.date is None:
+        if self.date is None or self.date == "":
             return self.id_taxref.__str__()
         else:
             return "{}, Date prélèvement: {}".format(self.id_taxref.__str__(), self.date)
