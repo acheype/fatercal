@@ -4,7 +4,7 @@ from django.db.models.signals import post_save
 from itertools import chain
 
 from fatercal.views import ValidSpecialFilter, AltitudeSpecialFilter
-from .models import Taxon, HabitatDetail, Localitee, Prelevement, Recolteur, Hote, PlanteHote, Vernaculaire, Iso6393
+from .models import Taxon, HabitatDetail, Localisation, Prelevement, Recolteur, Hote, PlanteHote, Vernaculaire, Iso6393
 from .function import get_recolteur, constr_hierarchy_tree_branch_parents, constr_hierarchy_tree_branch_child
 
 
@@ -277,7 +277,7 @@ class TaxonModify(admin.ModelAdmin):
         :return: an html table
         """
         board_prelevement = """<table><tr>
-                                    <td><strong>Localité</strong></td> <td><strong>Type enregistrement</strong></td>
+                                    <td><strong>Localisation</strong></td> <td><strong>Type enregistrement</strong></td>
                                     <td><strong>Date</strong></td><td> <strong>Nb taxon present</strong></td>
                                     <td><strong>Collection museum</strong></td> <td><strong>Type specimen </strong></td>
                                     <td><strong>Code specimen</strong></td> <td><strong>Altitude Minimum</strong></td>
@@ -300,7 +300,7 @@ class TaxonModify(admin.ModelAdmin):
                                     <td><a href='/fatercal/prelevement/{}/'>Modification</a></td>
                                     </tr>
                                 ''' \
-                .format(prelev.id_localitee, prelev.type_enregistrement, prelev.date, prelev.nb_taxon_present,
+                .format(prelev.id_loc, prelev.type_enregistrement, prelev.date, prelev.nb_taxon_present,
                         prelev.collection_museum, prelev.type_specimen, prelev.code_specimen, prelev.altitude_min,
                         prelev.altitude_max, prelev.mode_de_collecte, prelev.toponyme, prelev.toponymie_x,
                         prelev.toponymie_y, get_recolteur(Recolteur, prelev), prelev.id_prelevement)
@@ -409,14 +409,14 @@ class TaxonModify(admin.ModelAdmin):
     hierarchy.short_description = 'Hiérarchie'
 
 
-class LocaliteeModify(admin.ModelAdmin):
+class LocalisationModify(admin.ModelAdmin):
     list_display = [
-        'localite'
+        'nom'
     ]
 
     fieldsets = [
         ('Informations', {
-            'fields': ('localite', 'latitude', 'longitude')
+            'fields': ('nom', 'id_sup', 'latitude', 'longitude')
         })
     ]
 
@@ -457,7 +457,7 @@ class PrelevementModify(admin.ModelAdmin):
                        'button_modal_date', 'information_complementaire')
         }),
         ('Localisation', {
-            'fields': ('id_localitee', 'toponyme', 'toponymie_x', 'toponymie_y', 'gps',
+            'fields': ('id_loc', 'toponyme', 'toponymie_x', 'toponymie_y', 'gps',
                        'altitude_min', 'altitude_max', 'old_x', 'old_y')
         }),
     ]
@@ -581,7 +581,7 @@ def add_genre_to_name(sender, instance, created, **kwargs):
 
 # the list of model to show to the user for modification
 admin.site.register(Taxon, TaxonModify)
-admin.site.register(Localitee, LocaliteeModify)
+admin.site.register(Localisation, LocalisationModify)
 admin.site.register(Prelevement, PrelevementModify)
 admin.site.register(Hote, HoteModify)
 admin.site.register(PlanteHote, PlanteHoteModify)

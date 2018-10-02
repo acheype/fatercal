@@ -62,18 +62,33 @@ class Iso6393(models.Model):
         return "{}".format(self.iso639_3,)
 
 
-class Localitee(models.Model):
-    id_localitee = models.AutoField(primary_key=True)
-    localite = models.CharField(max_length=250, verbose_name='Localité')
+class TypeLoc(models.Model):
+    id_type = models.AutoField(primary_key=True)
+    type = models.CharField(max_length=10, verbose_name='Type')
+
+    class Meta:
+        managed = True
+        db_table = 'type_loc'
+
+    def __str__(self):
+        return self.type
+
+
+class Localisation(models.Model):
+    id_loc = models.AutoField(primary_key=True)
+    id_sup = models.ForeignKey('Localisation', db_column='id_sup', blank=True,
+                               null=True, verbose_name="Localisation Supérieur")
+    loc_type = models.ForeignKey('TypeLoc', db_column='loc_type', verbose_name="Type")
+    nom = models.CharField(max_length=250, verbose_name='Nom')
     latitude = models.FloatField(blank=True, null=True,)
     longitude = models.FloatField(blank=True, null=True,)
 
     class Meta:
         managed = True
-        db_table = 'localitee'
+        db_table = 'localisation'
 
     def __str__(self):
-        return self.localite
+        return self.nom
 
 
 class PlanteHote(models.Model):
@@ -97,8 +112,8 @@ class PlanteHote(models.Model):
 
 class Prelevement(models.Model):
     id_prelevement = models.AutoField(primary_key=True)
-    id_localitee = models.ForeignKey(Localitee, db_column='id_localitee',
-                                     blank=True, null=True, verbose_name='Localité')
+    id_loc = models.ForeignKey(Localisation, db_column='id_loc',
+                                     blank=True, null=True, verbose_name='Localisation')
     id_taxref = models.ForeignKey('Taxon', db_column='id_taxref', verbose_name='Taxon')
     type_enregistrement = models.ForeignKey('TypeEnregistrement', db_column='type_enregistrement',
                                             blank=True, null=True)
