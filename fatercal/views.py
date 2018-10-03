@@ -350,6 +350,31 @@ def extract_search_sample(request):
         raise Http404("This page doesn't exist.")
 
 
+@login_required()
+def export_for_import_sample(request):
+    """
+    A simple csv file for future export in the db
+    :param request: an request object (see Django doc)
+    :return: a csv file
+    """
+    # Generate a sequence of rows. The range is based on the maximum number of
+    # rows that can be handled by a single sheet in most spreadsheet
+    # applications.
+    nb = request.META.get('HTTP_REFERER').find('?')
+    if nb != -1:
+        param = request.META.get('HTTP_REFERER')[nb + 1:]
+    else:
+        param = None
+    rows = (idx for idx in get_taxons_for_sample(param, Taxon))
+    pseudo_buffer = Echo()
+    writer = csv.writer(pseudo_buffer, delimiter=';')
+    response = StreamingHttpResponse((writer.writerow(row) for row in rows),
+                                     content_type="text/csv")
+    response['Content-Disposition'] = 'attachment; filename="fatercal_export_import' + \
+                                      str(datetime.datetime.now()) + '.csv"'
+    return response
+
+
 class ValidSpecialFilter(admin.SimpleListFilter):
     """
     This filter will always return a subset

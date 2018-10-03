@@ -215,7 +215,7 @@ def get_sample(samples, param):
     This function get all Information needed from all or specific sample
     :param samples: The model which is connected to the table Prelevement in the database
     :param param: the parameter's if the user want to export his research
-    :return: all the taxon with the information we want
+    :return: a list of tuple
     """
     if param is None:
         list_not_proper = samples.objects.all()
@@ -503,3 +503,23 @@ def get_form_advanced_search(search_advanced, request):
         'count_es': -1
     }
     return HttpResponse(template.render(context, request))
+
+
+def get_taxons_for_sample(param, taxons):
+    """
+    Construct a csv file with research result for importing sample for these taxon
+    :return: a list of tuple
+    """
+    if param is None:
+        list_not_proper = taxons.objects.all()
+    else:
+        list_param = inspect_url_variable(param, params_search_taxon)
+        list_not_proper = get_specific_search_taxon(taxons, list_param)
+    list_taxon = [
+        ('ID', 'RANG', 'LB_NOM', 'LB_AUTEUR', 'COLLECTION_MUSEUM', 'CODE_SPECIMEN', 'NB_TAXON_PRESENT',
+         'TYPE_SPECIMEN', 'TYPE_ENREGISTREMENT', 'MODE DE COLLECTE', 'DATE', 'INFORMATION COMPLEMENTAIRE',
+         'LOCALISATION', 'LATITUDE', 'LONGITUDE', 'GPS', 'ALTITUDE_MIN', 'ALTITUDE_MAX', 'RECOLTEURS')
+    ]
+    for taxon in list_not_proper:
+        list_taxon.append((taxon.id, taxon.rang.lb_rang, taxon.lb_auteur))
+    return list_taxon
