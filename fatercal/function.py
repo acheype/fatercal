@@ -3,11 +3,11 @@ from django.template import loader
 from django.db.models import F, Q
 
 """ Variable for the application"""
-regex = r"(^\d{4}$)|"
-r"(^\d{4}-(0[1-9]|1[0-2])$)|"
-r"(^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)|"
-r"(^$)|"
-r"(^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])\/\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)"
+regex = r"(^\d{4}$)|" \
+        r"(^\d{4}-(0[1-9]|1[0-2])$)|" \
+        r"(^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)|" \
+        r"(^$)|" \
+        r"(^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])\/\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)"
 params_search_taxon = ['q', 'nc__status__exact', 'rang__rang__exact', 'valide']
 params_search_sample = ['q', 'toponyme']
 
@@ -64,7 +64,7 @@ def get_msg(tup):
     elif tup.cd_sup is not None:
         if tup.cd_sup != tup.id_sup.cd_nom:
             return None, None, 'x', None
-    return (None, None, None, None)
+    return None, None, None, None
 
 
 def get_taxon(taxons, param):
