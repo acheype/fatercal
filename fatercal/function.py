@@ -3,7 +3,7 @@ from django.template import loader
 from django.db.models import F, Q
 
 """ Variable for the application"""
-regex = r"(^\d{4}$)|" \
+regex_date = r"(^\d{4}$)|" \
         r"(^\d{4}-(0[1-9]|1[0-2])$)|" \
         r"(^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)|" \
         r"(^$)|" \
