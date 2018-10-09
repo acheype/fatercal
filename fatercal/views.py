@@ -1,11 +1,14 @@
+from .models import *
 from django.http import Http404
 from django.contrib import admin
-from django.contrib.auth.decorators import login_required
-from .models import Taxon, Prelevement
-from .forms import TaxonChangeRef, TaxonChangeSup, SearchAdvanced, ChooseData
-import csv
-import datetime
 from django.http import StreamingHttpResponse
+from django.core.exceptions import ValidationError
+from django.contrib.auth.decorators import login_required
+from .forms import TaxonChangeRef, TaxonChangeSup, SearchAdvanced, ChooseData, UploadFileCsv
+
+import csv
+import codecs
+import datetime
 from .function import *
 
 
@@ -373,6 +376,51 @@ def export_for_import_sample(request):
     response['Content-Disposition'] = 'attachment; filename="fatercal_export_import' + \
                                       str(datetime.datetime.now()) + '.csv"'
     return response
+
+
+@login_required()
+def add_sample_by_csv(request):
+    template = loader.get_template('fatercal/prelevement/import_sample.html')
+    message = ''
+    if request.method == 'POST':
+        form = UploadFileCsv(request.POST, request.FILES)
+        try:
+            if form.is_valid():
+                filename = request.FILES['file'].name
+                extension = filename[filename.rfind('.'):]
+                print(extension)
+                valid_extensions = ['.csv', '.txt']
+                if extension in valid_extensions:
+                    csv_file = csv.DictReader(codecs.iterdecode(request.FILES['file'], 'latin-1'), delimiter=';')
+                    list_dict_sample = []
+                    count = 1
+                    for row in csv_file:
+                        result = verify_sample(row, Taxon, TypeEnregistrement, count)
+                        if result['good']:
+                            result = construct_sample(row, Taxon, Prelevement, Localisation,
+                                                      Recolteur, TypeLoc, TypeEnregistrement)
+                            list_dict_sample.append(result)
+                        else:
+                            raise NotGoodSample(result['message'])
+                        count += 1
+                    save_all_sample(list_dict_sample)
+                    message = 'Tous les prélèvements ont tous été importé.'
+                else:
+                    raise ValidationError(u'Unsupported file extension.')
+            else:
+                message = "Veuillez donnez le fichier d'importation."
+        except ValidationError:
+            message = "Le fichier n'est pas dans le bon format."
+        except NotGoodSample as e:
+            message = e.message
+        except KeyError:
+            message = "Le fichier n'a pas les bon nom de colonne ou une colonne est manquante."
+    form = UploadFileCsv()
+    context = {
+        'message': message,
+        'form': form,
+    }
+    return HttpResponse(template.render(context, request))
 
 
 class ValidSpecialFilter(admin.SimpleListFilter):

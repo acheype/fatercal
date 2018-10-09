@@ -1,6 +1,7 @@
 from django.http import HttpResponse
 from django.template import loader
 from django.db.models import F, Q
+import re
 
 """ Variable for the application"""
 regex_date = r"(^\d{4}$)|" \
@@ -516,10 +517,173 @@ def get_taxons_for_sample(param, taxons):
         list_param = inspect_url_variable(param, params_search_taxon)
         list_not_proper = get_specific_search_taxon(taxons, list_param)
     list_taxon = [
-        ('ID', 'RANG', 'LB_NOM', 'LB_AUTEUR', 'COLLECTION_MUSEUM', 'CODE_SPECIMEN', 'NB_TAXON_PRESENT',
-         'TYPE_SPECIMEN', 'TYPE_ENREGISTREMENT', 'MODE DE COLLECTE', 'DATE', 'INFORMATION COMPLEMENTAIRE',
-         'LOCALISATION', 'LATITUDE', 'LONGITUDE', 'GPS', 'ALTITUDE_MIN', 'ALTITUDE_MAX', 'RECOLTEURS')
+        ('id', 'rang', 'nom', 'auteur', 'collection museum', 'code specimen', 'nb taxon present',
+         'type specimen', 'type enregistrement', 'mode de collecte', 'date', 'information complementaire',
+         'localisation', 'latitude', 'longitude', 'GPS', 'altitude min', 'altitude max', 'recolteurs')
     ]
     for taxon in list_not_proper:
         list_taxon.append((taxon.id, taxon.rang.lb_rang, taxon.lb_auteur))
     return list_taxon
+
+
+def verify_sample(line, taxons, type_enregistrement, count):
+    """
+    This function verify if all the parameter's with condition are good
+    :param line: The line in the csv file
+    :param taxon: The model which is connected to the table Taxon in the database
+    :param type_enregistrement: The model which is connected to the table TypeEnregistrement in the database
+    :param count: the line number we check
+    :return: a boolean
+    """
+    result = {
+        'good': False,
+        'message': 'Une erreur à été perçue à la ligne {}.'.format(count)
+    }
+    if taxons.objects.filter(id=line['id']).count() > 0:
+        if type_enregistrement.objects.filter(lb_type=line['type enregistrement']).count() > 0:
+            line['latitude'] = line['latitude'].replace(',', '.')
+            line['longitude'] = line['longitude'].replace(',', '.')
+            if is_variable_good(line):
+                if line['date'] is None or line['date'] == '':
+                    result['good'] = True
+                elif re.match(regex_date, line['date']):
+                    result['good'] = True
+                else:
+                    result['message'] += " La date entrée n'est pas au bon format."
+            else:
+                result['message'] += " L'un des nombres sur cette ligne contient des lettres ou GPS n'est pas au bon " \
+                                     "format."
+        else:
+            result['message'] += " Le type d'enregistrement entré n'existe pas."
+    else:
+        result['message'] += " L'ID du taxon entrée n'existe pas."
+    return result
+
+
+def is_variable_good(line):
+    """
+    Here we verify if the variables have digit in it or for GPS is a good format
+    :param line: The line in the csv file
+    :return: a boolean
+    """
+    try:
+        print(line)
+        if line['latitude'] != '': float(line['latitude'])
+        if line['longitude'] != '': float(line['longitude'])
+        if line['altitude max'] != '': int(line['altitude max'])
+        if line['altitude min'] != '': int(line['altitude min'])
+        if line['nb taxon present'] != '': int(line['nb taxon present'])
+        if line['GPS'] == '' or line['GPS'] == 'true' or line['GPS'] == 'false':
+            return True
+        else:
+            return False
+    except ValueError:
+        return False
+
+
+def construct_sample(line, taxons, prelevements, localisations, recolteurs, type_loc, type_enregistrement):
+    """
+    Construct the sample to import into the database from a line in the csv file
+    :param line: The line in the csv file
+    :param taxons: The model which is connected to the table Taxon in the database
+    :param prelevements: The model which is connected to the table Prelevement in the database
+    :param localisations: The model which is connected to the table Localisation in the database
+    :param recolteurs: The model which is connected to the table Recolteur in the database
+    :param type_loc: The model which is connected to the table TypeLoc in the database
+    :param type_enregistrement: The model which is connected to the table TypeEnregistrement in the database
+    :return: a dictionnary
+    """
+    result = {
+        'sample': None,
+        'loc': None,
+        'list_harvester': []
+    }
+    variable = get_variable_in_good_format(line)
+    if len(localisations.objects.filter(nom=line['localisation'])) > 0:
+        loc = localisations.objects.filter(nom=line['localisation'])[0]
+    else:
+        loc = localisations(loc_type=type_loc.objects.filter(id_type=4).first(), nom=line['localisation'],
+                            latitude=variable['latitude'], longitude=variable['longitude'])
+    result['loc'] = loc
+    sample = prelevements(id_taxref=taxons.objects.filter(id=line['id']).first(),
+                          collection_museum=line['collection museum'],
+                          code_specimen=line['code specimen'], nb_taxon_present=variable['nb_taxon'],
+                          type_specimen=line['type specimen'],
+                          type_enregistrement=type_enregistrement.objects.filter(
+                              lb_type=line['type enregistrement']).first(),
+                          mode_de_collecte=line['mode de collecte'], date=line['date'],
+                          information_complementaire=line['information complementaire'],
+                          toponymie_x=variable['latitude'], toponymie_y=variable['longitude'], gps=variable['GPS'],
+                          altitude_min=variable['altitude_min'], altitude_max=variable['altitude_max'])
+    result['sample'] = sample
+    if line['recolteurs'] != '':
+        recolteur = line['recolteurs']
+        list_harvester = []
+        print(type(recolteur))
+        if recolteur.find(',') == -1:
+            list_harvester.append(recolteurs(lb_auteur=recolteur.strip()))
+        else:
+            while recolteur is not None:
+                print(recolteur)
+                if recolteur.find(',') == -1:
+                    harvester = recolteur
+                    recolteur = None
+                else:
+                    harvester = recolteur[:recolteur.find(',')]
+                    recolteur = recolteur[recolteur.find(',')+1:]
+                list_harvester.append(recolteurs(lb_auteur=harvester.strip()))
+        result['list_harvester'] = list_harvester
+    return result
+
+
+def get_variable_in_good_format(line):
+    """
+    Transform the variable in a usable state
+    :param line: The line in the csv file
+    :return: a dictionnary
+    """
+    if line['latitude'] == '' or line['latitude'] is None: latitude = None
+    else: latitude = float(line['latitude'])
+    if line['longitude'] == '' or line['longitude'] is None: longitude = None
+    else: longitude = float(line['longitude'])
+    if line['altitude max'] == '' or line['altitude max'] is None: altitude_max = None
+    else: altitude_max = int(line['altitude max'])
+    if line['altitude min'] == '' or line['altitude min'] is None: altitude_min = None
+    else: altitude_min = int(line['altitude max'])
+    if line['nb taxon present'] == '' or line['nb taxon present'] is None: nb_taxon = None
+    else: nb_taxon = int(line['nb taxon present'])
+    if line['GPS'] == '' or line['GPS'] is None: gps = None
+    else:
+        if line['GPS'] == 'true':
+            gps = True
+        else:
+            gps = False
+    return {
+        'latitude': latitude,
+        'longitude': longitude,
+        'altitude_max': altitude_max,
+        'altitude_min': altitude_min,
+        'nb_taxon': nb_taxon,
+        'GPS': gps
+    }
+
+
+def save_all_sample(list_dict_sample):
+    """
+    This function simply save all the object from the csv file
+    :param list_dict_sample: a dictionnary which contains all the object to save
+    :return: void
+    """
+    for sample in list_dict_sample:
+        sample['loc'].save()
+        sample['sample'].id_loc = sample['loc']
+        sample['sample'].save()
+        print(sample)
+        for harvest in sample['list_harvester']:
+            harvest.id_prelevement = sample['sample']
+            harvest.save()
+
+
+class NotGoodSample(Exception):
+    def __init__(self, message):
+        self.message = message

@@ -1,0 +1,24 @@
+{% extends 'admin/base_site.html' %}
+
+{% load static %}
+
+{% block branding %}
+    <div class="head">
+        <h1 id="site-name">
+            <a href="/">Fatercal</a>
+        </h1>
+    </div>
+{% endblock %}
+{% block content %}
+<fieldset class="module aligned ">
+    <h1>Importation de données Prélèvements</h1>
+        {% load static %}
+            <p>{{ message }}</p>
+            <form enctype="multipart/form-data" action="" method="post">
+                {% csrf_token %}
+                {{ form }}
+                <input type="submit" />
+            </form>
+        {{ form.media }}
+</fieldset>
+{% endblock %}

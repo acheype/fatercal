@@ -42,3 +42,7 @@ class ChooseData(forms.Form):
     remark = forms.BooleanField(required=False, label='Remarque')
     source = forms.BooleanField(required=False, label='Sources')
     description_reference = forms.BooleanField(required=False, label='Reference description')
+
+
+class UploadFileCsv(forms.Form):
+    file = forms.FileField(required=True, label='Fichier d\'import')
