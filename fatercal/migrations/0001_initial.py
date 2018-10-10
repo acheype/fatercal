@@ -57,15 +57,16 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='Localitee',
+            name='Localisation',
             fields=[
-                ('id_localitee', models.AutoField(primary_key=True, serialize=False)),
-                ('localite', models.CharField(verbose_name='Localité', max_length=250)),
+                ('id_loc', models.AutoField(primary_key=True, serialize=False)),
+                ('nom', models.CharField(verbose_name='Nom', max_length=250)),
                 ('latitude', models.FloatField(blank=True, null=True)),
                 ('longitude', models.FloatField(blank=True, null=True)),
+                ('id_sup', models.ForeignKey(verbose_name='Localisation Supérieur', blank=True, null=True, db_column='id_sup', to='fatercal.Localisation')),
             ],
             options={
-                'db_table': 'localitee',
+                'db_table': 'localisation',
                 'managed': True,
             },
         ),
@@ -86,7 +87,7 @@ class Migration(migrations.Migration):
             name='Prelevement',
             fields=[
                 ('id_prelevement', models.AutoField(primary_key=True, serialize=False)),
-                ('date', models.CharField(max_length=23, blank=True, null=True, validators=[django.core.validators.RegexValidator(regex='(^\\d{4}$)|', message="La date doit être dans l'une des formes suivantes: 1850, 1850-12, 1850-12-01", code='invalid_username')])),
+                ('date', models.CharField(max_length=23, blank=True, null=True, validators=[django.core.validators.RegexValidator(regex='(^\\d{4}$)|(^\\d{4}-(0[1-9]|1[0-2])$)|(^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\\d|2\\d|3[0-1])$)|(^$)|(^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\\d|2\\d|3[0-1])\\/\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\\d|2\\d|3[0-1])$)', message="La date doit être dans l'une des formes suivantes: 1850, 1850-12, 1850-12-01", code='invalid_username')])),
                 ('nb_taxon_present', models.SmallIntegerField(blank=True, null=True)),
                 ('collection_museum', models.CharField(max_length=250, blank=True, null=True)),
                 ('type_specimen', models.CharField(max_length=250, blank=True, null=True)),
@@ -98,10 +99,8 @@ class Migration(migrations.Migration):
                 ('toponymie_x', models.FloatField(blank=True, null=True)),
                 ('toponymie_y', models.FloatField(blank=True, null=True)),
                 ('gps', models.NullBooleanField(verbose_name='GPS')),
-                ('old_x', models.CharField(verbose_name='Ancienne position x', max_length=250, blank=True, null=True)),
-                ('old_y', models.CharField(verbose_name='Ancienne position y', max_length=250, blank=True, null=True)),
                 ('information_complementaire', models.TextField(blank=True, null=True)),
-                ('id_localitee', models.ForeignKey(verbose_name='Localité', blank=True, null=True, db_column='id_localitee', to='fatercal.Localitee')),
+                ('id_loc', models.ForeignKey(verbose_name='Localisation', blank=True, null=True, db_column='id_loc', to='fatercal.Localisation')),
             ],
             options={
                 'db_table': 'prelevement',
@@ -190,6 +189,17 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
+            name='TypeLoc',
+            fields=[
+                ('id_type', models.AutoField(primary_key=True, serialize=False)),
+                ('type', models.CharField(verbose_name='Type', max_length=10)),
+            ],
+            options={
+                'db_table': 'type_loc',
+                'managed': True,
+            },
+        ),
+        migrations.CreateModel(
             name='Vernaculaire',
             fields=[
                 ('id_taxvern', models.AutoField(primary_key=True, serialize=False)),
@@ -242,6 +252,11 @@ class Migration(migrations.Migration):
             model_name='plantehote',
             name='id_taxref',
             field=models.ForeignKey(verbose_name='Taxon', db_column='id_taxref', to='fatercal.Taxon'),
+        ),
+        migrations.AddField(
+            model_name='localisation',
+            name='loc_type',
+            field=models.ForeignKey(verbose_name='Type', db_column='loc_type', to='fatercal.TypeLoc'),
         ),
         migrations.AddField(
             model_name='hote',
