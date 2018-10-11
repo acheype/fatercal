@@ -103,7 +103,7 @@ def change_taxon_sup(request, id_taxon):
     """
 
     taxon_to_change = Taxon.objects.get(id=id_taxon)
-    # The user has finished changing the data  int the form and send it back
+    # The user has finished changing the data in the form and send it back
     if taxon_to_change == taxon_to_change.id_ref:
         if request.method == 'POST':
             form = TaxonChangeSup(request.POST)
@@ -111,15 +111,29 @@ def change_taxon_sup(request, id_taxon):
             if form.is_valid():
                 if taxon_to_change != form.cleaned_data['taxon_superieur']:
                     taxon_to_change.id_sup = form.cleaned_data['taxon_superieur']
-                    taxon_to_change.save()
-                    template = loader.get_template('fatercal/return_change_taxon.html')
-                    context = {
-                        'error': None,
-                        'taxon_to_change': taxon_to_change,
-                        'message': message,
-                        'user': request.user.__str__(),
-                    }
-                    return HttpResponse(template.render(context, request))
+                    try:
+                        taxon_to_change.clean()
+                        error = ''
+                        taxon_to_change.save()
+                        template = loader.get_template('fatercal/return_change_taxon.html')
+                        context = {
+                            'error': error,
+                            'taxon_to_change': taxon_to_change,
+                            'message': message,
+                            'user': request.user.__str__(),
+                        }
+                        return HttpResponse(template.render(context, request))
+                    except ValidationError as e:
+                        error = e.message
+                        form = TaxonChangeSup()
+                        template = loader.get_template('fatercal/change_taxon.html')
+                        context = {
+                            'error': error,
+                            'taxon_to_change': taxon_to_change,
+                            'form': form,
+                            'user': request.user.__str__(),
+                        }
+                        return HttpResponse(template.render(context, request))
                 else:
                     form = TaxonChangeSup()
                     template = loader.get_template('fatercal/change_taxon.html')
@@ -356,7 +370,7 @@ def extract_search_sample(request):
 @login_required()
 def export_for_import_sample(request):
     """
-    A simple csv file for future export in the db
+    A simple csv file for future importation in the db
     :param request: an request object (see Django doc)
     :return: a csv file
     """
@@ -380,6 +394,11 @@ def export_for_import_sample(request):
 
 @login_required()
 def add_sample_by_csv(request):
+    """
+    This page allow the user to import sample via a csv(or txt) file
+    :param request: request: an request object (see Django doc)
+    :return: a view
+    """
     template = loader.get_template('fatercal/prelevement/import_sample.html')
     message = ''
     if request.method == 'POST':

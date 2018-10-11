@@ -6,11 +6,12 @@
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
 from __future__ import unicode_literals
-from .function import regex_date
+from .function import *
 
 from django.db import models
 
 from django.core.validators import RegexValidator
+from django.core.exceptions import ValidationError
 
 
 class DocsUses(models.Model):
@@ -127,7 +128,7 @@ class Prelevement(models.Model):
                                 ),
                             ]
                             )
-    nb_taxon_present = models.SmallIntegerField(blank=True, null=True)
+    nb_taxon_present = models.SmallIntegerField(blank=True, null=True, verbose_name='Nombre Individu')
     collection_museum = models.CharField(max_length=250, blank=True, null=True)
     type_specimen = models.CharField(max_length=250, blank=True, null=True)
     code_specimen = models.CharField(max_length=250, blank=True, null=True)
@@ -195,6 +196,19 @@ class Taxon(models.Model):
     sources = models.TextField(blank=True, null=True)
     id_espece = models.IntegerField(blank=True, null=True)
     reference_description = models.TextField(blank=True, null=True)
+
+    def clean(self):
+        """
+        Verify if the hierarchy is correct
+        :return: void
+        """
+        rank = next((rank for rank in param_hierarchy if self.rang.rang == rank[1]), None)
+        if rank is not None and self.id_sup is not None:
+            rank_sup = next((rank for rank in param_hierarchy if self.id_sup.rang.rang == rank[1]), None)
+            print(rank, rank_sup)
+            if rank_sup is not None:
+                if rank[0] < rank_sup[0]:
+                    raise ValidationError("Le taxon supérieur a un rang inférieur a votre taxon .")
 
     def valide(self):
         """
