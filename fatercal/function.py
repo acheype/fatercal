@@ -5,10 +5,10 @@ import re
 
 """ Variable for the application"""
 regex_date = r"(^\d{4}$)|" \
-        r"(^\d{4}-(0[1-9]|1[0-2])$)|" \
-        r"(^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)|" \
-        r"(^$)|" \
-        r"(^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])\/\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)"
+             r"(^\d{4}-(0[1-9]|1[0-2])$)|" \
+             r"(^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)|" \
+             r"(^$)|" \
+             r"(^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])\/\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)"
 params_search_taxon = ['q', 'nc__status__exact', 'rang__rang__exact', 'valide']
 params_search_sample = ['q', 'toponyme']
 #  TO update when a new rank is inserted in the database
@@ -183,38 +183,60 @@ def construct_cleaned_taxon_search(taxon, cleaned_data):
     :return: a tuple
     """
     cleaned_taxon = ()
-    if cleaned_data['id']: cleaned_taxon += (taxon.id,)
+    if cleaned_data['id']:
+        cleaned_taxon += (taxon.id,)
     if taxon.id == taxon.id_ref_id:
-        if taxon.id_sup is None: cleaned_taxon += (None,)
+        if taxon.id_sup is None:
+            cleaned_taxon += (None,)
         else:
-            if cleaned_data['id_sup']: cleaned_taxon += (taxon.id_sup_id,)
-    else: cleaned_taxon += (None,)
-    if cleaned_data['id_ref']: cleaned_taxon += (taxon.id_ref_id,)
-    if cleaned_data['name']: cleaned_taxon += (taxon.lb_nom,)
-    if cleaned_data['author']: cleaned_taxon += (taxon.lb_auteur,)
-    if cleaned_data['rank']: cleaned_taxon += (taxon.rang.lb_rang,)
+            if cleaned_data['id_sup']:
+                cleaned_taxon += (taxon.id_sup_id,)
+    else:
+        cleaned_taxon += (None,)
+    if cleaned_data['id_ref']:
+        cleaned_taxon += (taxon.id_ref_id,)
+    if cleaned_data['name']:
+        cleaned_taxon += (taxon.lb_nom,)
+    if cleaned_data['author']:
+        cleaned_taxon += (taxon.lb_auteur,)
+    if cleaned_data['rank']:
+        cleaned_taxon += (taxon.rang.lb_rang,)
     if taxon.id == taxon.id_ref_id:
-        if cleaned_data['rank_sup']: cleaned_taxon += (taxon.id_sup,)
-    else: cleaned_taxon += (None,)
+        if cleaned_data['rank_sup']:
+            cleaned_taxon += (taxon.id_sup,)
+    else:
+        cleaned_taxon += (None,)
     if taxon.nc is None:
         cleaned_taxon += (None,)
     else:
-        if cleaned_data['status']: cleaned_taxon += (taxon.nc.lb_status,)
-    if taxon.habitat is None: cleaned_taxon += (None,)
+        if cleaned_data['status']:
+            cleaned_taxon += (taxon.nc.lb_status,)
+    if taxon.habitat is None:
+        cleaned_taxon += (None,)
     else:
-        if cleaned_data['habitat']: cleaned_taxon += (taxon.habitat.lb_habitat,)
-    if cleaned_data['grande_terre']: cleaned_taxon += (taxon.grande_terre,)
-    if cleaned_data['loyalty_island']: cleaned_taxon += (taxon.iles_loyautee,)
-    if cleaned_data['other']: cleaned_taxon += (taxon.autre,)
-    if taxon.remarque is None: cleaned_taxon += (None,)
+        if cleaned_data['habitat']:
+            cleaned_taxon += (taxon.habitat.lb_habitat,)
+    if cleaned_data['grande_terre']:
+        cleaned_taxon += (taxon.grande_terre,)
+    if cleaned_data['loyalty_island']:
+        cleaned_taxon += (taxon.iles_loyautee,)
+    if cleaned_data['other']:
+        cleaned_taxon += (taxon.autre,)
+    if taxon.remarque is None:
+        cleaned_taxon += (None,)
     else:
-        if cleaned_data['remark']: cleaned_taxon += (taxon.remarque.replace('\n', ''),)
-    if taxon.sources is None: cleaned_taxon += (None,)
+        if cleaned_data['remark']:
+            cleaned_taxon += (taxon.remarque.replace('\n', ''),)
+    if taxon.sources is None:
+        cleaned_taxon += (None,)
     else:
-        if cleaned_data['source']: cleaned_taxon += (taxon.sources.replace('\n', ''),)
-    if taxon.reference_description is None: cleaned_taxon += (None,)
+        if cleaned_data['source']:
+            cleaned_taxon += (taxon.sources.replace('\n', ''),)
+    if taxon.reference_description is None:
+        cleaned_taxon += (None,)
     else:
-        if cleaned_data['description_reference']: cleaned_taxon += (taxon.reference_description.replace('\n', ''),)
+        if cleaned_data['description_reference']:
+            cleaned_taxon += (taxon.reference_description.replace('\n', ''),)
     return cleaned_taxon
 
 
@@ -560,11 +582,16 @@ def is_variable_good(line):
     """
     try:
         print(line)
-        if line['latitude'] != '': float(line['latitude'])
-        if line['longitude'] != '': float(line['longitude'])
-        if line['altitude max'] != '': int(line['altitude max'])
-        if line['altitude min'] != '': int(line['altitude min'])
-        if line['nb taxon present'] != '': int(line['nb taxon present'])
+        if line['latitude'] != '':
+            float(line['latitude'])
+        if line['longitude'] != '':
+            float(line['longitude'])
+        if line['altitude max'] != '':
+            int(line['altitude max'])
+        if line['altitude min'] != '':
+            int(line['altitude min'])
+        if line['nb taxon present'] != '':
+            int(line['nb taxon present'])
         if line['GPS'] == '' or line['GPS'] == 'true' or line['GPS'] == 'false':
             return True
         else:
@@ -622,7 +649,7 @@ def construct_sample(line, taxons, prelevements, localisations, recolteurs, type
                     recolteur = None
                 else:
                     harvester = recolteur[:recolteur.find(',')]
-                    recolteur = recolteur[recolteur.find(',')+1:]
+                    recolteur = recolteur[recolteur.find(',') + 1:]
                 list_harvester.append(recolteurs(lb_auteur=harvester.strip()))
         result['list_harvester'] = list_harvester
     return result
@@ -634,17 +661,28 @@ def get_variable_in_good_format(line):
     :param line: The line in the csv file
     :return: a dictionnary
     """
-    if line['latitude'] == '' or line['latitude'] is None: latitude = None
-    else: latitude = float(line['latitude'])
-    if line['longitude'] == '' or line['longitude'] is None: longitude = None
-    else: longitude = float(line['longitude'])
-    if line['altitude max'] == '' or line['altitude max'] is None: altitude_max = None
-    else: altitude_max = int(line['altitude max'])
-    if line['altitude min'] == '' or line['altitude min'] is None: altitude_min = None
-    else: altitude_min = int(line['altitude max'])
-    if line['nb taxon present'] == '' or line['nb taxon present'] is None: nb_taxon = None
-    else: nb_taxon = int(line['nb taxon present'])
-    if line['GPS'] == '' or line['GPS'] is None: gps = None
+    if line['latitude'] == '' or line['latitude'] is None:
+        latitude = None
+    else:
+        latitude = float(line['latitude'])
+    if line['longitude'] == '' or line['longitude'] is None:
+        longitude = None
+    else:
+        longitude = float(line['longitude'])
+    if line['altitude max'] == '' or line['altitude max'] is None:
+        altitude_max = None
+    else:
+        altitude_max = int(line['altitude max'])
+    if line['altitude min'] == '' or line['altitude min'] is None:
+        altitude_min = None
+    else:
+        altitude_min = int(line['altitude max'])
+    if line['nb taxon present'] == '' or line['nb taxon present'] is None:
+        nb_taxon = None
+    else:
+        nb_taxon = int(line['nb taxon present'])
+    if line['GPS'] == '' or line['GPS'] is None:
+        gps = None
     else:
         if line['GPS'] == 'true':
             gps = True

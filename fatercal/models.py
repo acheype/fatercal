@@ -52,7 +52,7 @@ class Hote(models.Model):
         return 'id_hote__lb_nom', 'id_hote__lb_auteur',
 
     def __str__(self):
-        return "{}".format(self.id_hote,)
+        return "{}".format(self.id_hote, )
 
 
 class Iso6393(models.Model):
@@ -66,7 +66,7 @@ class Iso6393(models.Model):
         db_table = 'iso639-3'
 
     def __str__(self):
-        return "{}".format(self.iso639_3,)
+        return "{}".format(self.iso639_3, )
 
 
 class TypeLoc(models.Model):
@@ -87,8 +87,8 @@ class Localisation(models.Model):
                                null=True, verbose_name="Localisation Supérieur")
     loc_type = models.ForeignKey('TypeLoc', db_column='loc_type', verbose_name="Type")
     nom = models.CharField(max_length=250, verbose_name='Nom')
-    latitude = models.FloatField(blank=True, null=True,)
-    longitude = models.FloatField(blank=True, null=True,)
+    latitude = models.FloatField(blank=True, null=True, )
+    longitude = models.FloatField(blank=True, null=True, )
 
     class Meta:
         managed = True
@@ -123,7 +123,7 @@ class PlanteHote(models.Model):
 class Prelevement(models.Model):
     id_prelevement = models.AutoField(primary_key=True)
     id_loc = models.ForeignKey(Localisation, db_column='id_loc',
-                                     blank=True, null=True, verbose_name='Localisation')
+                               blank=True, null=True, verbose_name='Localisation')
     id_taxref = models.ForeignKey('Taxon', db_column='id_taxref', verbose_name='Taxon')
     type_enregistrement = models.ForeignKey('TypeEnregistrement', db_column='type_enregistrement',
                                             blank=True, null=True)
@@ -185,7 +185,6 @@ class TypeEnregistrement(models.Model):
 
 
 class Taxon(models.Model):
-
     id_ref = models.ForeignKey('self', db_column='id_ref', blank=True, null=True,
                                related_name='id_ref+', verbose_name='Référent')
     id_sup = models.ForeignKey('self', db_column='id_sup', blank=True, null=True,
@@ -265,6 +264,7 @@ class Taxon(models.Model):
         return '''<strong>Si vous voulez créer un nouveau taxon
         ne mettez rien dans référent et mettez
         un supérieur à votre nouveau taxon</strong>'''
+
     info.allow_tags = True
 
     @staticmethod
