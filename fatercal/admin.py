@@ -4,19 +4,8 @@ from django.db.models.signals import post_save
 from itertools import chain
 
 from fatercal.views import ValidSpecialFilter, AltitudeSpecialFilter
-from .models import Taxon, HabitatDetail, Localisation, Prelevement, Recolteur, Hote, PlanteHote, Vernaculaire, Iso6393
+from .models import Taxon, Localisation, Prelevement, Recolteur, Hote, PlanteHote, Vernaculaire, Iso6393
 from .function import get_recolteur, constr_hierarchy_tree_branch_parents, constr_hierarchy_tree_branch_child
-
-
-class PlanteHoteObj(admin.StackedInline):
-    """
-        This Class will display the model of the table
-        Hote to display all plant hote affected to the actual taxon selected
-        by the user
-    """
-    model = PlanteHote
-    # How many empty line it will display for creating new object
-    extra = 1
 
 
 # This class serve to modify or add a Parasite for the Model Taxon
@@ -49,18 +38,6 @@ class HoteHoteObj(admin.StackedInline):
     extra = 1
 
 
-# This class serve to modify or add an habitat for the Model Taxon
-class HabitatDetailObj(admin.TabularInline):
-    """
-    This Class will the model of the table
-    HabitatDetail to display all the object affected to the actual taxon selected
-    by the user
-    """
-    model = HabitatDetail
-    # How many empty line it will display for creating new object
-    extra = 1
-
-
 # This class serve to modify or add an Harvester for the Model Prelevement
 class RecolteurObj(admin.TabularInline):
     """
@@ -83,8 +60,6 @@ class TaxonModify(admin.ModelAdmin):
     inlines = (
         HoteHoteObj,
         HoteParasiteObj,
-        PlanteHoteObj,
-        HabitatDetailObj,
     )
 
     # a list of field that can't be modify
@@ -453,11 +428,12 @@ class PrelevementModify(admin.ModelAdmin):
             'fields': ('id_taxref', 'collection_museum', 'code_specimen', 'nb_taxon_present', 'type_specimen',)
         }),
         ('Informations', {
-            'fields': ('type_enregistrement', 'mode_de_collecte', 'date',
+            'fields': ('type_enregistrement', 'plante_hote', 'mode_de_collecte', 'date',
                        'button_modal_date', 'information_complementaire')
         }),
         ('Localisation', {
-            'fields': ('id_loc', 'toponyme', 'toponymie_x', 'toponymie_y', 'gps', 'altitude_min', 'altitude_max')
+            'fields': ('id_loc', 'toponyme', 'toponymie_x', 'toponymie_y', 'habitat',
+                       'gps', 'altitude_min', 'altitude_max')
         }),
     ]
 
@@ -499,19 +475,18 @@ class HoteModify(admin.ModelAdmin):
 class PlanteHoteModify(admin.ModelAdmin):
     """ This class will display the model Taxon for adding or modifying a plante_hote"""
     list_display = [
-        'plante',
-        'id_taxref',
+        'plante'
     ]
 
     search_fields = (
-        'id_taxref__lb_nom',
+        'famille',
         'genre',
         'espece',
     )
 
     fieldsets = [
         ('Informations', {
-            'fields': ('id_taxref', 'famille', 'genre', 'espece')
+            'fields': ('famille', 'genre', 'espece')
         })
     ]
 

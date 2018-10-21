@@ -6,7 +6,7 @@
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
 from __future__ import unicode_literals
-from .function import *
+from .function import regex_date, param_hierarchy
 
 from django.db import models
 
@@ -24,12 +24,18 @@ class DocsUses(models.Model):
 
 
 class HabitatDetail(models.Model):
-    id_taxref = models.ForeignKey('Taxon', db_column='id_taxref')
     nom = models.CharField(max_length=100)
 
     class Meta:
         managed = True
         db_table = 'habitat_detail'
+
+    @staticmethod
+    def autocomplete_search_fields():
+        return 'nom'
+
+    def __str__(self):
+        return "{}".format(self.nom)
 
 
 class Hote(models.Model):
@@ -94,7 +100,6 @@ class Localisation(models.Model):
 
 class PlanteHote(models.Model):
     id_plante_hote = models.AutoField(db_column='id_plante-hote', primary_key=True)  # Field renamed remove characters.
-    id_taxref = models.ForeignKey('Taxon', db_column='id_taxref', verbose_name="Taxon")
     famille = models.CharField(max_length=100, blank=True, null=True, verbose_name="Famille")
     genre = models.CharField(max_length=100, blank=True, null=True, verbose_name="Genre")
     espece = models.CharField(max_length=100, blank=True, null=True, verbose_name="Espèce")
@@ -109,6 +114,10 @@ class PlanteHote(models.Model):
 
     def __str__(self):
         return "{} {}".format(self.genre, self.espece)
+
+    @staticmethod
+    def autocomplete_search_fields():
+        return 'famille', 'genre', 'espece'
 
 
 class Prelevement(models.Model):
@@ -129,12 +138,15 @@ class Prelevement(models.Model):
                             ]
                             )
     nb_taxon_present = models.SmallIntegerField(blank=True, null=True, verbose_name='Nombre Individu')
+    habitat = models.ForeignKey(HabitatDetail, db_column='id_habitat', blank=True, null=True, verbose_name='Habitat')
     collection_museum = models.CharField(max_length=250, blank=True, null=True)
     type_specimen = models.CharField(max_length=250, blank=True, null=True)
     code_specimen = models.CharField(max_length=250, blank=True, null=True)
     altitude_min = models.BigIntegerField(blank=True, null=True, verbose_name='Altitude Minimum')
     altitude_max = models.BigIntegerField(blank=True, null=True, verbose_name='Altitude Maximum')
     mode_de_collecte = models.CharField(max_length=250, blank=True, null=True)
+    plante_hote = models.ForeignKey(PlanteHote, db_column='id_plante_hote',
+                                    blank=True, null=True, verbose_name='Plante Hote')
     toponyme = models.CharField(max_length=250, blank=True, null=True)
     toponymie_x = models.FloatField(blank=True, null=True)
     toponymie_y = models.FloatField(blank=True, null=True)
