@@ -217,7 +217,6 @@ class Taxon(models.Model):
         rank = next((rank for rank in param_hierarchy if self.rang.rang == rank[1]), None)
         if rank is not None and self.id_sup is not None:
             rank_sup = next((rank for rank in param_hierarchy if self.id_sup.rang.rang == rank[1]), None)
-            print(rank, rank_sup)
             if rank_sup is not None:
                 if rank[0] < rank_sup[0]:
                     raise ValidationError("Le taxon supérieur a un rang inférieur a votre taxon .")

@@ -18,26 +18,35 @@
         <span class="icon-arrow-right breadcrumbs-separator"></span> <a href="/fatercal/">Fatercal</a>
         <span class="icon-arrow-right breadcrumbs-separator"></span> Recherche Avancée
     </div><br>
-    <div>
-        <form action="" method="post">
-            {% csrf_token %}
-            {{ form }}
-            <input type="submit" value="Recherche!" />
-        </form><br>
-        <h5>Cette page vous affichera, pour un taxon donné, ses enfants ainsi que leurs enfants sous la forme
-            d'un arbre hiérarchique complet. Si l'option "Par Auteur" est cochée, il vous affichera tous les Taxon genre
-            relié à l'auteur rentré par l'utilisateur
-        </h5>
-    </div><br><br>
+    <fieldset class="module aligned ">
+        <div>
+            <form action="" method="post">
+                {% csrf_token %}
+                {{ form }}
+                <input type="submit" value="Recherche!" />
+            </form><br>
+            {{ form.media }}
+            <p>Cette page vous affichera, pour un taxon donné, ses enfants ainsi que leurs enfants sous la forme
+                d'un arbre hiérarchique complet. Si vous afficher les taxons liées à un auteur particulier
+                ne choissisez pas de taxon
+            </p>
+        </div><br><br>
+    </fieldset>
+    <br>
     {% if count_es != -1 %}
         <fieldset class="module aligned ">
             <div class="form-row field-lb_nom">
-            <p>
-                Nombre d'Espece Trouvée(s) : {{count_es}}
-            </p>
-            <p>
-                {{list_taxon |safe }}
-            </p>
+                {% if taxon != null%}
+                    <p>
+                        Taxon Choisi: <a href='/fatercal/taxon/{{taxon.id}}/'>{{taxon}}</a>
+                    </p>
+                {%endif%}
+                <p>
+                    Nombre d'Espece Trouvée(s) : {{count_es}}
+                </p>
+                <p>
+                    {{list_taxon |safe }}
+                </p>
             </div>
         </fieldset>
     {% endif %}

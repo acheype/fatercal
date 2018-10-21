@@ -18,8 +18,11 @@ class TaxonChangeSup(forms.Form):
 
 
 class SearchAdvanced(forms.Form):
-    par_auteur = forms.BooleanField(required=False)
-    search_term = forms.CharField(required=False, label='Champ de recherche', max_length=40)
+    taxon = AutoCompleteSelectField('valid', required=False, help_text=None)
+    auteur = forms.CharField(required=False, max_length=40)
+
+    class Meta:
+        model = Taxon
 
 
 class ChooseData(forms.Form):

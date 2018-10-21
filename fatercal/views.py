@@ -222,14 +222,14 @@ def advanced_search(request):
     if request.method == 'POST':
         form = SearchAdvanced(request.POST)
         if form.is_valid():
-            auteur = form.cleaned_data['par_auteur']
-            search_term = form.cleaned_data['search_term']
-            form = SearchAdvanced(initial={'search_term': search_term, 'par_auteur': auteur})
-            list_taxon, count_es = constr_hierarchy_tree_adv_search(Taxon, search_term, auteur)
+            taxon = form.cleaned_data['taxon']
+            auteur = form.cleaned_data['auteur']
+            form = SearchAdvanced(initial={'auteur': auteur})
+            list_taxon, count_es = constr_hierarchy_tree_adv_search(Taxon, taxon, auteur)
             context = {
                 'list_taxon': list_taxon,
                 'count_es': count_es,
-                'search_term': search_term,
+                'taxon': taxon,
                 'form': form,
             }
             return HttpResponse(template.render(context, request))
@@ -407,7 +407,6 @@ def add_sample_by_csv(request):
             if form.is_valid():
                 filename = request.FILES['file'].name
                 extension = filename[filename.rfind('.'):]
-                print(extension)
                 valid_extensions = ['.csv', '.txt']
                 if extension in valid_extensions:
                     csv_file = csv.DictReader(codecs.iterdecode(request.FILES['file'], 'latin-1'), delimiter=';')
