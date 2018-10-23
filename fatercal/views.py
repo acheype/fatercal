@@ -355,13 +355,14 @@ def extract_search_sample(request):
             param = request.META.get('HTTP_REFERER')[nb + 1:]
         else:
             param = None
-        rows = (idx for idx in get_sample(Prelevement, param))
-        pseudo_buffer = Echo()
-        writer = csv.writer(pseudo_buffer, delimiter=';')
-        response = StreamingHttpResponse((writer.writerow(row) for row in rows),
-                                         content_type="text/csv")
-        response['Content-Disposition'] = 'attachment; filename="fatercal_search_sample_' +\
+        rows = (idx for idx in get_sample(Prelevement, Recolteur, Taxon, param))
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="fatercal_search_sample_' + \
                                           str(datetime.datetime.now()) + '.csv"'
+        response.write(codecs.BOM_UTF8)
+        writer = csv.writer(response, delimiter=';')
+        for row in rows:
+            writer.writerow(row)
         return response
     except AttributeError:
         raise Http404("This page doesn't exist.")

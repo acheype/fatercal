@@ -240,10 +240,12 @@ def construct_cleaned_taxon_search(taxon, cleaned_data):
     return cleaned_taxon
 
 
-def get_sample(samples, param):
+def get_sample(samples, recolteur, taxons, param):
     """
     This function get all Information needed from all or specific sample
     :param samples: The model which is connected to the table Prelevement in the database
+    :param recolteur: The model which is connected to the table Recolteur in the database
+    :param taxons: The model which is connected to the table Taxon in the database
     :param param: the parameter's if the user want to export his research
     :return: a list of tuple
     """
@@ -252,15 +254,60 @@ def get_sample(samples, param):
     else:
         list_not_proper = get_specific_search_sample(samples, param)
     list_sample = [
-        ('NOM', 'AUTEUR', 'LOCALISATION', 'TOPONYME', 'ALTITUDE MIN', 'ALTITUDE MAX', 'COORDONNEE X', 'COORDONNEE Y',
-         'DATE', 'TYPE SPECIMEN')
+        ('Code identification', 'Ordre', 'Famille', 'Sous-Famille', 'Genre', 'Sous-Genre', 'Espece',
+         'Sous-Espece', 'Auteur(s)/date', 'Date', 'Collecteurs', 'Identificateur', "Date d'identification",
+         'Altitude(m)', 'Pays', 'Region', 'Commune', 'Lieu dit', 'Type de milieu', 'Nombre', 'Sexe', 'Capture/relacher',
+         'Informations complémentaires', 'Photo', 'X WGS 84', 'Y WGS 84', 'X RGNC', 'Y RGNC')
     ]
     for sample in list_not_proper.iterator():
-        tupple = (sample.id_taxref.lb_nom, sample.id_taxref.lb_auteur, sample.id_loc, sample.toponyme,
-                  sample.altitude_min, sample.altitude_max, sample.toponymie_x, sample.toponymie_y, sample.date,
-                  sample.type_specimen)
+        harvesters = get_recolteur(recolteur, sample)
+        dict_loc = get_loc_from_sample(sample)
+        taxon = taxons.objects.get(id=sample.id_taxref_id)
+        if taxon.id != taxon.id_ref_id:
+            dict_hierarchy = get_hierarchy_to_dict(taxon.id_ref)
+        else:
+            dict_hierarchy = get_hierarchy_to_dict(taxon)
+        altitude = format_altitude_sample(sample)
+        tupple = (sample.id_prelevement, dict_hierarchy.get('Ordre'), dict_hierarchy.get('Famille'),
+                  dict_hierarchy.get('Sous-Famille'), dict_hierarchy.get('Genre'), dict_hierarchy.get('Sous-Genre'),
+                  dict_hierarchy.get('Espèce'), dict_hierarchy.get('Sous-Espèce'), sample.id_taxref.lb_auteur,
+                  sample.date, harvesters, None, None, altitude, dict_loc.get('Pays'), dict_loc.get('Region'),
+                  dict_loc.get('Secteur'), dict_loc.get('nom'), sample.habitat, sample.nb_taxon_present,
+                  sample.type_specimen, sample.mode_de_collecte, sample.information_complementaire, None,
+                  sample.toponymie_x, sample.toponymie_y)
         list_sample.append(tupple)
     return list_sample
+
+
+def get_loc_from_sample(sample):
+    """
+    Get the localisation hierarchy in a dict to use it in the database
+    :param sample: an object sample
+    :return: a dictionnary
+    """
+    if sample.id_loc is None:
+        return {}
+    else:
+        loc = sample.id_loc
+        dict_loc = {}
+        while loc is not None:
+            dict_loc[loc.loc_type.type] = loc.nom
+            loc = loc.id_sup
+        return dict_loc
+
+
+def format_altitude_sample(sample):
+    """
+    Return the altitude in a string
+    :param sample: an object sample
+    :return: a string
+    """
+    if sample.altitude_min is None:
+        return sample.altitude_max
+    elif sample.altitude_max is None:
+        return sample.altitude_min
+    else:
+        return sample.altitude_min + '-' + sample.altitude_max
 
 
 def inspect_url_variable(param, params_search):
@@ -531,13 +578,47 @@ def get_taxons_for_sample(param, taxons):
         list_param = inspect_url_variable(param, params_search_taxon)
         list_not_proper = get_specific_search_taxon(taxons, list_param)
     list_taxon = [
-        ('id', 'rang', 'nom', 'auteur', 'collection museum', 'code specimen', 'nb taxon present',
-         'type specimen', 'type enregistrement', 'mode de collecte', 'date', 'information complementaire',
-         'localisation', 'latitude', 'longitude', 'GPS', 'altitude min', 'altitude max', 'recolteurs')
+        ('id_taxon', 'code_identification', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece',
+         'sous-espece', 'auteur(s)/date', 'date', 'collecteurs', 'identificateur', "date d'identification",
+         'altitude(m)', 'pays', 'region', 'commune', 'lieu dit', 'type de milieu', 'nombre', 'sexe', 'capture/relacher'
+         'informations complémentaires', 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc')
     ]
     for taxon in list_not_proper:
-        list_taxon.append((taxon.id, taxon.rang.lb_rang, taxon.lb_auteur))
+        dict_hierarchy = get_hierarchy_to_dict(taxon)
+        list_taxon.append((taxon.id, None, dict_hierarchy.get('Ordre'), dict_hierarchy.get('Famille'),
+                           dict_hierarchy.get('Sous-Famille'), dict_hierarchy.get('Genre'),
+                           dict_hierarchy.get('Sous-Genre'), dict_hierarchy.get('Espèce'),
+                           dict_hierarchy.get('Sous-Espèce'), taxon.lb_auteur))
     return list_taxon
+
+
+def get_hierarchy_to_dict(taxon):
+    """
+    Transform the list hierarchy in a usable dict for export
+    :param taxon: an object taxon
+    :return: a dictionnary
+    """
+    hierarchy, nb = taxon.get_hierarchy()
+    if hierarchy is None:
+        dict_hierarchy = {}
+    else:
+        dict_hierarchy = {}
+        dict_hierarchy['Ordre'] = \
+            next((taxon_p.lb_nom for taxon_p in hierarchy if taxon_p.rang.lb_rang == 'Ordre'), '')
+        dict_hierarchy['Famille'] = \
+            next((taxon_p.lb_nom for taxon_p in hierarchy if taxon_p.rang.lb_rang == 'Famille'), '')
+        dict_hierarchy['Sous-Famille'] = \
+            next((taxon_p.lb_nom for taxon_p in hierarchy if taxon_p.rang.lb_rang == 'Sous-Famille'), '')
+        dict_hierarchy['Genre'] = \
+            next((taxon_p.lb_nom for taxon_p in hierarchy if taxon_p.rang.lb_rang == 'Genre'), '')
+        dict_hierarchy['Sous-Genre'] = \
+            next((taxon_p.lb_nom for taxon_p in hierarchy if taxon_p.rang.lb_rang == 'Sous-Genre'), '')
+        dict_hierarchy['Espèce'] = \
+            next((taxon_p.lb_nom for taxon_p in hierarchy if taxon_p.rang.lb_rang == 'Espèce'), '')
+        dict_hierarchy['Sous-Espèce'] = \
+            next((taxon_p.lb_nom for taxon_p in hierarchy if taxon_p.rang.lb_rang == 'Sous-Espèce'), '')
+        dict_hierarchy[taxon.rang.lb_rang] = taxon.lb_nom
+    return dict_hierarchy
 
 
 def verify_sample(line, taxons, type_enregistrement, count):
@@ -581,7 +662,6 @@ def is_variable_good(line):
     :return: a boolean
     """
     try:
-        print(line)
         if line['latitude'] != '':
             float(line['latitude'])
         if line['longitude'] != '':
@@ -638,12 +718,10 @@ def construct_sample(line, taxons, prelevements, localisations, recolteurs, type
     if line['recolteurs'] != '':
         recolteur = line['recolteurs']
         list_harvester = []
-        print(type(recolteur))
         if recolteur.find(',') == -1:
             list_harvester.append(recolteurs(lb_auteur=recolteur.strip()))
         else:
             while recolteur is not None:
-                print(recolteur)
                 if recolteur.find(',') == -1:
                     harvester = recolteur
                     recolteur = None
@@ -708,7 +786,6 @@ def save_all_sample(list_dict_sample):
         sample['loc'].save()
         sample['sample'].id_loc = sample['loc']
         sample['sample'].save()
-        print(sample)
         for harvest in sample['list_harvester']:
             harvest.id_prelevement = sample['sample']
             harvest.save()

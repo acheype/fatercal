@@ -391,7 +391,7 @@ class LocalisationModify(admin.ModelAdmin):
 
     fieldsets = [
         ('Informations', {
-            'fields': ('nom', 'id_sup', 'latitude', 'longitude')
+            'fields': ('nom', 'id_sup', 'latitude', 'longitude', 'loc_type')
         })
     ]
 
