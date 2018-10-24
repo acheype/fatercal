@@ -583,7 +583,7 @@ def get_taxons_for_sample(param, taxons):
          'altitude(m)', 'pays', 'region', 'commune', 'lieu dit', 'type de milieu', 'nombre', 'sexe', 'capture/relacher'
          'informations complémentaires', 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc')
     ]
-    for taxon in list_not_proper:
+    for taxon in list_not_proper.iterator():
         dict_hierarchy = get_hierarchy_to_dict(taxon)
         list_taxon.append((taxon.id, None, dict_hierarchy.get('Ordre'), dict_hierarchy.get('Famille'),
                            dict_hierarchy.get('Sous-Famille'), dict_hierarchy.get('Genre'),
