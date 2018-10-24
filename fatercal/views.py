@@ -458,7 +458,7 @@ def export_adv_search(request):
         auteur = request.GET.get("auteur")
         rows = (idx for idx in get_taxon_adv_search(Taxon, taxon, auteur))
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="fatercal_search_sample_' + \
+        response['Content-Disposition'] = 'attachment; filename="fatercal_adv_export_for_sample' + \
                                           str(datetime.datetime.now()) + '.csv"'
         response.write(codecs.BOM_UTF8)
         writer = csv.writer(response, delimiter=';')

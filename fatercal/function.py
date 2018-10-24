@@ -792,6 +792,13 @@ def save_all_sample(list_dict_sample):
 
 
 def get_taxon_adv_search(taxons, taxon, auteur):
+    """
+    This function will get the child taxon of a taxon or an taxon's author choose by the user
+    :param taxons: The model which is connected to the table Taxon in the database
+    :param taxon: a taxon object
+    :param auteur: a string
+    :return: a list of tuple
+    """
     list_taxon = [
         ('id_taxon', 'code_identification', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece',
          'sous-espece', 'auteur(s)/date', 'date', 'collecteurs', 'identificateur', "date d'identification",
@@ -824,10 +831,10 @@ def get_taxon_adv_search(taxons, taxon, auteur):
 
 def format_adv_search_child_for_export_sample(list_child_taxon, list_taxon):
     """
-
-    :param list_child_taxon:
-    :param list_taxon:
-    :return:
+    Get the child taxon in a good format for the csv file in a recursive way
+    :param list_child_taxon: a list of taxon
+    :param list_taxon: a list of tuple
+    :return: a list of tuple
     """
     for l_taxon in list_child_taxon:
         dict_hierarchy = get_hierarchy_to_dict(l_taxon[0])
