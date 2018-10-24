@@ -225,9 +225,10 @@ def advanced_search(request):
             taxon = form.cleaned_data['taxon']
             auteur = form.cleaned_data['auteur']
             form = SearchAdvanced(initial={'auteur': auteur})
-            list_taxon, count_es = constr_hierarchy_tree_adv_search(Taxon, taxon, auteur)
+            hierarchy_tree, count_es = constr_hierarchy_tree_adv_search(Taxon, taxon, auteur)
             context = {
-                'list_taxon': list_taxon,
+                'list_taxon': hierarchy_tree,
+                'auteur': auteur,
                 'count_es': count_es,
                 'taxon': taxon,
                 'form': form,
@@ -440,6 +441,32 @@ def add_sample_by_csv(request):
         'form': form,
     }
     return HttpResponse(template.render(context, request))
+
+
+def export_adv_search(request):
+    """
+    A view that streams a large CSV file. In this case the file in format
+    for the organization taxref
+    :param request: request: an request object (see Django doc)
+    :return: a csv file
+    """
+    # Generate a sequence of rows. The range is based on the maximum number of
+    # rows that can be handled by a single sheet in most spreadsheet
+    # applications.
+    try:
+        taxon = request.GET.get("id")
+        auteur = request.GET.get("auteur")
+        rows = (idx for idx in get_taxon_adv_search(Taxon, taxon, auteur))
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="fatercal_search_sample_' + \
+                                          str(datetime.datetime.now()) + '.csv"'
+        response.write(codecs.BOM_UTF8)
+        writer = csv.writer(response, delimiter=';')
+        for row in rows:
+            writer.writerow(row)
+        return response
+    except AttributeError:
+        raise Http404("This page doesn't exist.")
 
 
 class ValidSpecialFilter(admin.SimpleListFilter):

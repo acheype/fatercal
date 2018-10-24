@@ -451,7 +451,7 @@ def constr_hierarchy_tree_adv_search(taxons, taxon, auteur):
     :param taxons: The model which is connected to the table Taxon in the database
     :param taxon: the taxon the user choose
     :param auteur: a string if the user want to search by author or not
-    :return: a string with html tag
+    :return: a string
     """
     if taxon is None:
         if auteur is '':
@@ -789,6 +789,55 @@ def save_all_sample(list_dict_sample):
         for harvest in sample['list_harvester']:
             harvest.id_prelevement = sample['sample']
             harvest.save()
+
+
+def get_taxon_adv_search(taxons, taxon, auteur):
+    list_taxon = [
+        ('id_taxon', 'code_identification', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece',
+         'sous-espece', 'auteur(s)/date', 'date', 'collecteurs', 'identificateur', "date d'identification",
+         'altitude(m)', 'pays', 'region', 'commune', 'lieu dit', 'type de milieu', 'nombre', 'sexe',
+         'capture/relacher'
+         'informations complémentaires', 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc')
+    ]
+    if taxon is not None:
+        taxon = taxons.objects.get(id=taxon)
+        list_child_taxon, count_es = get_child_of_child(taxons, taxon)
+        dict_hierarchy = get_hierarchy_to_dict(taxon)
+        list_taxon.append((taxon.id, None, dict_hierarchy.get('Ordre'), dict_hierarchy.get('Famille'),
+                           dict_hierarchy.get('Sous-Famille'), dict_hierarchy.get('Genre'),
+                           dict_hierarchy.get('Sous-Genre'), dict_hierarchy.get('Espèce'),
+                           dict_hierarchy.get('Sous-Espèce'), taxon.lb_auteur))
+        list_taxon = format_adv_search_child_for_export_sample(list_child_taxon[1], list_taxon)
+    elif auteur is not None:
+        list_child_taxon, count_es = get_search_results_auteur(taxons, auteur)
+        if type(list_taxon) is str:
+            return list_taxon
+        for l_taxon in list_child_taxon:
+            dict_hierarchy = get_hierarchy_to_dict(l_taxon[0])
+            list_taxon.append((l_taxon[0].id, None, dict_hierarchy.get('Ordre'), dict_hierarchy.get('Famille'),
+                               dict_hierarchy.get('Sous-Famille'), dict_hierarchy.get('Genre'),
+                               dict_hierarchy.get('Sous-Genre'), dict_hierarchy.get('Espèce'),
+                               dict_hierarchy.get('Sous-Espèce'), l_taxon[0].lb_auteur))
+            list_taxon = format_adv_search_child_for_export_sample(l_taxon[1], list_taxon)
+    return list_taxon
+
+
+def format_adv_search_child_for_export_sample(list_child_taxon, list_taxon):
+    """
+
+    :param list_child_taxon:
+    :param list_taxon:
+    :return:
+    """
+    for l_taxon in list_child_taxon:
+        dict_hierarchy = get_hierarchy_to_dict(l_taxon[0])
+        list_taxon.append((l_taxon[0].id, None, dict_hierarchy.get('Ordre'), dict_hierarchy.get('Famille'),
+                           dict_hierarchy.get('Sous-Famille'), dict_hierarchy.get('Genre'),
+                           dict_hierarchy.get('Sous-Genre'), dict_hierarchy.get('Espèce'),
+                           dict_hierarchy.get('Sous-Espèce'), l_taxon[0].lb_auteur))
+        if l_taxon[1] is not None:
+            list_taxon = format_adv_search_child_for_export_sample(l_taxon[1], list_taxon)
+    return list_taxon
 
 
 class NotGoodSample(Exception):

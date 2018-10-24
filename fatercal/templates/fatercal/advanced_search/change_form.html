@@ -34,12 +34,28 @@
     </fieldset>
     <br>
     {% if count_es != -1 %}
+        <ul class="object-tools initialized">
+            <li>
+                {% if taxon != null%}
+                    <a href="/fatercal/export_adv_search/?id={{taxon.id}}" class="btn btn-high btn-success">
+                        Export pour import de prélèvements
+                    </a>
+                {% else %}
+                    {% if count_es != 0 %}
+                        <a href="/fatercal/export_adv_search/?auteur={{auteur}}" class="btn btn-high btn-success">
+                            Export pour import de prélèvements
+                        </a>
+                    {% endif %}
+                {% endif %}
+            </li>
+        </ul>
         <fieldset class="module aligned ">
             <div class="form-row field-lb_nom">
                 {% if taxon != null%}
                     <p>
                         Taxon Choisi: <a href='/fatercal/taxon/{{taxon.id}}/'>{{taxon}}</a>
                     </p>
+
                 {%endif%}
                 <p>
                     Nombre d'Espece Trouvée(s) : {{count_es}}
