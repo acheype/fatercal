@@ -1,7 +1,6 @@
 from .models import *
 from django.http import Http404
 from django.contrib import admin
-from django.http import StreamingHttpResponse
 from django.core.exceptions import ValidationError
 from django.contrib.auth.decorators import login_required
 from .forms import TaxonChangeRef, TaxonChangeSup, SearchAdvanced, ChooseData, UploadFileCsv
@@ -10,16 +9,6 @@ import csv
 import codecs
 import datetime
 from .function import *
-
-
-class Echo(object):
-    """ An object that implements just the write method of the file-like
-    interface.
-    """
-
-    def write(self, value):
-        """ Write the value by returning it, instead of storing in a buffer. """
-        return value
 
 
 @login_required()
@@ -246,19 +235,20 @@ def extract_taxon_taxref(request):
     A view that streams a large CSV file. In this case the file in format
     for the organization taxref
     :param request: an request object (see Django doc)
-    :return: a csv file
+    :return: an HttpResponse object (see Django doc)
     """
     # Generate a sequence of rows. The range is based on the maximum number of
     # rows that can be handled by a single sheet in most spreadsheet
     # applications.
     param = None
     rows = (idx for idx in get_taxon(Taxon, param))
-    pseudo_buffer = Echo()
-    writer = csv.writer(pseudo_buffer, delimiter=';')
-    response = StreamingHttpResponse((writer.writerow(row) for row in rows),
-                                     content_type="text/csv")
+    response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref' + \
                                       str(datetime.datetime.now()) + '.csv"'
+    response.write(codecs.BOM_UTF8)
+    writer = csv.writer(response, delimiter=';')
+    for row in rows:
+        writer.writerow(row)
     return response
 
 
@@ -268,7 +258,7 @@ def extract_search_taxon_taxref(request):
     A view that streams a large CSV file. In this case the file in format
     for the organization taxref
     :param request: an request object (see Django doc)
-    :return: a csv file
+    :return: an HttpResponse object (see Django doc)
     """
     # Generate a sequence of rows. The range is based on the maximum number of
     # rows that can be handled by a single sheet in most spreadsheet
@@ -280,12 +270,13 @@ def extract_search_taxon_taxref(request):
         else:
             param = None
         rows = (idx for idx in get_taxon(Taxon, param))
-        pseudo_buffer = Echo()
-        writer = csv.writer(pseudo_buffer, delimiter=';')
-        response = StreamingHttpResponse((writer.writerow(row) for row in rows),
-                                         content_type="text/csv")
+        response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref_search' + \
                                           str(datetime.datetime.now()) + '.csv"'
+        response.write(codecs.BOM_UTF8)
+        writer = csv.writer(response, delimiter=';')
+        for row in rows:
+            writer.writerow(row)
         return response
     except AttributeError:
         raise Http404("This page doesn't exist.")
@@ -295,19 +286,21 @@ def choose_search_data(request):
     """
     View for choosing the field to export
     :param request: an request object (see Django doc)
-    :return: the view for choosing the field to export or a csv
+    :return: an HttpResponse object (see Django doc)
     """
     template = loader.get_template('fatercal/taxon/export_data_choose.html')
     if request.method == 'POST':
         form = ChooseData(request.POST)
         if form.is_valid():
             rows = (idx for idx in get_taxon_personal(Taxon, form))
-            pseudo_buffer = Echo()
-            writer = csv.writer(pseudo_buffer, delimiter=';')
-            response = StreamingHttpResponse((writer.writerow(row) for row in rows),
-                                             content_type="text/csv")
+            response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref' + \
                                               str(datetime.datetime.now()) + '.csv"'
+            response.write(codecs.BOM_UTF8)
+            writer = csv.writer(response, delimiter=';')
+            for row in rows:
+                writer.writerow(row)
+
             return response
         else:
             form = ChooseData()
@@ -345,7 +338,7 @@ def extract_search_sample(request):
     A view that streams a large CSV file. In this case the file in format
     for the organization taxref
     :param request: request: an request object (see Django doc)
-    :return: a csv file
+    :return: an HttpResponse object (see Django doc)
     """
     # Generate a sequence of rows. The range is based on the maximum number of
     # rows that can be handled by a single sheet in most spreadsheet
@@ -374,7 +367,7 @@ def export_for_import_sample(request):
     """
     A simple csv file for future importation in the db
     :param request: an request object (see Django doc)
-    :return: a csv file
+    :return: an HttpResponse object (see Django doc)
     """
     # Generate a sequence of rows. The range is based on the maximum number of
     # rows that can be handled by a single sheet in most spreadsheet
@@ -385,12 +378,13 @@ def export_for_import_sample(request):
     else:
         param = None
     rows = (idx for idx in get_taxons_for_sample(param, Taxon))
-    pseudo_buffer = Echo()
-    writer = csv.writer(pseudo_buffer, delimiter=';')
-    response = StreamingHttpResponse((writer.writerow(row) for row in rows),
-                                     content_type="text/csv")
+    response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="fatercal_export_import' + \
                                       str(datetime.datetime.now()) + '.csv"'
+    response.write(codecs.BOM_UTF8)
+    writer = csv.writer(response, delimiter=';')
+    for row in rows:
+        writer.writerow(row)
     return response
 
 
@@ -399,7 +393,7 @@ def add_sample_by_csv(request):
     """
     This page allow the user to import sample via a csv(or txt) file
     :param request: request: an request object (see Django doc)
-    :return: a view
+    :return: an HttpResponse object (see Django doc)
     """
     template = loader.get_template('fatercal/prelevement/import_sample.html')
     message = ''
@@ -448,7 +442,7 @@ def export_adv_search(request):
     A view that streams a large CSV file. In this case the file in format
     for the organization taxref
     :param request: request: an request object (see Django doc)
-    :return: a csv file
+    :return: an HttpResponse object (see Django doc)
     """
     # Generate a sequence of rows. The range is based on the maximum number of
     # rows that can be handled by a single sheet in most spreadsheet
