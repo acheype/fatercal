@@ -580,7 +580,7 @@ def get_taxons_for_sample(param, taxons):
     list_taxon = [
         ('id_taxon', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece',
          'sous-espece', 'auteur(s)/date', 'date', 'collecteurs', 'identificateur', "date d'identification",
-         'altitude(m)', 'pays', 'region', 'commune', 'lieu dit', 'type de milieu', 'nombre', 'sexe', 'capture/relacher'
+         'altitude(m)', 'pays', 'region', 'commune', 'lieu dit', 'type de milieu', 'nombre', 'sexe', 'capture/relacher',
          'informations complémentaires', 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc')
     ]
     for taxon in list_not_proper.iterator():
@@ -803,8 +803,7 @@ def get_taxon_adv_search(taxons, taxon, auteur):
         ('id_taxon', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece',
          'sous-espece', 'auteur(s)/date', 'date', 'collecteurs', 'identificateur', "date d'identification",
          'altitude(m)', 'pays', 'region', 'commune', 'lieu dit', 'type de milieu', 'nombre', 'sexe',
-         'capture/relacher'
-         'informations complémentaires', 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc')
+         'capture/relacher', 'informations complémentaires', 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc')
     ]
     if taxon is not None:
         taxon = taxons.objects.get(id=taxon)
