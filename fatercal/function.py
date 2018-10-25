@@ -578,14 +578,14 @@ def get_taxons_for_sample(param, taxons):
         list_param = inspect_url_variable(param, params_search_taxon)
         list_not_proper = get_specific_search_taxon(taxons, list_param)
     list_taxon = [
-        ('id_taxon', 'code_identification', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece',
+        ('id_taxon', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece',
          'sous-espece', 'auteur(s)/date', 'date', 'collecteurs', 'identificateur', "date d'identification",
          'altitude(m)', 'pays', 'region', 'commune', 'lieu dit', 'type de milieu', 'nombre', 'sexe', 'capture/relacher'
          'informations complémentaires', 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc')
     ]
     for taxon in list_not_proper.iterator():
         dict_hierarchy = get_hierarchy_to_dict(taxon)
-        list_taxon.append((taxon.id, None, dict_hierarchy.get('Ordre'), dict_hierarchy.get('Famille'),
+        list_taxon.append((taxon.id, dict_hierarchy.get('Ordre'), dict_hierarchy.get('Famille'),
                            dict_hierarchy.get('Sous-Famille'), dict_hierarchy.get('Genre'),
                            dict_hierarchy.get('Sous-Genre'), dict_hierarchy.get('Espèce'),
                            dict_hierarchy.get('Sous-Espèce'), taxon.lb_auteur))
@@ -800,7 +800,7 @@ def get_taxon_adv_search(taxons, taxon, auteur):
     :return: a list of tuple
     """
     list_taxon = [
-        ('id_taxon', 'code_identification', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece',
+        ('id_taxon', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece',
          'sous-espece', 'auteur(s)/date', 'date', 'collecteurs', 'identificateur', "date d'identification",
          'altitude(m)', 'pays', 'region', 'commune', 'lieu dit', 'type de milieu', 'nombre', 'sexe',
          'capture/relacher'
@@ -810,7 +810,7 @@ def get_taxon_adv_search(taxons, taxon, auteur):
         taxon = taxons.objects.get(id=taxon)
         list_child_taxon, count_es = get_child_of_child(taxons, taxon)
         dict_hierarchy = get_hierarchy_to_dict(taxon)
-        list_taxon.append((taxon.id, None, dict_hierarchy.get('Ordre'), dict_hierarchy.get('Famille'),
+        list_taxon.append((taxon.id, dict_hierarchy.get('Ordre'), dict_hierarchy.get('Famille'),
                            dict_hierarchy.get('Sous-Famille'), dict_hierarchy.get('Genre'),
                            dict_hierarchy.get('Sous-Genre'), dict_hierarchy.get('Espèce'),
                            dict_hierarchy.get('Sous-Espèce'), taxon.lb_auteur))
