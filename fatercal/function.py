@@ -581,7 +581,7 @@ def get_taxons_for_sample(param, taxons):
         ('id_taxon', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece',
          'sous-espece', 'auteur(s)/date', 'date', 'collecteurs', 'identificateur', "date d'identification",
          'altitude(m)', 'pays', 'region', 'commune', 'lieu dit', 'type de milieu', 'nombre', 'sexe', 'capture/relacher',
-         'informations complémentaires', 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc')
+         'informations complementaires', 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc')
     ]
     for taxon in list_not_proper.iterator():
         dict_hierarchy = get_hierarchy_to_dict(taxon)
@@ -626,7 +626,6 @@ def verify_sample(line, taxons, type_enregistrement, count):
     This function verify if all the parameter's with condition are good
     :param line: The line in the csv file
     :param taxons: The model which is connected to the table Taxon in the database
-    :param type_enregistrement: The model which is connected to the table TypeEnregistrement in the database
     :param count: the line number we check
     :return: a boolean
     """
@@ -634,22 +633,23 @@ def verify_sample(line, taxons, type_enregistrement, count):
         'good': False,
         'message': 'Une erreur à été perçue à la ligne {}.'.format(count)
     }
-    if taxons.objects.filter(id=line['id']).count() > 0:
-        if type_enregistrement.objects.filter(lb_type=line['type enregistrement']).count() > 0:
-            line['latitude'] = line['latitude'].replace(',', '.')
-            line['longitude'] = line['longitude'].replace(',', '.')
-            if is_variable_good(line):
-                if line['date'] is None or line['date'] == '':
-                    result['good'] = True
-                elif re.match(regex_date, line['date']):
-                    result['good'] = True
+    if taxons.objects.filter(id=line['id_taxon']).count() > 0:
+        if type_enregistrement.objects.filter(lb_type=line['capture/relacher']).count() > 0:
+            if line['x wgs 84'] is not None and line['y wgs 84'] is not None:
+                if is_variable_good(line):
+                    if line['date'] is None or line['date'] == '':
+                        result['good'] = True
+                    elif re.match(regex_date, line['date']):
+                        result['good'] = True
+                    else:
+                        result['message'] += " La date entrée n'est pas au bon format."
                 else:
-                    result['message'] += " La date entrée n'est pas au bon format."
+                    result['message'] += " L'un des nombres sur cette ligne contient des lettres"
             else:
-                result['message'] += " L'un des nombres sur cette ligne contient des lettres ou GPS n'est pas au bon " \
-                                     "format."
+                result['message'] += " Les coordonnées pour ce prélèvements ne sont pas présentes."
         else:
-            result['message'] += " Le type d'enregistrement entré n'existe pas."
+            result['message'] += " Le type d'enregistrement dans le champ capture/relacher n'existe pas" \
+                                 " ou n'est pas renseigné."
     else:
         result['message'] += " L'ID du taxon entrée n'existe pas."
     return result
@@ -662,25 +662,24 @@ def is_variable_good(line):
     :return: a boolean
     """
     try:
-        if line['latitude'] != '':
-            float(line['latitude'])
-        if line['longitude'] != '':
-            float(line['longitude'])
-        if line['altitude max'] != '':
-            int(line['altitude max'])
-        if line['altitude min'] != '':
-            int(line['altitude min'])
-        if line['nb taxon present'] != '':
-            int(line['nb taxon present'])
-        if line['GPS'] == '' or line['GPS'] == 'true' or line['GPS'] == 'false':
-            return True
+        if line['x wgs 84'] != '' and line['x wgs 84'] is not None:
+            float(line['x wgs 84'])
+        if line['y wgs 84'] != '' and line['y wgs 84'] is not None:
+            float(line['y wgs 84'])
+        if "-" in line['altitude(m)']:
+            int(line['altitude(m)'][:line['altitude(m)'].find('-')])
+            int(line['altitude(m)'][line['altitude(m)'].find('-') + 1:])
         else:
-            return False
+            int(line['altitude(m)'])
+        if line['nombre'] != '':
+            int(line['nombre'])
+        return True
     except ValueError:
         return False
 
 
-def construct_sample(line, taxons, prelevements, localisations, recolteurs, type_loc, type_enregistrement):
+def construct_sample(line, taxons, prelevements, localisations, recolteurs, type_loc, type_enregistrements, type_milieu,
+                     count):
     """
     Construct the sample to import into the database from a line in the csv file
     :param line: The line in the csv file
@@ -689,7 +688,8 @@ def construct_sample(line, taxons, prelevements, localisations, recolteurs, type
     :param localisations: The model which is connected to the table Localisation in the database
     :param recolteurs: The model which is connected to the table Recolteur in the database
     :param type_loc: The model which is connected to the table TypeLoc in the database
-    :param type_enregistrement: The model which is connected to the table TypeEnregistrement in the database
+    :param type_enregistrements: The model which is connected to the table TypeLoc in the database
+    :param count: an int which indicate the csv line where at
     :return: a dictionnary
     """
     result = {
@@ -698,25 +698,28 @@ def construct_sample(line, taxons, prelevements, localisations, recolteurs, type
         'list_harvester': []
     }
     variable = get_variable_in_good_format(line)
-    if len(localisations.objects.filter(nom=line['localisation'])) > 0:
-        loc = localisations.objects.filter(nom=line['localisation'])[0]
+    result['loc'] = get_loc_from_line(line, localisations, type_loc)
+    type_enregistrement = type_enregistrements.objects.get(lb_type=line['capture/relacher'])
+    if line['type de milieu'] is not None and line['type de milieu'].strip() != '':
+        habitat = type_milieu.objects.filter(nom=line['type de milieu']).first()
+        if habitat is None:
+            habitat = type_milieu(nom=line['type de milieu'])
     else:
-        loc = localisations(loc_type=type_loc.objects.filter(id_type=4).first(), nom=line['localisation'],
-                            latitude=variable['latitude'], longitude=variable['longitude'])
-    result['loc'] = loc
-    sample = prelevements(id_taxref=taxons.objects.filter(id=line['id']).first(),
-                          collection_museum=line['collection museum'],
-                          code_specimen=line['code specimen'], nb_taxon_present=variable['nb_taxon'],
-                          type_specimen=line['type specimen'],
-                          type_enregistrement=type_enregistrement.objects.filter(
-                              lb_type=line['type enregistrement']).first(),
-                          mode_de_collecte=line['mode de collecte'], date=line['date'],
-                          information_complementaire=line['information complementaire'],
-                          toponymie_x=variable['latitude'], toponymie_y=variable['longitude'], gps=variable['GPS'],
+        habitat = None
+    result['habitat'] = habitat
+    if result['loc'] is None:
+        raise NotGoodSample("Une erreur à la ligne {}. ".format(count) + "La localisation n'est pas indiqué dans "
+                                                                         "l'un des 4 champs.")
+    sample = prelevements(id_taxref=taxons.objects.filter(id=line['id_taxon']).first(),
+                          nb_taxon_present=variable['nombre'],
+                          type_specimen=line['sexe'],
+                          type_enregistrement=type_enregistrement, date=line['date'],
+                          information_complementaire=line['informations complementaires'],
+                          toponymie_x=variable['x wgs 84'], toponymie_y=variable['y wgs 84'], gps=True,
                           altitude_min=variable['altitude_min'], altitude_max=variable['altitude_max'])
     result['sample'] = sample
-    if line['recolteurs'] != '':
-        recolteur = line['recolteurs']
+    if line['collecteurs'] != '':
+        recolteur = line['collecteurs']
         list_harvester = []
         if recolteur.find(',') == -1:
             list_harvester.append(recolteurs(lb_auteur=recolteur.strip()))
@@ -733,46 +736,89 @@ def construct_sample(line, taxons, prelevements, localisations, recolteurs, type
     return result
 
 
+def get_loc_from_line(line, localisations, type_loc):
+    """
+    Return a dictionnary of localisation from the line
+    :param line: The line in the csv file
+    :param localisations: The model which is connected to the table Localisation in the database
+    :param type_loc: The model which is connected to the table TypeLoc in the database
+    :return: a dictionnary or None
+    """
+    if (line['lieu dit'] is None or line['lieu dit']) == '' or (line['commune'] is None or line['commune'] == '') or \
+            ((line['region'] is None or line['region']) == '') or ((line['pays'] is None or line['pays']) == ''):
+        return None
+    else:
+        pays = localisations.objects.filter(
+            nom=line['pays']
+        ).first()
+        if pays is None:
+            pays = localisations(nom=line['pays'], latitude=line['x wgs 84'], longitude=line['y wgs 84'],
+                                 loc_type=type_loc.objects.get(type='Pays'))
+        region = localisations.objects.filter(
+            nom=line['region']
+        ).first()
+        if region is None:
+            region = localisations(nom=line['region'], latitude=line['x wgs 84'], longitude=line['y wgs 84'],
+                                   loc_type=type_loc.objects.get(type='Region'))
+        else:
+            pays = None
+        secteur = localisations.objects.filter(
+            nom=line['commune']
+        ).first()
+        if secteur is None:
+            secteur = localisations(nom=line['commune'], latitude=line['x wgs 84'], longitude=line['y wgs 84'],
+                                    loc_type=type_loc.objects.get(type='Secteur'))
+        else:
+            region = None
+            pays = None
+        nom = localisations.objects.filter(
+            nom=line['lieu dit']
+        ).first()
+        if nom is None:
+            nom = localisations(nom=line['lieu dit'], latitude=line['x wgs 84'], longitude=line['y wgs 84'],
+                                loc_type=type_loc.objects.get(type='nom'))
+        else:
+            secteur = None
+            region = None
+            pays = None
+    return {
+        "pays": pays,
+        "region": region,
+        "secteur": secteur,
+        "nom": nom
+    }
+
+
 def get_variable_in_good_format(line):
     """
     Transform the variable in a usable state
     :param line: The line in the csv file
     :return: a dictionnary
     """
-    if line['latitude'] == '' or line['latitude'] is None:
+    if line['x wgs 84'] == '' or line['x wgs 84'] is None:
         latitude = None
     else:
-        latitude = float(line['latitude'])
-    if line['longitude'] == '' or line['longitude'] is None:
+        latitude = float(line['x wgs 84'])
+    if line['y wgs 84'] == '' or line['y wgs 84'] is None:
         longitude = None
     else:
-        longitude = float(line['longitude'])
-    if line['altitude max'] == '' or line['altitude max'] is None:
+        longitude = float(line['y wgs 84'])
+    if "-" in line['altitude(m)']:
+        altitude_min = line['altitude(m)'][:line['altitude(m)'].find('-')]
+        altitude_max = line['altitude(m)'][line['altitude(m)'].find('-')+1:]
+    else:
+        altitude_min = int(line['altitude(m)'])
         altitude_max = None
-    else:
-        altitude_max = int(line['altitude max'])
-    if line['altitude min'] == '' or line['altitude min'] is None:
-        altitude_min = None
-    else:
-        altitude_min = int(line['altitude max'])
-    if line['nb taxon present'] == '' or line['nb taxon present'] is None:
+    if line['nombre'] == '' or line['nombre'] is None:
         nb_taxon = None
     else:
-        nb_taxon = int(line['nb taxon present'])
-    if line['GPS'] == '' or line['GPS'] is None:
-        gps = None
-    else:
-        if line['GPS'] == 'true':
-            gps = True
-        else:
-            gps = False
+        nb_taxon = int(line['nombre'])
     return {
-        'latitude': latitude,
-        'longitude': longitude,
-        'altitude_max': altitude_max,
+        'x wgs 84': latitude,
+        'y wgs 84': longitude,
         'altitude_min': altitude_min,
-        'nb_taxon': nb_taxon,
-        'GPS': gps
+        'altitude_max': altitude_max,
+        'nombre': nb_taxon,
     }
 
 
@@ -783,8 +829,29 @@ def save_all_sample(list_dict_sample):
     :return: void
     """
     for sample in list_dict_sample:
-        sample['loc'].save()
-        sample['sample'].id_loc = sample['loc']
+        if sample['loc']['pays'] is not None:
+            sample['loc']['pays'].save()
+            sample['loc']['region'].id_sup = sample['loc']['pays']
+            sample['loc']['region'].save()
+            sample['loc']['secteur'].id_sup = sample['loc']['region']
+            sample['loc']['secteur'].save()
+            sample['loc']['nom'].id_sup = sample['loc']['secteur']
+            sample['loc']['nom'].save()
+        elif sample['loc']['region'] is not None:
+            sample['loc']['region'].save()
+            sample['loc']['secteur'].id_sup = sample['loc']['region']
+            sample['loc']['secteur'].save()
+            sample['loc']['nom'].id_sup = sample['loc']['secteur']
+            sample['loc']['nom'].save()
+        elif sample['loc']['secteur'] is not None:
+            sample['loc']['secteur'].save()
+            sample['loc']['nom'].id_sup = sample['loc']['secteur']
+            sample['loc']['nom'].save()
+        else:
+            sample['loc']['nom'].save()
+        sample['sample'].id_loc = sample['loc']['nom']
+        if sample['habitat'] is not None:
+            sample['sample'].habitat = sample['habitat']
         sample['sample'].save()
         for harvest in sample['list_harvester']:
             harvest.id_prelevement = sample['sample']
@@ -803,7 +870,7 @@ def get_taxon_adv_search(taxons, taxon, auteur):
         ('id_taxon', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece',
          'sous-espece', 'auteur(s)/date', 'date', 'collecteurs', 'identificateur', "date d'identification",
          'altitude(m)', 'pays', 'region', 'commune', 'lieu dit', 'type de milieu', 'nombre', 'sexe',
-         'capture/relacher', 'informations complémentaires', 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc')
+         'capture/relacher', 'informations complementaires', 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc')
     ]
     if taxon is not None:
         taxon = taxons.objects.get(id=taxon)

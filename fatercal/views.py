@@ -381,7 +381,6 @@ def export_for_import_sample(request):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="fatercal_export_import' + \
                                       str(datetime.datetime.now()) + '.csv"'
-    response.write(codecs.BOM_UTF8)
     writer = csv.writer(response, delimiter=';')
     for row in rows:
         writer.writerow(row)
@@ -412,7 +411,7 @@ def add_sample_by_csv(request):
                         result = verify_sample(row, Taxon, TypeEnregistrement, count)
                         if result['good']:
                             result = construct_sample(row, Taxon, Prelevement, Localisation,
-                                                      Recolteur, TypeLoc, TypeEnregistrement)
+                                                      Recolteur, TypeLoc, TypeEnregistrement, HabitatDetail, count)
                             list_dict_sample.append(result)
                         else:
                             raise NotGoodSample(result['message'])
@@ -454,7 +453,6 @@ def export_adv_search(request):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="fatercal_adv_export_for_sample' + \
                                           str(datetime.datetime.now()) + '.csv"'
-        response.write(codecs.BOM_UTF8)
         writer = csv.writer(response, delimiter=';')
         for row in rows:
             writer.writerow(row)
