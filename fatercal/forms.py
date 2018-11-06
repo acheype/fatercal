@@ -3,8 +3,8 @@ from .models import Taxon
 from ajax_select.fields import AutoCompleteSelectField
 
 
-class TaxonChangeRef(forms.Form):
-    referent = AutoCompleteSelectField("valid_and_syn", required=True, help_text=None)
+class AllTaxon(forms.Form):
+    taxon = AutoCompleteSelectField("valid_and_syn", required=True, help_text=None)
 
     class Meta:
         model = Taxon

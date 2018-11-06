@@ -13,5 +13,7 @@ urlpatterns = [
     url(r'^export_search_sample/$', views.extract_search_sample, name='Export sample search'),
     url(r'^export_for_import_sample/$', views.export_for_import_sample, name='Export sample search'),
     url(r'^import_sample/$', views.add_sample_by_csv, name='Import sample'),
-    url(r'^export_adv_search/$', views.export_adv_search, name='Export advanced search taxon')
+    url(r'^export_adv_search/$', views.export_adv_search, name='Export advanced search taxon'),
+    url(r'^map_sample/$', views.map_sample, name='Map Sample'),
+    url(r'^update_map/$', views.update_map, name='Update Map')
 ]

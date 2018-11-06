@@ -3,8 +3,9 @@ from django.http import Http404
 from django.contrib import admin
 from django.core.exceptions import ValidationError
 from django.contrib.auth.decorators import login_required
-from .forms import TaxonChangeRef, TaxonChangeSup, SearchAdvanced, ChooseData, UploadFileCsv
+from .forms import AllTaxon, TaxonChangeSup, SearchAdvanced, ChooseData, UploadFileCsv
 
+import json
 import csv
 import codecs
 import datetime
@@ -24,23 +25,22 @@ def change_taxon_ref(request, id_taxon):
     if taxon_to_change == taxon_to_change.id_ref:
         # The user has finished changing the data  int the form and send it back
         if request.method == 'POST':
-            form = TaxonChangeRef(request.POST)
+            form = AllTaxon(request.POST)
             message = "Le Taxon {} a bien été mis à jour".format(taxon_to_change.nom_complet)
             if form.is_valid():
-                # taxon_to_change.update(id_ref=form.cleaned_data['referent'])
                 list_syn = Taxon.objects.filter(id_ref=taxon_to_change)
                 list_child = Taxon.objects.filter(id_sup=taxon_to_change)
                 for child in list_child:
-                    child.id_sup = form.cleaned_data['referent']
+                    child.id_sup = form.cleaned_data['taxon']
                     child.save()
                 for syn in list_syn:
-                    syn.id_ref = form.cleaned_data['referent']
+                    syn.id_ref = form.cleaned_data['taxon']
                     syn.save()
-                if form.cleaned_data['referent'] != form.cleaned_data['referent'].id_ref:
-                    form.cleaned_data['referent'].id_ref = form.cleaned_data['referent']
-                    form.cleaned_data['referent'].id_sup = taxon_to_change.id_sup
-                    form.cleaned_data['referent'].save()
-                taxon_to_change.id_ref = form.cleaned_data['referent']
+                if form.cleaned_data['taxon'] != form.cleaned_data['taxon'].id_ref:
+                    form.cleaned_data['taxon'].id_ref = form.cleaned_data['taxon']
+                    form.cleaned_data['taxon'].id_sup = taxon_to_change.id_sup
+                    form.cleaned_data['taxon'].save()
+                taxon_to_change.id_ref = form.cleaned_data['taxon']
                 taxon_to_change.id_sup = None
                 taxon_to_change.save()
                 template = loader.get_template('fatercal/return_change_taxon.html')
@@ -51,7 +51,7 @@ def change_taxon_ref(request, id_taxon):
                 }
                 return HttpResponse(template.render(context, request))
             else:
-                form = TaxonChangeRef()
+                form = AllTaxon()
                 template = loader.get_template('fatercal/change_taxon.html')
                 context = {
                     'error': 'Veuillez choisir un taxon parmi ceux proposés.',
@@ -61,7 +61,7 @@ def change_taxon_ref(request, id_taxon):
                 }
                 return HttpResponse(template.render(context, request))
         else:
-            form = TaxonChangeRef()
+            form = AllTaxon()
             template = loader.get_template('fatercal/change_taxon.html')
             context = {
                 'error': None,
@@ -436,6 +436,7 @@ def add_sample_by_csv(request):
     return HttpResponse(template.render(context, request))
 
 
+@login_required()
 def export_adv_search(request):
     """
     A view that streams a large CSV file. In this case the file in format
@@ -459,6 +460,94 @@ def export_adv_search(request):
         return response
     except AttributeError:
         raise Http404("This page doesn't exist.")
+
+
+@login_required()
+def update_map(request):
+    """
+
+    :param request:
+    :return:
+    """
+    if request.method == 'GET':
+        if request.GET['taxon'] == '':
+            return HttpResponse(json.dumps(None), content_type="application/json")
+        else:
+            taxon = Taxon.objects.get(id=request.GET['taxon'])
+            if taxon is None:
+                return HttpResponse(json.dumps(None), content_type="application/json")
+            else:
+                list_sample = []
+                queryset = Prelevement.objects.filter(id_taxref=taxon.id)
+                if taxon.id == taxon.id_ref_id:
+                    queryset_synonymous = Taxon.objects.filter(id_ref=taxon.id).filter(~Q(id=taxon.id))
+                    for taxon in queryset_synonymous:
+                        queryset_synonymous_sample = Prelevement.objects.filter(id_taxref=taxon.id)
+                        for sample in queryset_synonymous_sample:
+                            list_sample.append({
+                                'sample_id': sample.id_prelevement,
+                                'latitude': sample.toponymie_y,
+                                'longitude': sample.toponymie_x,
+                            })
+                for sample in queryset:
+                    default_loc = False
+                    if sample.id_loc is None:
+                        loc = None
+                    else:
+                        loc = sample.id_loc.nom
+                        if sample.toponymie_x == sample.id_loc.longitude and \
+                                sample.id_loc.latitude == sample.toponymie_y:
+                            default_loc = True
+                    list_sample.append({
+                        'id': sample.id_prelevement,
+                        'loc': loc,
+                        'default_loc': default_loc,
+                        'latitude': sample.toponymie_y,
+                        'longitude': sample.toponymie_x,
+                    })
+                return HttpResponse(json.dumps(list_sample), content_type="application/json")
+    else:
+        return HttpResponse(json.dumps(None), content_type="application/json")
+
+
+@login_required()
+def map_sample(request):
+    """
+    A view for displaying the map with each taxon with their sample
+    :param request: request: an request object (see Django doc)
+    :return: an HttpResponse object (see Django doc)
+    """
+    # Generate a sequence of rows. The range is based on the maximum number of
+    # rows that can be handled by a single sheet in most spreadsheet
+    # applications.
+    if request.method == 'POST':
+        form = AllTaxon(request.POST)
+        if form.is_valid():
+            taxon = form.cleaned_data['taxon']
+            list_sample = []
+            queryset = Prelevement.objects.filter(id_taxref=taxon.id)
+            for sample in queryset.iterator():
+                list_sample.append({
+                    'id': sample.id_prelevement,
+                    'latitude': sample.toponymie_y,
+                    'longitude': sample.toponymie_x
+                })
+            template = loader.get_template('fatercal/prelevement/map_sample.html')
+            context = {
+                'form': form,
+                'list_sample': list_sample,
+                'error': '',
+            }
+            return HttpResponse(template.render(context, request))
+    else:
+        form = AllTaxon()
+        template = loader.get_template('fatercal/prelevement/map_sample.html')
+        context = {
+            'form': form,
+            'list_sample': [],
+            'error': '',
+        }
+        return HttpResponse(template.render(context, request))
 
 
 class ValidSpecialFilter(admin.SimpleListFilter):
