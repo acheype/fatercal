@@ -15,8 +15,8 @@ params_search_sample = ['q', 'toponyme']
 param_hierarchy = [
     [1, 'Dumm'], [2, 'SPRG'], [3, 'KD'], [4, 'SSRG'], [5, 'IFRG'], [6, 'PH'], [7, 'SBPH'], [8, 'IFPH'], [9, 'SPCL'],
     [10, 'CL'], [11, 'SBCL'], [12, 'IFCL'], [13, 'SPOR'], [14, 'OR'], [15, 'SBOR'], [16, 'IFOR'], [17, 'SPFM'],
-    [18, 'FM'], [19, 'SBFM'], [20, 'TR'], [21, 'SBTR'], [22, 'GN'], [22, 'SSGN'], [22, 'SSGN'], [23, 'SC'], [23, 'SCO'],
-    [23, 'SCO'], [24, 'SSCO'], [25, 'ES'], [26, 'SSES'], [27, 'VAR'], [28, 'SVAR']
+    [18, 'FM'], [19, 'SBFM'], [20, 'TR'], [21, 'SBTR'], [22, 'GN'], [22, 'SSGN'], [23, 'SC'], [23, 'SCO'], [24, 'SSCO'],
+    [25, 'ES'], [26, 'SSES'], [27, 'VAR'], [28, 'SVAR']
 ]
 
 
