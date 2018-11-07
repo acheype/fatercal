@@ -123,13 +123,13 @@ def construct_cleaned_taxon(taxon):
             id_sup = taxon.id_sup_id
         dict_parent = get_superior(taxon)
         tupple = (dict_parent.get('KD'), dict_parent.get('PH'), dict_parent.get('CL'), dict_parent.get('OR'),
-                  dict_parent.get('CL'), dict_parent.get('FM'), None, None, taxon.id, taxon.id_ref_id, id_sup,
+                  dict_parent.get('CL'), dict_parent.get('FM'), None, taxon.id, taxon.id_ref_id, id_sup,
                   taxon.cd_nom, None, taxon.cd_sup, taxon.cd_ref, taxon.rang.rang, taxon.lb_nom, taxon.lb_auteur,
                   taxon.nom_complet, None, taxon.lb_nom, None, None, habitat, statut) + msg
     else:
         dict_parent = get_superior(taxon.id_ref)
         tupple = (dict_parent.get('KD'), dict_parent.get('PH'), dict_parent.get('CL'), dict_parent.get('OR'),
-                  dict_parent.get('CL'), dict_parent.get('FM'), None, None, taxon.id, taxon.id_ref_id, None,
+                  dict_parent.get('CL'), dict_parent.get('FM'), None, taxon.id, taxon.id_ref_id, None,
                   taxon.cd_nom, None, taxon.cd_sup, taxon.cd_ref, taxon.rang.rang, taxon.lb_nom, taxon.lb_auteur,
                   taxon.nom_complet, None, taxon.id_ref.lb_nom, None, None, habitat, statut) + msg
     return tupple
