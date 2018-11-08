@@ -626,6 +626,7 @@ def verify_sample(line, taxons, type_enregistrement, count):
     This function verify if all the parameter's with condition are good
     :param line: The line in the csv file
     :param taxons: The model which is connected to the table Taxon in the database
+    :param type_enregistrement: The model which is connected to the table TypeLoc in the database
     :param count: the line number we check
     :return: a boolean
     """
@@ -689,6 +690,7 @@ def construct_sample(line, taxons, prelevements, localisations, recolteurs, type
     :param recolteurs: The model which is connected to the table Recolteur in the database
     :param type_loc: The model which is connected to the table TypeLoc in the database
     :param type_enregistrements: The model which is connected to the table TypeLoc in the database
+    :param type_milieu: The model which is connected to the table HabitatDetail in the database
     :param count: an int which indicate the csv line where at
     :return: a dictionnary
     """
@@ -911,6 +913,18 @@ def format_adv_search_child_for_export_sample(list_child_taxon, list_taxon):
         if l_taxon[1] is not None:
             list_taxon = format_adv_search_child_for_export_sample(l_taxon[1], list_taxon)
     return list_taxon
+
+
+def is_admin(request):
+    """
+    Verify if the user is in the group Admin
+    :param request: An request object (See Django Doc)
+    :return: a boolean
+    """
+    for group in request.user.groups.all():
+        if group.name == "Admin":
+            return True
+    return False
 
 
 class NotGoodSample(Exception):

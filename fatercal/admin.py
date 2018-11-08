@@ -5,7 +5,7 @@ from itertools import chain
 
 from fatercal.views import ValidSpecialFilter, AltitudeSpecialFilter
 from .models import Taxon, Localisation, Prelevement, Recolteur, Hote, PlanteHote, Vernaculaire, Iso6393
-from .function import get_recolteur, constr_hierarchy_tree_branch_parents, constr_hierarchy_tree_branch_child
+from .function import get_recolteur, constr_hierarchy_tree_branch_parents, constr_hierarchy_tree_branch_child, is_admin
 
 
 # This class serve to modify or add a Parasite for the Model Taxon
@@ -55,6 +55,13 @@ class TaxonModify(admin.ModelAdmin):
     """ This class will display the model Taxon for adding or modifying a taxon"""
 
     change_list_template = 'fatercal/taxon/change_list.html'
+
+    def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
+        if not is_admin(request):
+            self.change_form_template = 'fatercal/change_form.html'
+            return super(TaxonModify, self).render_change_form(request, context, add, change, form_url, obj)
+        else:
+            return super(TaxonModify, self).render_change_form(request, context, add, change, form_url, obj)
 
     # It will use the class define ealier to display all the object affected to the actual taxon
     inlines = (
@@ -437,6 +444,13 @@ class PrelevementModify(admin.ModelAdmin):
         }),
     ]
 
+    def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
+        if not is_admin(request):
+            self.change_form_template = 'fatercal/change_form.html'
+            return super(PrelevementModify, self).render_change_form(request, context, add, change, form_url, obj)
+        else:
+            return super(PrelevementModify, self).render_change_form(request, context, add, change, form_url, obj)
+
     # an url path to change referent or superior
     def button_modal_date(self, obj):
         return '''
@@ -471,6 +485,13 @@ class HoteModify(admin.ModelAdmin):
         })
     ]
 
+    def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
+        if not is_admin(request):
+            self.change_form_template = 'fatercal/change_form.html'
+            return super(HoteModify, self).render_change_form(request, context, add, change, form_url, obj)
+        else:
+            return super(HoteModify, self).render_change_form(request, context, add, change, form_url, obj)
+
 
 class PlanteHoteModify(admin.ModelAdmin):
     """ This class will display the model Taxon for adding or modifying a plante_hote"""
@@ -490,6 +511,13 @@ class PlanteHoteModify(admin.ModelAdmin):
         })
     ]
 
+    def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
+        if not is_admin(request):
+            self.change_form_template = 'fatercal/change_form.html'
+            return super(PlanteHoteModify, self).render_change_form(request, context, add, change, form_url, obj)
+        else:
+            return super(PlanteHoteModify, self).render_change_form(request, context, add, change, form_url, obj)
+
 
 class VernaculaireModify(admin.ModelAdmin):
     """ This class will display the model Taxon for adding or modifying a vernaculaire object"""
@@ -507,6 +535,13 @@ class VernaculaireModify(admin.ModelAdmin):
             'fields': ('id_taxref', 'nom_vern', 'pays', 'iso639_3')
         })
     ]
+
+    def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
+        if not is_admin(request):
+            self.change_form_template = 'fatercal/change_form.html'
+            return super(VernaculaireModify, self).render_change_form(request, context, add, change, form_url, obj)
+        else:
+            return super(VernaculaireModify, self).render_change_form(request, context, add, change, form_url, obj)
 
 
 class Iso6393Modify(admin.ModelAdmin):
@@ -533,6 +568,13 @@ class Iso6393Modify(admin.ModelAdmin):
             'fields': ('iso639_3', 'language_name', 'language_name_fr', 'type')
         })
     ]
+
+    def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
+        if not is_admin(request):
+            self.change_form_template = 'fatercal/change_form.html'
+            return super(Iso6393Modify, self).render_change_form(request, context, add, change, form_url, obj)
+        else:
+            return super(Iso6393Modify, self).render_change_form(request, context, add, change, form_url, obj)
 
 
 def add_genre_to_name(sender, instance, created, **kwargs):
