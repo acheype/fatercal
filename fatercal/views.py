@@ -332,6 +332,10 @@ def update_map(request):
                             })
                 for sample in queryset:
                     default_loc = False
+                    if sample.type_enregistrement is None:
+                        t_enre = None
+                    else:
+                        t_enre = sample.type_enregistrement.lb_type
                     if sample.id_loc is None:
                         loc = None
                     else:
@@ -345,6 +349,9 @@ def update_map(request):
                         'default_loc': default_loc,
                         'latitude': sample.toponymie_y,
                         'longitude': sample.toponymie_x,
+                        't_enre': t_enre,
+                        'date': sample.date,
+                        'collection_museum': sample.collection_museum,
                     })
                 return HttpResponse(json.dumps(list_sample), content_type="application/json")
     else:

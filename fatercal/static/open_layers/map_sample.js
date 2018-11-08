@@ -64,7 +64,10 @@ function addMarker(data) {
        "longitude" : data['longitude'],
        "latitude": data['latitude'],
        "loc": data['loc'],
-       "default_loc": data['default_loc']
+       "default_loc": data['default_loc'],
+       't_enre': data['t_enre'],
+       'date': data['date'],
+       'collection_museum': data['collection_museum']
        }
   );
 
@@ -74,10 +77,7 @@ function addMarker(data) {
 function update_map(){
     var taxon = django.jQuery("#id_taxon").val();
     django.jQuery.get('/fatercal/update_map', {taxon: taxon}, function(data){
-               if (data == null){
-                   console.log('echec');
-               } else {
-                    console.log('good');
+               if (data != null){
                     markerSource.clear();
                     for (var i = 0; i < data.length; i++ ){
                         addMarker(data[i])
@@ -90,18 +90,29 @@ select.on('select', function(e) {
     var divIcon = document.getElementById("selected_icon");
     divIcon.innerHTML = "";
     e.selected.forEach(function(element){
-        console.log(element)
+        var not_attribute = ""
         divIcon.innerHTML = divIcon.innerHTML +
         "<a href=/fatercal/prelevement/" + element.get("id") + "/>Lien vers le prélèvement</a>" +
-        "<br> Lontitude: " + element.get("longitude") +", Latitude: " + element.get("latitude") + "<br>";
+        "<br> <b>Lontitude:</b> " + element.get("longitude") +", <b>Latitude:</b> " + element.get("latitude") + "<br>";
         if (element.get("loc") == null){
-            divIcon.innerHTML = divIcon.innerHTML + "Ce prélèvement n'a pas de localisation associé.";
+            not_attribute = not_attribute + "Aucune localisation associé.";
         } else {
-            divIcon.innerHTML = divIcon.innerHTML + "Localisation: " + element.get("loc");
+            divIcon.innerHTML = divIcon.innerHTML + "<b>Localisation:</b> " + element.get("loc");
             if (element.get("default_loc") == true){
-                divIcon.innerHTML = divIcon.innerHTML + "<br>Ce prélèvement à les coordonnées par défaut de sa localisation";
+                divIcon.innerHTML = divIcon.innerHTML + "<br>Coordonnées par défaut de sa localisation";
             }
         }
+        if (element.get("t_enre") == null){
+            not_attribute = not_attribute + "<br>Aucun type d'enregistrement associé.";
+        } else {
+            divIcon.innerHTML = divIcon.innerHTML + "<br><b>Type Enregistrement:</b> " + element.get("t_enre");
+        }
+        if (element.get("date") == null || element.get("date") == ""){
+            not_attribute = not_attribute + "<br>Aucune date n'est associé à ce prélèvement.";
+        } else {
+            divIcon.innerHTML = divIcon.innerHTML + "<br><b>Date:</b> " + element.get("date");
+        }
+        divIcon.innerHTML = divIcon.innerHTML + not_attribute;
         divIcon.innerHTML = divIcon.innerHTML + "<br><br>";
     })
 });
