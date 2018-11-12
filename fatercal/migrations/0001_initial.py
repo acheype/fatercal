@@ -88,7 +88,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id_prelevement', models.AutoField(primary_key=True, serialize=False)),
                 ('date', models.CharField(max_length=23, blank=True, null=True, validators=[django.core.validators.RegexValidator(regex='(^\\d{4}$)|(^\\d{4}-(0[1-9]|1[0-2])$)|(^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\\d|2\\d|3[0-1])$)|(^$)|(^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\\d|2\\d|3[0-1])\\/\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\\d|2\\d|3[0-1])$)', message="La date doit être dans l'une des formes suivantes: 1850, 1850-12, 1850-12-01", code='invalid_username')])),
-                ('nb_taxon_present', models.SmallIntegerField(blank=True, null=True)),
+                ('nb_taxon_present', models.SmallIntegerField(verbose_name='Nombre Individu', blank=True, null=True)),
                 ('collection_museum', models.CharField(max_length=250, blank=True, null=True)),
                 ('type_specimen', models.CharField(max_length=250, blank=True, null=True)),
                 ('code_specimen', models.CharField(max_length=250, blank=True, null=True)),
@@ -100,6 +100,7 @@ class Migration(migrations.Migration):
                 ('toponymie_y', models.FloatField(blank=True, null=True)),
                 ('gps', models.NullBooleanField(verbose_name='GPS')),
                 ('information_complementaire', models.TextField(blank=True, null=True)),
+                ('habitat', models.ForeignKey(verbose_name='Habitat', blank=True, null=True, db_column='id_habitat', to='fatercal.HabitatDetail')),
                 ('id_loc', models.ForeignKey(verbose_name='Localisation', blank=True, null=True, db_column='id_loc', to='fatercal.Localisation')),
             ],
             options={
@@ -245,13 +246,13 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='prelevement',
-            name='type_enregistrement',
-            field=models.ForeignKey(blank=True, null=True, db_column='type_enregistrement', to='fatercal.TypeEnregistrement'),
+            name='plante_hote',
+            field=models.ForeignKey(verbose_name='Plante Hote', blank=True, null=True, db_column='id_plante_hote', to='fatercal.PlanteHote'),
         ),
         migrations.AddField(
-            model_name='plantehote',
-            name='id_taxref',
-            field=models.ForeignKey(verbose_name='Taxon', db_column='id_taxref', to='fatercal.Taxon'),
+            model_name='prelevement',
+            name='type_enregistrement',
+            field=models.ForeignKey(blank=True, null=True, db_column='type_enregistrement', to='fatercal.TypeEnregistrement'),
         ),
         migrations.AddField(
             model_name='localisation',
@@ -267,11 +268,6 @@ class Migration(migrations.Migration):
             model_name='hote',
             name='id_parasite',
             field=models.ForeignKey(verbose_name='Parasite', db_column='id_parasite', related_name='parasite', to='fatercal.Taxon'),
-        ),
-        migrations.AddField(
-            model_name='habitatdetail',
-            name='id_taxref',
-            field=models.ForeignKey(db_column='id_taxref', to='fatercal.Taxon'),
         ),
         migrations.AlterUniqueTogether(
             name='hote',
