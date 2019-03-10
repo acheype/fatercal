@@ -325,34 +325,36 @@ def update_map(request):
                     for taxon in queryset_synonymous:
                         queryset_synonymous_sample = Prelevement.objects.filter(id_taxref=taxon.id)
                         for sample in queryset_synonymous_sample:
-                            list_sample.append({
-                                'sample_id': sample.id_prelevement,
-                                'latitude': sample.toponymie_y,
-                                'longitude': sample.toponymie_x,
-                            })
+                            if sample.toponymie_x is not None and sample.toponymie_y is not None:
+                                list_sample.append({
+                                    'sample_id': sample.id_prelevement,
+                                    'latitude': sample.toponymie_y,
+                                    'longitude': sample.toponymie_x,
+                                })
                 for sample in queryset:
-                    default_loc = False
-                    if sample.type_enregistrement is None:
-                        t_enre = None
-                    else:
-                        t_enre = sample.type_enregistrement.lb_type
-                    if sample.id_loc is None:
-                        loc = None
-                    else:
-                        loc = sample.id_loc.nom
-                        if sample.toponymie_x == sample.id_loc.longitude and \
-                                sample.id_loc.latitude == sample.toponymie_y:
-                            default_loc = True
-                    list_sample.append({
-                        'id': sample.id_prelevement,
-                        'loc': loc,
-                        'default_loc': default_loc,
-                        'latitude': sample.toponymie_y,
-                        'longitude': sample.toponymie_x,
-                        't_enre': t_enre,
-                        'date': sample.date,
-                        'collection_museum': sample.collection_museum,
-                    })
+                    if sample.toponymie_x is not None and sample.toponymie_y is not None:
+                        default_loc = False
+                        if sample.type_enregistrement is None:
+                            t_enre = None
+                        else:
+                            t_enre = sample.type_enregistrement.lb_type
+                        if sample.id_loc is None:
+                            loc = None
+                        else:
+                            loc = sample.id_loc.nom
+                            if sample.toponymie_x == sample.id_loc.longitude and \
+                                    sample.id_loc.latitude == sample.toponymie_y:
+                                default_loc = True
+                        list_sample.append({
+                            'id': sample.id_prelevement,
+                            'loc': loc,
+                            'default_loc': default_loc,
+                            'latitude': sample.toponymie_y,
+                            'longitude': sample.toponymie_x,
+                            't_enre': t_enre,
+                            'date': sample.date,
+                            'collection_museum': sample.collection_museum,
+                        })
                 return HttpResponse(json.dumps(list_sample), content_type="application/json")
     else:
         return HttpResponse(json.dumps(None), content_type="application/json")

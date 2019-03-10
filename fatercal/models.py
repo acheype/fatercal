@@ -106,14 +106,14 @@ class PlanteHote(models.Model):
 
     def plante(self):
         """Return the name of the taxon"""
-        return "{} {}".format(self.genre, self.espece)
+        return "{} {} {}".format(self.famille, self.genre, self.espece)
 
     class Meta:
         managed = True
         db_table = 'plante_hote'
 
     def __str__(self):
-        return "{} {}".format(self.genre, self.espece)
+        return "{} {} {}".format(self.famille, self.genre, self.espece)
 
     @staticmethod
     def autocomplete_search_fields():
