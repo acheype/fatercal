@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.decorators import login_required
 from .forms import AllTaxon, TaxonChangeSup, SearchAdvanced, ChooseData, UploadFileCsv
 
+
 import json
 import csv
 import codecs
@@ -91,13 +92,13 @@ def change_taxon_ref(request, id_taxon):
     """
     View for changing the superior of a taxon
     :param request: an request object (see Django doc)
-    :param id_taxon: The id specific to one taxon
+    :param id_taxon: The id specific to the taxon we want to change the referent.
     :return: an HttpResponse Object (see Django doc)
     """
 
     taxon_to_change = Taxon.objects.get(id=id_taxon)
     if taxon_to_change == taxon_to_change.id_ref:
-        # The user has finished changing the data  int the form and send it back
+        # The user has finished changing the data in the form and send it back
         if request.method == 'POST':
             form = AllTaxon(request.POST)
             message = "Le Taxon {} a bien été mis à jour".format(taxon_to_change.nom_complet)
@@ -413,7 +414,7 @@ def extract_taxon_taxref(request):
     # applications.
     if is_admin(request):
         param = None
-        rows = (idx for idx in get_taxon(Taxon, param))
+        rows = (idx for idx in get_taxon_from_search(Taxon, param))
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref' + \
                                           str(datetime.datetime.now()) + '.csv"'
@@ -443,7 +444,7 @@ def extract_search_taxon_taxref(request):
                 param = request.META.get('HTTP_REFERER')[nb + 1:]
             else:
                 param = None
-            rows = (idx for idx in get_taxon(Taxon, param))
+            rows = (idx for idx in get_taxon_from_search(Taxon, param))
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref_search' + \
                                               str(datetime.datetime.now()) + '.csv"'
@@ -467,6 +468,7 @@ def choose_search_data(request):
     if request.method == 'POST':
         form = ChooseData(request.POST)
         if form.is_valid():
+            print(form.cleaned_data)
             rows = (idx for idx in get_taxon_personal(Taxon, form))
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref' + \
@@ -644,6 +646,7 @@ def export_adv_search(request):
                 writer.writerow(row)
             return response
         except AttributeError:
+            print(5555)
             raise Http404("This page doesn't exist.")
     else:
         raise Http404("This page doesn't exist.")

@@ -56,28 +56,28 @@ def get_superior(taxon):
     return dict_parent
 
 
-def get_msg(tup):
+def get_msg(taxon):
     """
-    This function aim to get a message for taxref if it's != or not
-    :param tup: the object from the Taxon model
+    This function aim to get a message if it's != or not between Fatercal and Taxref in the csv file
+    :param taxon: the object from the Taxon model
     :return a tupple:
     """
-    if tup.cd_nom is None:
+    if taxon.cd_nom is None:
         return 'x', None, None, None
-    elif (tup.id_ref != tup and tup.cd_ref == tup.id_ref.cd_nom) or \
-            (tup.id_ref == tup and tup.cd_ref != tup.id_ref.cd_nom):
+    elif (taxon.id_ref != taxon and taxon.cd_ref == taxon.id_ref.cd_nom) or \
+            (taxon.id_ref == taxon and taxon.cd_ref != taxon.cd_nom):
         return None, None, None, 'x'
-    elif tup.cd_ref != tup.id_ref.cd_nom:
+    elif taxon.cd_ref != taxon.id_ref.cd_nom:
         return None, 'x', None, None
-    elif tup.cd_sup is not None:
-        if tup.cd_sup != tup.id_sup.cd_nom:
+    elif taxon.cd_sup is not None:
+        if taxon.cd_sup != taxon.id_sup.cd_nom:
             return None, None, 'x', None
     return None, None, None, None
 
 
-def get_taxon(taxons, param):
+def get_taxon_from_search(taxons, param):
     """
-    This function get all Information needed from all taxon
+    This function get all Information needed from all taxon from the user's search parameter
     :param taxons: The model which is connected to the table Taxon in the database
     :param param: the parameter's if the user want to export his research
     :return: a list of tuple
@@ -123,13 +123,13 @@ def construct_cleaned_taxon(taxon):
             id_sup = taxon.id_sup_id
         dict_parent = get_superior(taxon)
         tupple = (dict_parent.get('KD'), dict_parent.get('PH'), dict_parent.get('CL'), dict_parent.get('OR'),
-                  dict_parent.get('CL'), dict_parent.get('FM'), None, taxon.id, taxon.id_ref_id, id_sup,
+                  dict_parent.get('FM'), None, None, taxon.id, taxon.id_ref_id, id_sup,
                   taxon.cd_nom, None, taxon.cd_sup, taxon.cd_ref, taxon.rang.rang, taxon.lb_nom, taxon.lb_auteur,
                   taxon.nom_complet, None, taxon.lb_nom, None, None, habitat, statut) + msg
     else:
         dict_parent = get_superior(taxon.id_ref)
         tupple = (dict_parent.get('KD'), dict_parent.get('PH'), dict_parent.get('CL'), dict_parent.get('OR'),
-                  dict_parent.get('CL'), dict_parent.get('FM'), None, taxon.id, taxon.id_ref_id, None,
+                  dict_parent.get('FM'), None, None, taxon.id, taxon.id_ref_id, None,
                   taxon.cd_nom, None, taxon.cd_sup, taxon.cd_ref, taxon.rang.rang, taxon.lb_nom, taxon.lb_auteur,
                   taxon.nom_complet, None, taxon.id_ref.lb_nom, None, None, habitat, statut) + msg
     return tupple
@@ -166,7 +166,7 @@ def construct_list_taxon(list_not_proper, cleaned_data):
         if cleaned_data[key]:
             cleaned_list += (key,)
     list_taxon = [cleaned_list, ]
-    if tuple == ():
+    if cleaned_list == ():
         return list_taxon
     else:
         for taxon in list_not_proper.iterator():
@@ -178,7 +178,7 @@ def construct_list_taxon(list_not_proper, cleaned_data):
 def construct_cleaned_taxon_search(taxon, cleaned_data):
     """
     Construct a tuple with field requested by the user
-    :param taxon: The model which is connected to the table Taxon in the database
+    :param taxon: An taxon object from the model Taxon
     :param cleaned_data: a dict from the form object (see Django doc)
     :return: a tuple
     """
@@ -307,7 +307,7 @@ def format_altitude_sample(sample):
     elif sample.altitude_max is None:
         return sample.altitude_min
     else:
-        return sample.altitude_min + '-' + sample.altitude_max
+        return "{}-{}".format(sample.altitude_min, sample.altitude_max)
 
 
 def inspect_url_variable(param, params_search):
@@ -359,14 +359,14 @@ def get_specific_search_taxon(taxons, list_param):
     return list_not_proper
 
 
-def get_specific_search_sample(taxons, param):
+def get_specific_search_sample(samples, param):
     """
     Filter from the user's parameter's
-    :param taxons: The model which is connected to the table Taxon in the database
+    :param samples: The model which is connected to the table Prelevement in the database
     :param param: the user's parameter if the user want to export his research
     :return: a list filtered
     """
-    list_not_proper = taxons.objects.all()
+    list_not_proper = samples.objects.all()
     list_param_sample = inspect_url_variable(param, params_search_sample)
     if 'q' in list_param_sample:
         if list_param_sample['q'] != '':
@@ -399,7 +399,7 @@ def get_taxon_child(taxon, child, count_es):
         return None, count_es
 
 
-def get_search_results_auteur(taxons, search_term):
+def get_search_results_auteur_by_genus(taxons, search_term):
     """
     The goal of this function is to retun a list of genus related by a author
     :param taxons: The model which is connected to the table Taxon in the database
@@ -458,7 +458,7 @@ def constr_hierarchy_tree_adv_search(taxons, taxon, auteur):
             html_hierarchy = 'Veuillez remplir le champ de recherche !'
             count_es = 0
         else:
-            list_taxon, count_es = get_search_results_auteur(taxons, auteur)
+            list_taxon, count_es = get_search_results_auteur_by_genus(taxons, auteur)
             if type(list_taxon) is str:
                 return list_taxon, 0
             html_hierarchy = ''
@@ -467,9 +467,9 @@ def constr_hierarchy_tree_adv_search(taxons, taxon, auteur):
                 list_hierarchy, count = l_taxon[0].get_hierarchy()
                 html_hierarchy_begin, html_hierarchy_end = constr_hierarchy_tree_branch_parents(list_hierarchy)
                 html_hierarchy_child = ''
-                html_hierarchy_child = contr_hierarchy_tree_branch_adv_search_child(l_taxon[1],
+                html_hierarchy_child = constr_hierarchy_tree_branch_adv_search_child(l_taxon[1],
                                                                                     count + 1, html_hierarchy_child)
-                html_taxon = '<li class="folder"><label><strong>{} :</strong> {} {}</label></li>' \
+                html_taxon = '<li class="folder"><label><strong>{} :</strong> {} {}</li>' \
                     .format(l_taxon[0].rang, l_taxon[0].lb_nom, l_taxon[0].lb_auteur)
                 html_hierarchy_end = html_hierarchy_child + '</ul></ul></li>'
                 html_hierarchy += html_hierarchy_begin + html_taxon + html_hierarchy_end + '</div>'
@@ -478,9 +478,9 @@ def constr_hierarchy_tree_adv_search(taxons, taxon, auteur):
         list_hierarchy, count = taxon.get_hierarchy()
         html_hierarchy_begin, html_hierarchy_end = constr_hierarchy_tree_branch_parents(list_hierarchy)
         html_hierarchy_child = ''
-        html_hierarchy_child = contr_hierarchy_tree_branch_adv_search_child(list_taxon[1],
+        html_hierarchy_child = constr_hierarchy_tree_branch_adv_search_child(list_taxon[1],
                                                                             count + 1, html_hierarchy_child)
-        html_taxon = '<li class="folder"><label><strong>{} :</strong> {} {}</label></li>' \
+        html_taxon = '<li class="folder"><label><strong>{} :</strong> {} {}</li>' \
             .format(taxon.rang, taxon.lb_nom, taxon.lb_auteur)
         html_hierarchy_end = html_hierarchy_child + '</ul></ul></li>'
         html_hierarchy = html_hierarchy_begin + html_taxon + html_hierarchy_end
@@ -495,19 +495,24 @@ def constr_hierarchy_tree_branch_parents(list_hierarchy):
     :return: a string with html tag
     """
     count_parent = 1
-    html_hierarchy_begin = '<ul class="tree"><br/>'
+    html_hierarchy_begin_start = '<ul class="tree"><br/>'
+    html_hierarchy_begin = ''
     html_hierarchy_end = '</ul>'
     if list_hierarchy is not None:
         for parent in reversed(list_hierarchy):
             html_hierarchy_begin = html_hierarchy_begin + '''<li><label class="tree_label" for="c{}">
             <strong>{} : </strong></al><a href="/fatercal/taxon/{}/">{}</a>
-            </label><ul>'''.format(count_parent, parent.rang, parent.id, parent)
+            <ul>'''.format(count_parent, parent.rang, parent.id, parent)
             html_hierarchy_end = '</ul></li>' + html_hierarchy_end
             count_parent = count_parent + 1
+    for x in range(count_parent):
+        html_hierarchy_begin_start = html_hierarchy_begin_start + '<al>'
+    html_hierarchy_begin = html_hierarchy_begin_start + """
+    """ + html_hierarchy_begin
     return html_hierarchy_begin, html_hierarchy_end
 
 
-def contr_hierarchy_tree_branch_adv_search_child(list_taxon, count, hierarchy_child):
+def constr_hierarchy_tree_branch_adv_search_child(list_taxon, count, hierarchy_child):
     """
     Construct the end of the hierarchy tree
     :param list_taxon: a list which contains different taxon
@@ -516,12 +521,11 @@ def contr_hierarchy_tree_branch_adv_search_child(list_taxon, count, hierarchy_ch
     :return: a string with html tag
     """
     for l_taxon in list_taxon:
-        hierarchy_child = hierarchy_child + \
-                          '<ul><li><label class="tree_label" for="c{}"/><strong>{} : </strong></al>' \
-                          '<a href="/fatercal/taxon/{}/">{}</a></label>   ''' \
-                          .format(count, l_taxon[0].rang, l_taxon[0].id, l_taxon[0])
+        hierarchy_child = hierarchy_child + """
+        <ul><li><al><label class="tree_label" for="c{}"/><strong>{} : </strong></al>
+        <a href="/fatercal/taxon/{}/">{}</a>""".format(count, l_taxon[0].rang, l_taxon[0].id, l_taxon[0])
         if l_taxon[1] is not None:
-            hierarchy_child = contr_hierarchy_tree_branch_adv_search_child(l_taxon[1], count + 1, hierarchy_child)
+            hierarchy_child = constr_hierarchy_tree_branch_adv_search_child(l_taxon[1], count + 1, hierarchy_child)
         hierarchy_child = hierarchy_child + '</li></ul>'
     return hierarchy_child
 
@@ -535,12 +539,12 @@ def constr_hierarchy_tree_branch_child(list_child, nb):
     """
     if len(list_child) > 0:
         rang = list_child[0].rang
-        str_child = '<ul><li><label class="tree_label" for="c{}"/><strong>{} : </strong></label><ul>' \
-            .format(str(nb + 1), rang)
+        str_child = """<ul><li><label class="tree_label" for="c{}"/><strong>{} : </strong><ul>
+        """.format(str(nb + 1), rang)
         for child in list_child:
             if rang != child.rang:
                 str_child = str_child + '''</ul></li><li class="folder"><label for="c{}">
-                <strong>{} : </strong></label><li><ul>
+                <strong>{} : </strong><li><ul>
                 <a href="/fatercal/taxon/{}/">{}</a>'''.format(str(nb + 1), child.rang, child.id, child)
                 rang = child.rang
             else:
@@ -599,10 +603,8 @@ def get_hierarchy_to_dict(taxon):
     :return: a dictionnary
     """
     hierarchy, nb = taxon.get_hierarchy()
-    if hierarchy is None:
-        dict_hierarchy = {}
-    else:
-        dict_hierarchy = {}
+    dict_hierarchy = {}
+    if hierarchy is not None:
         dict_hierarchy['Ordre'] = \
             next((taxon_p.lb_nom for taxon_p in hierarchy if taxon_p.rang.lb_rang == 'Ordre'), '')
         dict_hierarchy['Famille'] = \
@@ -626,7 +628,7 @@ def verify_sample(line, taxons, type_enregistrement, count):
     This function verify if all the parameter's with condition are good
     :param line: The line in the csv file
     :param taxons: The model which is connected to the table Taxon in the database
-    :param type_enregistrement: The model which is connected to the table TypeLoc in the database
+    :param type_enregistrement: The model which is connected to the table TypeEnregistrement in the database
     :param count: the line number we check
     :return: a boolean
     """
@@ -746,7 +748,7 @@ def get_loc_from_line(line, localisations, type_loc):
     :param type_loc: The model which is connected to the table TypeLoc in the database
     :return: a dictionnary or None
     """
-    if (line['lieu dit'] is None or line['lieu dit']) == '' or (line['commune'] is None or line['commune'] == '') or \
+    if (line['lieu dit'] is None or line['lieu dit'] == '') or (line['commune'] is None or line['commune'] == '') or \
             ((line['region'] is None or line['region']) == '') or ((line['pays'] is None or line['pays']) == ''):
         return None
     else:
@@ -860,11 +862,11 @@ def save_all_sample(list_dict_sample):
             harvest.save()
 
 
-def get_taxon_adv_search(taxons, taxon, auteur):
+def get_taxon_adv_search(taxons, taxon_id, auteur):
     """
     This function will get the child taxon of a taxon or an taxon's author choose by the user
     :param taxons: The model which is connected to the table Taxon in the database
-    :param taxon: a taxon object
+    :param taxon_id: a taxon's ID
     :param auteur: a string
     :return: a list of tuple
     """
@@ -874,8 +876,8 @@ def get_taxon_adv_search(taxons, taxon, auteur):
          'altitude(m)', 'pays', 'region', 'commune', 'lieu dit', 'type de milieu', 'nombre', 'sexe',
          'capture/relacher', 'informations complementaires', 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc')
     ]
-    if taxon is not None:
-        taxon = taxons.objects.get(id=taxon)
+    if taxon_id is not None:
+        taxon = taxons.objects.get(id=taxon_id)
         list_child_taxon, count_es = get_child_of_child(taxons, taxon)
         dict_hierarchy = get_hierarchy_to_dict(taxon)
         list_taxon.append((taxon.id, dict_hierarchy.get('Ordre'), dict_hierarchy.get('Famille'),
@@ -884,7 +886,7 @@ def get_taxon_adv_search(taxons, taxon, auteur):
                            dict_hierarchy.get('Sous-Espèce'), taxon.lb_auteur))
         list_taxon = format_adv_search_child_for_export_sample(list_child_taxon[1], list_taxon)
     elif auteur is not None:
-        list_child_taxon, count_es = get_search_results_auteur(taxons, auteur)
+        list_child_taxon, count_es = get_search_results_auteur_by_genus(taxons, auteur)
         if type(list_taxon) is str:
             return list_taxon
         for l_taxon in list_child_taxon:
