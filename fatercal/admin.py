@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.db.models import Q
+from django.utils.safestring import mark_safe
 from django.db.models.signals import post_save
 from itertools import chain
 
@@ -223,13 +224,12 @@ class TaxonModify(admin.ModelAdmin):
         :return: a link to another page
         """
         if obj == obj.id_ref:
-            return """<br/>
+            return mark_safe("""<br/>
             <p><a href='/fatercal/change_ref/{}/'>Changez le référent</a></p>
             <p><a href="/fatercal/change_sup/{}/">Changez le supérieur</a></p>
-            <br/>
-            """.format(obj.id, obj.id)
+            <br/>""".format(obj.id, obj.id))
         else:
-            return "<p>Vous ne pouvez pas changez le supérieur ou le référent de ce taxon.</p>"
+            return mark_safe("<p>Vous ne pouvez pas changez le supérieur ou le référent de ce taxon.</p>")
 
     def vernaculaires(self, obj):
         """
@@ -250,7 +250,7 @@ class TaxonModify(admin.ModelAdmin):
             for vern in list_vernaculaire:
                 string += vern.nom_vern + "</br>"
         string += "</br><a href='/fatercal/vernaculaire/add?id_taxref={}'>Ajouter un Vernaculaire</a>".format(obj.id)
-        return string
+        return mark_safe(string)
 
     def prelevements(self, obj):
         """
@@ -288,7 +288,7 @@ class TaxonModify(admin.ModelAdmin):
                         prelev.toponymie_y, get_recolteur(Recolteur, prelev), prelev.id_prelevement)
         board_prelevement += "</table></br><a href='/fatercal/prelevement/add?id_taxref={}'>Ajouter un Prelevement</a>"\
             .format(obj.id)
-        return board_prelevement
+        return mark_safe(board_prelevement)
 
     def referent(self, obj):
         """
@@ -296,8 +296,8 @@ class TaxonModify(admin.ModelAdmin):
         :param obj: an Taxon object (see models.py)
         :return: the validity in html tag
         """
-        return """<a href='/fatercal/taxon/{}/'>{}</a> <br/> <br/> <a href="/fatercal/taxon_to_valid/{}">
-                   Cliquer ici pour le passer en valide.</a>""".format(obj.id_ref_id, obj.id_ref.nom_complet, obj.id)
+        return mark_safe("""<a href='/fatercal/taxon/{}/'>{}</a> <br/> <br/> <a href="/fatercal/taxon_to_valid/{}">
+                   Cliquer ici pour le passer en valide.</a>""".format(obj.id_ref_id, obj.id_ref.nom_complet, obj.id))
 
     def syn(self, obj):
         """
@@ -312,7 +312,7 @@ class TaxonModify(admin.ModelAdmin):
                 string += "<a href='/fatercal/taxon/{}/'>{}</a><br/>".format(syn.id, syn.nom_complet)
         else:
             string = ""
-        return string
+        return mark_safe(string)
 
     def valid(self, obj):
         """
@@ -321,9 +321,9 @@ class TaxonModify(admin.ModelAdmin):
         :return: an image
         """
         if obj.id == obj.id_ref_id:
-            return '<img src="/static/admin/img/icon-yes.gif" alt="True">'
+            return mark_safe('<img src="/static/admin/img/icon-yes.gif" alt="True">')
         else:
-            return '<img src="/static/admin/img/icon-no.gif" alt="False">'
+            return mark_safe('<img src="/static/admin/img/icon-no.gif" alt="False">')
 
     # This function will construct the hierarchy tree of the taxon
     def hierarchy(self, obj):
@@ -349,10 +349,10 @@ class TaxonModify(admin.ModelAdmin):
                 .format(obj.id_ref.rang, obj.id_ref_id, obj.id_ref.lb_nom, obj.lb_auteur)
         str_child = constr_hierarchy_tree_branch_child(list_child, nb)
         if str_child == '':
-            return '<ul class="tree"><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end
+            return mark_safe('<ul class="tree"><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end)
         else:
             str_hierarchy_end = str_child + '</ul></ul></li>'
-            return '<ul><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end
+            return mark_safe('<ul><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end)
 
     @staticmethod
     def id(obj):
@@ -377,17 +377,9 @@ class TaxonModify(admin.ModelAdmin):
         }
 
     # Override attribute in Model Admin
-    change_taxon.allow_tags = True
-    change_taxon.short_description = 'Modification'
-    prelevements.allow_tags = True
-    vernaculaires.allow_tags = True
     vernaculaires.short_description = 'Vernaculaire'
-    referent.allow_tags = True
-    syn.allow_tags = True
     syn.short_description = 'Autre(s) combinaison(s) et/ou synonyme(s)'
-    valid.allow_tags = True
     valid.short_description = 'Valide'
-    hierarchy.allow_tags = True
     hierarchy.short_description = 'Hiérarchie'
 
 
@@ -453,13 +445,12 @@ class PrelevementModify(admin.ModelAdmin):
 
     # an url path to change referent or superior
     def button_modal_date(self, obj):
-        return '''
+        return mark_safe('''
         Ces champs ne sont pas obligatoires ils vous aident juste à remplir le champ date au-dessus.<br><br>
         Date unique: <input type="date" oninput=Date_update('unique') id="date_1"><br><br>
         Période: <input type="date" id="date_periode_1" oninput=Date_update('periode')>
         <input type="date" id="date_periode_2" oninput=Date_update('periode')>
-        '''
-    button_modal_date.allow_tags = True
+        ''')
     button_modal_date.short_description = 'Date Calendrier'
 
     # list of file to use for style or javascript function

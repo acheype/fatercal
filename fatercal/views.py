@@ -468,7 +468,6 @@ def choose_search_data(request):
     if request.method == 'POST':
         form = ChooseData(request.POST)
         if form.is_valid():
-            print(form.cleaned_data)
             rows = (idx for idx in get_taxon_personal(Taxon, form))
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref' + \
@@ -646,7 +645,6 @@ def export_adv_search(request):
                 writer.writerow(row)
             return response
         except AttributeError:
-            print(5555)
             raise Http404("This page doesn't exist.")
     else:
         raise Http404("This page doesn't exist.")

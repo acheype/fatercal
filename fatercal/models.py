@@ -12,6 +12,7 @@ from django.db import models
 
 from django.core.validators import RegexValidator
 from django.core.exceptions import ValidationError
+from django.utils.safestring import mark_safe
 
 
 class DocsUses(models.Model):
@@ -39,8 +40,10 @@ class HabitatDetail(models.Model):
 
 
 class Hote(models.Model):
-    id_hote = models.ForeignKey('Taxon', db_column='id_hote', related_name='hote', verbose_name='Hote')
-    id_parasite = models.ForeignKey('Taxon', db_column='id_parasite', related_name='parasite', verbose_name='Parasite')
+    id_hote = models.ForeignKey('Taxon', db_column='id_hote', related_name='hote', verbose_name='Hote',
+                                on_delete=models.DO_NOTHING)
+    id_parasite = models.ForeignKey('Taxon', db_column='id_parasite', related_name='parasite', verbose_name='Parasite',
+                                    on_delete=models.DO_NOTHING)
 
     class Meta:
         managed = True
@@ -84,8 +87,8 @@ class TypeLoc(models.Model):
 class Localisation(models.Model):
     id_loc = models.AutoField(primary_key=True)
     id_sup = models.ForeignKey('Localisation', db_column='id_sup', blank=True,
-                               null=True, verbose_name="Localisation Supérieur")
-    loc_type = models.ForeignKey('TypeLoc', db_column='loc_type', verbose_name="Type")
+                               null=True, verbose_name="Localisation Supérieur", on_delete=models.DO_NOTHING)
+    loc_type = models.ForeignKey('TypeLoc', db_column='loc_type', verbose_name="Type", on_delete=models.DO_NOTHING)
     nom = models.CharField(max_length=250, verbose_name='Nom')
     latitude = models.FloatField(blank=True, null=True, )
     longitude = models.FloatField(blank=True, null=True, )
@@ -123,10 +126,10 @@ class PlanteHote(models.Model):
 class Prelevement(models.Model):
     id_prelevement = models.AutoField(primary_key=True)
     id_loc = models.ForeignKey(Localisation, db_column='id_loc',
-                               blank=True, null=True, verbose_name='Localisation')
-    id_taxref = models.ForeignKey('Taxon', db_column='id_taxref', verbose_name='Taxon')
+                               blank=True, null=True, verbose_name='Localisation', on_delete=models.DO_NOTHING)
+    id_taxref = models.ForeignKey('Taxon', db_column='id_taxref', verbose_name='Taxon', on_delete=models.DO_NOTHING)
     type_enregistrement = models.ForeignKey('TypeEnregistrement', db_column='type_enregistrement',
-                                            blank=True, null=True)
+                                            blank=True, null=True, on_delete=models.DO_NOTHING)
     date = models.CharField(max_length=23, blank=True, null=True,
                             validators=[
                                 RegexValidator(
@@ -138,7 +141,8 @@ class Prelevement(models.Model):
                             ]
                             )
     nb_taxon_present = models.SmallIntegerField(blank=True, null=True, verbose_name='Nombre Individu')
-    habitat = models.ForeignKey(HabitatDetail, db_column='id_habitat', blank=True, null=True, verbose_name='Habitat')
+    habitat = models.ForeignKey(HabitatDetail, db_column='id_habitat', blank=True, null=True, verbose_name='Habitat',
+                                on_delete=models.DO_NOTHING)
     collection_museum = models.CharField(max_length=250, blank=True, null=True)
     type_specimen = models.CharField(max_length=250, blank=True, null=True)
     code_specimen = models.CharField(max_length=250, blank=True, null=True)
@@ -146,7 +150,7 @@ class Prelevement(models.Model):
     altitude_max = models.BigIntegerField(blank=True, null=True, verbose_name='Altitude Maximum')
     mode_de_collecte = models.CharField(max_length=250, blank=True, null=True)
     plante_hote = models.ForeignKey(PlanteHote, db_column='id_plante_hote',
-                                    blank=True, null=True, verbose_name='Plante Hote')
+                                    blank=True, null=True, verbose_name='Plante Hote', on_delete=models.DO_NOTHING)
     toponyme = models.CharField(max_length=250, blank=True, null=True)
     toponymie_x = models.FloatField(blank=True, null=True)
     toponymie_y = models.FloatField(blank=True, null=True)
@@ -162,7 +166,8 @@ class Prelevement(models.Model):
 
 
 class Recolteur(models.Model):
-    id_prelevement = models.ForeignKey(Prelevement, db_column='id_prelevement', blank=True, null=True)
+    id_prelevement = models.ForeignKey(Prelevement, db_column='id_prelevement', blank=True, null=True,
+                                       on_delete=models.DO_NOTHING)
     lb_auteur = models.CharField(max_length=250, blank=True, null=True, verbose_name='Récolteurs')
 
     class Meta:
@@ -186,19 +191,19 @@ class TypeEnregistrement(models.Model):
 
 class Taxon(models.Model):
     id_ref = models.ForeignKey('self', db_column='id_ref', blank=True, null=True,
-                               related_name='id_ref+', verbose_name='Référent')
+                               related_name='id_ref+', verbose_name='Référent', on_delete=models.DO_NOTHING)
     id_sup = models.ForeignKey('self', db_column='id_sup', blank=True, null=True,
-                               related_name='id_sup+', verbose_name='Rang Supérieur')
+                               related_name='id_sup+', verbose_name='Rang Supérieur', on_delete=models.DO_NOTHING)
     cd_nom = models.IntegerField(unique=True, blank=True, null=True)
     cd_ref = models.IntegerField(blank=True, null=True)
     cd_sup = models.IntegerField(blank=True, null=True)
     lb_nom = models.CharField(max_length=250, verbose_name='Nom')
     lb_auteur = models.CharField(max_length=250, blank=True, null=True, verbose_name='Auteur')
     nom_complet = models.CharField(max_length=250, blank=True, null=True)
-    rang = models.ForeignKey('TaxrefRang', db_column='rang', verbose_name='rang')
-    habitat = models.ForeignKey('TaxrefHabitat', db_column='habitat', blank=True, null=True)
+    rang = models.ForeignKey('TaxrefRang', db_column='rang', verbose_name='rang', on_delete=models.DO_NOTHING)
+    habitat = models.ForeignKey('TaxrefHabitat', db_column='habitat', blank=True, null=True, on_delete=models.DO_NOTHING)
     nc = models.ForeignKey('TaxrefStatus', db_column='nc', blank=True, null=True,
-                           verbose_name='Statut')
+                           verbose_name='Statut', on_delete=models.DO_NOTHING)
     grande_terre = models.NullBooleanField()
     iles_loyautee = models.NullBooleanField(verbose_name='Îles Loyauté')
     autre = models.NullBooleanField()
@@ -261,9 +266,9 @@ class Taxon(models.Model):
         Some info when creating a new taxon
         :return:
         """
-        return '''<strong>Si vous voulez créer un nouveau taxon
+        return mark_safe('''<strong>Si vous voulez créer un nouveau taxon
         ne mettez rien dans référent et mettez
-        un supérieur à votre nouveau taxon</strong>'''
+        un supérieur à votre nouveau taxon</strong>''')
 
     info.allow_tags = True
 
@@ -315,10 +320,10 @@ class TaxrefStatus(models.Model):
 
 class Vernaculaire(models.Model):
     id_taxvern = models.AutoField(primary_key=True)
-    id_taxref = models.ForeignKey(Taxon, db_column='id_taxref', verbose_name='Taxon')
+    id_taxref = models.ForeignKey(Taxon, db_column='id_taxref', verbose_name='Taxon', on_delete=models.DO_NOTHING)
     nom_vern = models.CharField(max_length=100, verbose_name='Nom Vernaculaire')
     pays = models.CharField(max_length=100, verbose_name='Pays d\'utilisation')
-    iso639_3 = models.ForeignKey(Iso6393, db_column='iso639-3')
+    iso639_3 = models.ForeignKey(Iso6393, db_column='iso639-3', on_delete=models.DO_NOTHING)
 
     class Meta:
         managed = True
