@@ -440,6 +440,23 @@ class PrelevementModify(admin.ModelAdmin):
         }),
     ]
 
+    # redefinition of the method save_model
+    def save_model(self, request, obj, form, change):
+        """
+        Add specific change when adding a new taxon
+        :param request: an request object (see Django doc)
+        :param obj: an Prelevement object (see models.py)
+        :param form: the form used when creating the taxon
+        :param change:
+        :return: nothing
+        """
+        # When loc is given we take the loc and toponymie is not given, we take the localisation number from loc
+        if obj.id_loc is not None and (obj.toponymie_x is None and obj.toponymie_y is None):
+            if obj.id_loc.latitude is not None and obj.id_loc.longitude:
+                obj.toponymie_x = obj.id_loc.latitude
+                obj.toponymie_y = obj.id_loc.longitude
+        super(PrelevementModify, self).save_model(request, obj, form, change)
+
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
         if not is_admin(request):
             self.change_form_template = 'fatercal/change_form.html'
