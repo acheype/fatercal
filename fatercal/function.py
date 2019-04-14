@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from django.template import loader
 from django.db.models import F, Q
-from .variable import regex_date, params_search_sample, params_search_taxon
+from .variable import regex_date
 import re
 
 
@@ -60,17 +60,16 @@ def get_msg(taxon):
     return None, None, None, None
 
 
-def get_taxon_from_search(taxons, param):
+def get_taxon_from_search(taxons, list_param):
     """
     This function get all Information needed from all taxon from the user's search parameter
     :param taxons: The model which is connected to the table Taxon in the database
-    :param param: the parameter's if the user want to export his research
+    :param list_param: a dict which contains the parameters
     :return: a list of tuple
     """
-    if param is None:
+    if list_param is None:
         list_not_proper = taxons.objects.all()
     else:
-        list_param = inspect_url_variable(param, params_search_taxon)
         list_not_proper = get_specific_search_taxon(taxons, list_param)
     list_taxon = [
         ('REGNE', 'PHYLUM', 'CLASSE', 'ORDRE', 'FAMILLE', 'GROUP1_INPN', 'GROUP2_INPN', 'ID', 'ID_REF', 'ID_SUP',
@@ -295,28 +294,6 @@ def format_altitude_sample(sample):
         return "{}-{}".format(sample.altitude_min, sample.altitude_max)
 
 
-def inspect_url_variable(param, params_search):
-    """
-    Get the get parameter's from the past url
-    :param param: the user's parameter if the user want to export his research
-    :param params_search: a dict which contain's the default parameter's name
-    :return: a dict
-    """
-    list_param = {}
-    if param is None:
-        return None
-    else:
-        for params in params_search:
-            if params in param:
-                first = param.find(params)
-                part_param = param[first:]
-                if part_param.find('&') == -1:
-                    list_param[params] = part_param[part_param.find('=') + 1:]
-                else:
-                    list_param[params] = part_param[part_param.find('=') + 1:part_param.find('&')]
-        return list_param
-
-
 def get_specific_search_taxon(taxons, list_param):
     """
     Filter from the user's parameter
@@ -344,19 +321,20 @@ def get_specific_search_taxon(taxons, list_param):
     return list_not_proper
 
 
-def get_specific_search_sample(samples, param):
+def get_specific_search_sample(samples, list_param):
     """
     Filter from the user's parameter's
     :param samples: The model which is connected to the table Prelevement in the database
-    :param param: the user's parameter if the user want to export his research
+    :param list_param: a list of parameter if the user want to export his research
     :return: a list filtered
     """
     list_not_proper = samples.objects.all()
-    list_param_sample = inspect_url_variable(param, params_search_sample)
-    if 'q' in list_param_sample:
-        if list_param_sample['q'] != '':
-            list_not_proper = list_not_proper.filter(
-                id_taxref__lb_nom__icontains=list_param_sample['q'].replace("+", " "))
+    if list_param is not None:
+        if 'q' in list_param:
+            if list_param['q'] != '':
+                list_not_proper = list_not_proper.filter(
+                    Q(id_taxref__lb_nom__icontains=list_param['q'].replace("+", " ")) |
+                    Q(toponyme__icontains=list_param['q'].replace("+", " ")))
     return list_not_proper
 
 
@@ -556,15 +534,14 @@ def get_form_advanced_search(search_advanced, request):
     return HttpResponse(template.render(context, request))
 
 
-def get_taxons_for_sample(param, taxons):
+def get_taxons_for_sample(list_param, taxons):
     """
     Construct a csv file with research result for importing sample for these taxon
     :return: a list of tuple
     """
-    if param is None:
+    if list_param is None:
         list_not_proper = taxons.objects.all()
     else:
-        list_param = inspect_url_variable(param, params_search_taxon)
         list_not_proper = get_specific_search_taxon(taxons, list_param)
     list_taxon = [
         ('id_taxon', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece',

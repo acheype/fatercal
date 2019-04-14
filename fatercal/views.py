@@ -8,8 +8,8 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.decorators import login_required
 from .forms import AllTaxon, TaxonChangeSup, SearchAdvanced, ChooseData, UploadFileCsv
 from .function import get_form_advanced_search, constr_hierarchy_tree_adv_search, get_taxon_from_search, is_admin,\
-    get_taxon_personal, inspect_url_variable, get_sample, get_taxons_for_sample, verify_sample, save_all_sample, \
-    construct_sample, params_search_taxon, NotGoodSample, get_taxon_adv_search
+    get_taxon_personal, get_sample, get_taxons_for_sample, verify_sample, save_all_sample, \
+    construct_sample, NotGoodSample, get_taxon_adv_search
 
 import json
 import csv
@@ -443,12 +443,8 @@ def extract_search_taxon_taxref(request):
     # applications.
     if is_admin(request):
         try:
-            nb = request.META.get('HTTP_REFERER').find('?')
-            if nb != -1:
-                param = request.META.get('HTTP_REFERER')[nb + 1:]
-            else:
-                param = None
-            rows = (idx for idx in get_taxon_from_search(Taxon, param))
+            list_param = request.GET
+            rows = (idx for idx in get_taxon_from_search(Taxon, list_param))
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref_search' + \
                                               str(datetime.datetime.now()) + '.csv"'
@@ -462,6 +458,7 @@ def extract_search_taxon_taxref(request):
     raise Http404("This page doesn't exist.")
 
 
+@login_required()
 def choose_search_data(request):
     """
     View for choosing the field to export
@@ -491,28 +488,22 @@ def choose_search_data(request):
                 'user': request.user.__str__(),
             }
         return HttpResponse(template.render(context, request))
-    try:
-        nb = request.META.get('HTTP_REFERER').find('?')
-        if nb != -1:
-            param = request.META.get('HTTP_REFERER')[nb + 1:]
-        else:
-            param = None
-        list_param = inspect_url_variable(param, params_search_taxon)
-    except AttributeError:
-        raise Http404("This page doesn't exist.")
-    if list_param is None:
-        form = ChooseData()
     else:
-        form = ChooseData(initial={key: value for (key, value) in list_param.items()})
-    context = {
-        'error': '',
-        'form': form,
-        'list_param': list_param,
-        'user': request.user.__str__(),
-    }
-    return HttpResponse(template.render(context, request))
+        list_param = request.GET
+        if list_param is None:
+            form = ChooseData()
+        else:
+            form = ChooseData(initial={key: value for (key, value) in list_param.items()})
+        context = {
+            'error': '',
+            'form': form,
+            'list_param': list_param,
+            'user': request.user.__str__(),
+        }
+        return HttpResponse(template.render(context, request))
 
 
+@login_required()
 def extract_search_sample(request):
     """
     A view that streams a large CSV file. In this case the file in format
@@ -525,12 +516,8 @@ def extract_search_sample(request):
     # applications.
     if is_admin(request):
         try:
-            nb = request.META.get('HTTP_REFERER').find('?')
-            if nb != -1:
-                param = request.META.get('HTTP_REFERER')[nb + 1:]
-            else:
-                param = None
-            rows = (idx for idx in get_sample(Prelevement, Recolteur, Taxon, param))
+            list_param = request.GET
+            rows = (idx for idx in get_sample(Prelevement, Recolteur, Taxon, list_param))
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="fatercal_search_sample_' + \
                                               str(datetime.datetime.now()) + '.csv"'
@@ -556,12 +543,8 @@ def export_for_import_sample(request):
     # rows that can be handled by a single sheet in most spreadsheet
     # applications.
     if is_admin(request):
-        nb = request.META.get('HTTP_REFERER').find('?')
-        if nb != -1:
-            param = request.META.get('HTTP_REFERER')[nb + 1:]
-        else:
-            param = None
-        rows = (idx for idx in get_taxons_for_sample(param, Taxon))
+        list_param = request.GET
+        rows = (idx for idx in get_taxons_for_sample(list_param, Taxon))
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="fatercal_export_import' + \
                                           str(datetime.datetime.now()) + '.csv"'

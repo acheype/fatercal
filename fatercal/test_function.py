@@ -192,7 +192,7 @@ class TaxonTestCase(TestCase):
                                 None, None, 'ES', 'species_synonymous', 'auteur9', None, None, 'genus species', None,
                                 None, None, None, 'x', None, None, None)]
         self.assertEqual(list_taxon_expected, list_taxon_output)
-        param = "q=species"
+        param = {'q': 'species'}
         list_taxon_output = get_taxon_from_search(Taxon, param)
         list_taxon_expected = [('REGNE', 'PHYLUM', 'CLASSE', 'ORDRE', 'FAMILLE', 'GROUP1_INPN', 'GROUP2_INPN', 'ID',
                                 'ID_REF', 'ID_SUP', 'CD_NOM', 'CD_TAXSUP', 'CD_SUP', 'CD_REF', 'RANG', 'LB_NOM',
@@ -298,8 +298,8 @@ class TaxonTestCase(TestCase):
         self.assertEqual(result_expected, result_output)
 
     def test_get_taxons_for_sample(self):
-        param = None
-        list_taxon_output = get_taxons_for_sample(param, Taxon)
+        list_param = None
+        list_taxon_output = get_taxons_for_sample(list_param, Taxon)
         list_taxon_expected = [('id_taxon', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece',
                                 'sous-espece', 'auteur(s)/date', 'date', 'collecteurs', 'identificateur',
                                 "date d'identification", 'altitude(m)', 'pays', 'region', 'commune', 'lieu dit',
@@ -316,8 +316,8 @@ class TaxonTestCase(TestCase):
                                (2, '', '', '', '', '', '', '', 'auteur2'),
                                (9, None, None, None, None, None, None, None, 'auteur9')]
         self.assertEqual(list_taxon_expected, list_taxon_output)
-        param = "q=genus species"
-        list_taxon_output = get_taxons_for_sample(param, Taxon)
+        list_param = {'q': 'genus species'}
+        list_taxon_output = get_taxons_for_sample(list_param, Taxon)
         list_taxon_expected = [('id_taxon', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece',
                                 'sous-espece', 'auteur(s)/date', 'date', 'collecteurs', 'identificateur',
                                 "date d'identification", 'altitude(m)', 'pays', 'region', 'commune', 'lieu dit',
@@ -600,8 +600,8 @@ class SampleTestClass(TestCase):
                                 (5, None, None, None, None, None, None, None, 'auteur1', None, 'auteur', None, None,
                                  None, None, None, None, None, None, None, None, None, None, None, None, None)]
         self.assertEqual(list_sample_expected, list_sample_output)
-        param = 'q=None Found'
-        list_sample_output = get_sample(Prelevement, Recolteur, Taxon, param)
+        list_param = {'q': 'None Found'}
+        list_sample_output = get_sample(Prelevement, Recolteur, Taxon, list_param)
         list_sample_expected = [('Code identification', 'Ordre', 'Famille', 'Sous-Famille', 'Genre', 'Sous-Genre',
                                  'Espece', 'Sous-Espece', 'Auteur(s)/date', 'Date', 'Collecteurs', 'Identificateur',
                                  "Date d'identification", 'Altitude(m)', 'Pays', 'Region', 'Commune', 'Lieu dit',
@@ -610,11 +610,11 @@ class SampleTestClass(TestCase):
         self.assertEqual(list_sample_expected, list_sample_output)
 
     def test_get_specific_sample_search(self):
-        param = ""
-        list_not_proper = get_specific_search_sample(Prelevement, param)
+        list_param = None
+        list_not_proper = get_specific_search_sample(Prelevement, list_param)
         self.assertEqual(list_not_proper.count(), 1)
-        param = "q=species"
-        list_not_proper = get_specific_search_sample(Prelevement, param)
+        list_param = {'q': 'species'}
+        list_not_proper = get_specific_search_sample(Prelevement, list_param)
         self.assertEqual(list_not_proper.first(), self.sample)
 
     def test_construct_sample(self):
@@ -742,27 +742,6 @@ class LocationTestCase(TestCase):
 
 # Test function that are not related to any existing model
 class OtherTestCase(TestCase):
-    def test_inspect_url_variable(self):
-        param = None
-        self.assertEqual(inspect_url_variable(param, params_search_taxon), None)
-        param = "q=1&nc__status__exact=status&rang__rang__exact=ES&valide=YES"
-        dict_param_output = inspect_url_variable(param, params_search_taxon)
-        dict_param_expected = {
-            'q': '1',
-            'nc__status__exact': 'status',
-            'rang__rang__exact': 'ES',
-            'valide': 'YES'
-        }
-        self.assertEqual(dict_param_expected, dict_param_output)
-        param = "q=1&nc__status__exact=status&rang__rang__exact=ES&not_correct=1"
-        dict_param_output = inspect_url_variable(param, params_search_taxon)
-        dict_param_expected = {
-            'q': '1',
-            'nc__status__exact': 'status',
-            'rang__rang__exact': 'ES',
-        }
-        self.assertEqual(dict_param_output, dict_param_expected)
-
     def test_is_variable_good(self):
         line = {
             'x wgs 84': 'dfsdf',

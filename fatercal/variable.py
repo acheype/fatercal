@@ -4,8 +4,6 @@ regex_date = r"(^\d{4}$)|" \
              r"(^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)|" \
              r"(^$)|" \
              r"(^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])\/\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$)"
-params_search_taxon = ['q', 'nc__status__exact', 'rang__rang__exact', 'valide']
-params_search_sample = ['q', 'toponyme']
 #  TO update when a new rank is inserted in the database
 param_hierarchy = [
     [1, 'Dumm'], [2, 'SPRG'], [3, 'KD'], [4, 'SSRG'], [5, 'IFRG'], [6, 'PH'], [7, 'SBPH'], [8, 'IFPH'], [9, 'SPCL'],
