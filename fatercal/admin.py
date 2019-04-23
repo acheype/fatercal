@@ -58,7 +58,7 @@ class TaxonModify(admin.ModelAdmin):
     change_list_template = 'fatercal/taxon/change_list.html'
 
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
-        if not is_admin(request):
+        if not is_admin(request.user):
             self.change_form_template = 'fatercal/change_form.html'
             return super(TaxonModify, self).render_change_form(request, context, add, change, form_url, obj)
         else:
@@ -458,7 +458,7 @@ class PrelevementModify(admin.ModelAdmin):
         super(PrelevementModify, self).save_model(request, obj, form, change)
 
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
-        if not is_admin(request):
+        if not is_admin(request.user):
             self.change_form_template = 'fatercal/change_form.html'
             return super(PrelevementModify, self).render_change_form(request, context, add, change, form_url, obj)
         else:
@@ -498,7 +498,7 @@ class HoteModify(admin.ModelAdmin):
     ]
 
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
-        if not is_admin(request):
+        if not is_admin(request.user):
             self.change_form_template = 'fatercal/change_form.html'
             return super(HoteModify, self).render_change_form(request, context, add, change, form_url, obj)
         else:
@@ -524,7 +524,7 @@ class PlanteHoteModify(admin.ModelAdmin):
     ]
 
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
-        if not is_admin(request):
+        if not is_admin(request.user):
             self.change_form_template = 'fatercal/change_form.html'
             return super(PlanteHoteModify, self).render_change_form(request, context, add, change, form_url, obj)
         else:
@@ -549,7 +549,7 @@ class VernaculaireModify(admin.ModelAdmin):
     ]
 
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
-        if not is_admin(request):
+        if not is_admin(request.user):
             self.change_form_template = 'fatercal/change_form.html'
             return super(VernaculaireModify, self).render_change_form(request, context, add, change, form_url, obj)
         else:
@@ -582,7 +582,7 @@ class Iso6393Modify(admin.ModelAdmin):
     ]
 
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
-        if not is_admin(request):
+        if not is_admin(request.user):
             self.change_form_template = 'fatercal/change_form.html'
             return super(Iso6393Modify, self).render_change_form(request, context, add, change, form_url, obj)
         else:

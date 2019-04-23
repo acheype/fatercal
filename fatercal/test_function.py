@@ -1,7 +1,10 @@
 from django.test import TestCase
+from django.contrib.auth.models import User, Group
 from fatercal.function import *
-from fatercal.models import *
-from .forms import ChooseData, SearchAdvanced
+from fatercal.models import TaxrefStatus, TaxrefHabitat, TaxrefRang, TypeEnregistrement
+from .forms import ChooseData
+import os
+import csv
 
 
 # Test function that are related to the model Taxon
@@ -51,10 +54,48 @@ class TaxonTestCase(TestCase):
         self.kingdom.id_ref = self.kingdom
         self.kingdom.save()
 
+    def test_change_ref_taxon(self):
+        second_species = Taxon.objects.create(id=10, lb_nom="second_species", lb_auteur="auteur10",
+                                              rang=self.species.rang, id_sup=self.genus)
+        second_species.id_ref = second_species
+        second_species.save()
+        cleaned_data = {'taxon': second_species}
+        change_ref_taxon(self.species, cleaned_data)
+        self.species = Taxon.objects.get(id=7)
+        self.sub_species = Taxon.objects.get(id=8)
+        self.species_syn = Taxon.objects.get(id=9)
+        self.assertEqual(self.species_syn.id_ref, second_species)
+        self.assertEqual(self.sub_species.id_sup, second_species)
+        self.assertEqual(self.species.id_ref, second_species)
+
+    def test_change_sup_taxon(self):
+        second_genus = Taxon.objects.create(id=10, lb_nom="second_genus", lb_auteur="auteur10",
+                                            rang=self.genus.rang, id_sup=self.genus)
+        second_genus.id_ref = second_genus
+        second_genus.save()
+        cleaned_data = {'taxon_superieur': second_genus}
+        template_expected = loader.get_template('fatercal/return_change_taxon.html')
+        error_expected = ''
+        template_output, error_output = change_sup_taxon(self.species, cleaned_data)
+        self.assertEqual(template_expected.render(), template_output.render())
+        self.assertEqual(error_expected, error_output)
+        self.species = Taxon.objects.get(id=7)
+        self.assertEqual(self.species.id_sup, second_genus)
+
+        cleaned_data = {'taxon_superieur': self.sub_species}
+        template_expected = loader.get_template('fatercal/change_taxon.html')
+        error_expected = 'Le taxon supérieur a un rang inférieur a votre taxon .'
+        template_output, error_output = change_sup_taxon(self.species, cleaned_data)
+        self.assertEqual(template_expected.render(), template_output.render())
+        self.assertEqual(error_expected, error_output)
+        self.species = Taxon.objects.get(id=7)
+        self.assertEqual(self.species.id_sup, second_genus)
+
     def test_get_superior(self):
         dict_parent = get_superior(self.species)
         self.assertEqual(dict_parent['GN'], self.genus.lb_nom)
         self.assertEqual(dict_parent['FM'], self.family.lb_nom)
+
         dict_parent = get_superior(self.kingdom)
         self.assertEqual(dict_parent, {})
 
@@ -69,6 +110,7 @@ class TaxonTestCase(TestCase):
         species_syn.save()
         self.assertEqual(get_msg(self.species), (None, None, None, 'x'))
         self.assertEqual(get_msg(species_syn), (None, None, None, 'x'))
+
         species_syn.cd_ref = 2
         species_syn.save()
         self.assertEqual(get_msg(species_syn), (None, 'x', None, None))
@@ -99,6 +141,7 @@ class TaxonTestCase(TestCase):
                                                                  'auteur7', 'genus species auteur7', None,
                                                                  'genus species', None, None, 1, 'A', 'x', None, None,
                                                                  None))
+
         self.assertEqual(construct_cleaned_taxon(self.species_syn), (None, None, None, None, None, None, None, 9, 7,
                                                                      None, None, None, None, None, 'ES',
                                                                      'species_synonymous', 'auteur9',
@@ -108,38 +151,36 @@ class TaxonTestCase(TestCase):
 
     def test_get_specific_taxon_search(self):
         dict_param = {}
-        list_not_proper = get_specific_search_taxon(Taxon, dict_param)
+        list_not_proper = get_specific_search_taxon(dict_param)
         self.assertEqual(list_not_proper.count(), 9)
-        dict_param = {
-            'q': 'genus species'
-        }
-        list_not_proper = get_specific_search_taxon(Taxon, dict_param)
+
+        dict_param = {'q': 'genus species'}
+        list_not_proper = get_specific_search_taxon(dict_param)
         self.assertEqual(list_not_proper.first(), self.species)
+
         self.species.nc = self.status
         self.species.save()
-        dict_param = {
-            'nc__status__exact': 'A'
-        }
-        list_not_proper = get_specific_search_taxon(Taxon, dict_param)
+        dict_param = {'nc__status__exact': 'A'}
+        list_not_proper = get_specific_search_taxon(dict_param)
         self.assertEqual(list_not_proper.first(), self.species)
-        dict_param = {
-            'rang__rang__exact': 'KD'
-        }
+
+        dict_param = {'rang__rang__exact': 'KD'}
         kingdom = Taxon.objects.get(lb_nom="kingdom")
-        list_not_proper = get_specific_search_taxon(Taxon, dict_param)
+        list_not_proper = get_specific_search_taxon(dict_param)
         self.assertEqual(list_not_proper.first(), kingdom)
 
     def test_get_taxon_child(self):
         self.sub_species = Taxon.objects.get(lb_nom="genus species sub_species")
-        list_child, nb = get_taxon_child(Taxon, self.genus, 0)
+        list_child, nb = get_taxon_child(self.genus, 0)
         self.assertEqual(list_child, [[self.species, [[self.sub_species, None]]]])
+
         species_2 = Taxon.objects.create(id=10, lb_nom="species_2", lb_auteur="auteur10", rang=self.species.rang,
                                          id_sup=self.genus)
-        list_child, nb = get_taxon_child(Taxon, self.genus, 0)
+        list_child, nb = get_taxon_child(self.genus, 0)
         self.assertEqual(list_child, [[self.species, [[self.sub_species, None]]], [species_2, None]])
 
     def test_get_child_of_child(self):
-        list_child, nb = get_child_of_child(Taxon, self.genus)
+        list_child, nb = get_child_of_child(self.genus)
         self.assertEqual(list_child, [self.genus, [[self.species, [[self.sub_species, None]]]]])
 
     def test_get_hierarchy_to_dicy(self):
@@ -157,7 +198,7 @@ class TaxonTestCase(TestCase):
 
     def test_get_taxon_from_search(self):
         param = None
-        list_taxon_output = get_taxon_from_search(Taxon, param)
+        list_taxon_output = get_taxon_from_search(param)
         list_taxon_expected = [('REGNE', 'PHYLUM', 'CLASSE', 'ORDRE', 'FAMILLE', 'GROUP1_INPN', 'GROUP2_INPN', 'ID',
                                 'ID_REF', 'ID_SUP', 'CD_NOM', 'CD_TAXSUP', 'CD_SUP', 'CD_REF', 'RANG', 'LB_NOM',
                                 'LB_AUTEUR', 'NOM_COMPLET', 'NOM_COMPLET_HTML', 'NOM_VALIDE', 'NOM_VERN',
@@ -192,8 +233,9 @@ class TaxonTestCase(TestCase):
                                 None, None, 'ES', 'species_synonymous', 'auteur9', None, None, 'genus species', None,
                                 None, None, None, 'x', None, None, None)]
         self.assertEqual(list_taxon_expected, list_taxon_output)
+
         param = {'q': 'species'}
-        list_taxon_output = get_taxon_from_search(Taxon, param)
+        list_taxon_output = get_taxon_from_search(param)
         list_taxon_expected = [('REGNE', 'PHYLUM', 'CLASSE', 'ORDRE', 'FAMILLE', 'GROUP1_INPN', 'GROUP2_INPN', 'ID',
                                 'ID_REF', 'ID_SUP', 'CD_NOM', 'CD_TAXSUP', 'CD_SUP', 'CD_REF', 'RANG', 'LB_NOM',
                                 'LB_AUTEUR', 'NOM_COMPLET', 'NOM_COMPLET_HTML', 'NOM_VALIDE', 'NOM_VERN',
@@ -222,7 +264,7 @@ class TaxonTestCase(TestCase):
             'rank_sup': True, 'status': True, 'habitat': True, 'grande_terre': True, 'loyalty_island': True,
             'other': True, 'remark': True, 'source': True, 'description_reference': True
         }
-        taxon_personal_output = get_taxon_personal(Taxon, form)
+        taxon_personal_output = get_taxon_personal(form)
         taxon_personal_expected = [('id', 'id_sup', 'id_ref', 'name', 'author', 'rank', 'rank_sup', 'status', 'habitat',
                                     'grande_terre', 'loyalty_island', 'other', 'remark', 'source',
                                     'description_reference'),
@@ -231,10 +273,8 @@ class TaxonTestCase(TestCase):
         self.assertEqual(taxon_personal_expected, taxon_personal_output)
 
     def test_construct_list_taxon(self):
-        param = {
-            'q': 'species',
-        }
-        list_not_proper = get_specific_search_taxon(Taxon, param)
+        param = {'q': 'species',}
+        list_not_proper = get_specific_search_taxon(param)
         cleaned_data = {
             'id': False, 'id_sup': False, 'id_ref': False, 'name': False, 'author': False, 'rank': False,
             'rank_sup': False, 'status': False, 'habitat': False, 'grande_terre': False, 'loyalty_island': False,
@@ -243,6 +283,7 @@ class TaxonTestCase(TestCase):
         list_taxon_expected = [()]
         list_taxon_output = construct_list_taxon(list_not_proper, cleaned_data)
         self.assertEqual(list_taxon_expected, list_taxon_output)
+
         cleaned_data = {
             'id': True, 'id_sup': True, 'id_ref': True, 'name': True, 'author': True, 'rank': True, 'rank_sup': True,
             'status': True, 'habitat': True, 'grande_terre': True, 'loyalty_island': True, 'other': True,
@@ -270,6 +311,7 @@ class TaxonTestCase(TestCase):
         cleaned_taxon_search_expected = (7, 6, 7, 'genus species', 'auteur7', 'Espèce',
                                          self.genus, None, None, None, None, None, None, None, None)
         self.assertEqual(cleaned_taxon_search_expected, cleaned_taxon_search_output)
+
         self.species.id_sup = None
         self.species.habitat = self.habitat
         self.species.nc = self.status
@@ -287,19 +329,20 @@ class TaxonTestCase(TestCase):
         self.assertEqual(cleaned_taxon_search_expected, cleaned_taxon_search_output)
 
     def test_get_search_results_auteur_by_genus(self):
-        result_output = get_search_results_auteur_by_genus(Taxon, 'auteur6')
+        result_output = get_search_results_auteur_by_genus('auteur6')
         result_expected = ([[self.genus, [[self.species, [[self.sub_species, None]]]]]], 2)
         self.assertEqual(result_expected, result_output)
+
         self.genus.delete()
         self.species.id_sup = None
         self.species.save()
-        result_output = get_search_results_auteur_by_genus(Taxon, 'auteur6')
+        result_output = get_search_results_auteur_by_genus('auteur6')
         result_expected = ('Aucun résultat trouvé.', 0)
         self.assertEqual(result_expected, result_output)
 
     def test_get_taxons_for_sample(self):
         list_param = None
-        list_taxon_output = get_taxons_for_sample(list_param, Taxon)
+        list_taxon_output = get_taxons_for_sample(list_param)
         list_taxon_expected = [('id_taxon', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece',
                                 'sous-espece', 'auteur(s)/date', 'date', 'collecteurs', 'identificateur',
                                 "date d'identification", 'altitude(m)', 'pays', 'region', 'commune', 'lieu dit',
@@ -316,8 +359,9 @@ class TaxonTestCase(TestCase):
                                (2, '', '', '', '', '', '', '', 'auteur2'),
                                (9, None, None, None, None, None, None, None, 'auteur9')]
         self.assertEqual(list_taxon_expected, list_taxon_output)
+
         list_param = {'q': 'genus species'}
-        list_taxon_output = get_taxons_for_sample(list_param, Taxon)
+        list_taxon_output = get_taxons_for_sample(list_param)
         list_taxon_expected = [('id_taxon', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece',
                                 'sous-espece', 'auteur(s)/date', 'date', 'collecteurs', 'identificateur',
                                 "date d'identification", 'altitude(m)', 'pays', 'region', 'commune', 'lieu dit',
@@ -329,7 +373,7 @@ class TaxonTestCase(TestCase):
         self.assertEqual(list_taxon_expected, list_taxon_output)
 
     def test_constr_hierarchy_tree_adv_search(self):
-        html_hierarchy_output, nb_output = constr_hierarchy_tree_adv_search(Taxon, self.species, None)
+        html_hierarchy_output, nb_output = constr_hierarchy_tree_adv_search(self.species, None)
         html_hierarchy_expected = """<ul class="tree"><br/><al><al><al><al><al><al><al>
     <li><label class="tree_label" for="c1">
             <strong>Regne : </strong></al><a href="/fatercal/taxon/1/">kingdom auteur1</a>
@@ -349,7 +393,8 @@ class TaxonTestCase(TestCase):
         self.maxDiff = None
         self.assertEqual(html_hierarchy_expected, html_hierarchy_output)
         self.assertEqual(nb_output, 1)
-        html_hierarchy_output, nb_output = constr_hierarchy_tree_adv_search(Taxon, None, 'auteur6')
+
+        html_hierarchy_output, nb_output = constr_hierarchy_tree_adv_search(None, 'auteur6')
         html_hierarchy_expected = """<div><ul class="tree"><br/><al><al><al><al><al><al>
     <li><label class="tree_label" for="c1">
             <strong>Regne : </strong></al><a href="/fatercal/taxon/1/">kingdom auteur1</a>
@@ -373,7 +418,7 @@ class TaxonTestCase(TestCase):
         list_hierarchy, nb = self.species.get_hierarchy()
         html_hierarchy_start_output, html_hierarchy_end_output = constr_hierarchy_tree_branch_parents(list_hierarchy)
         html_hierarchy_start_expected = """<ul class="tree"><br/><al><al><al><al><al><al><al>
-    <li><label class="tree_label" for="c1">
+            <li><label class="tree_label" for="c1">
             <strong>Regne : </strong></al><a href="/fatercal/taxon/1/">kingdom auteur1</a>
             <ul><li><label class="tree_label" for="c2">
             <strong>Phylum : </strong></al><a href="/fatercal/taxon/2/">phylum auteur2</a>
@@ -391,7 +436,7 @@ class TaxonTestCase(TestCase):
         self.assertEqual(html_hierarchy_end_expected, html_hierarchy_end_output)
 
     def test_contr_hierarchy_tree_branch_adv_search_child(self):
-        list_taxon, nb = get_child_of_child(Taxon, self.species)
+        list_taxon, nb = get_child_of_child(self.species)
         hierarchy_child_output = constr_hierarchy_tree_branch_adv_search_child(list_taxon[1], nb, '')
         hierarchy_child_expected = """<ul><li><al><label class="tree_label" for="c1"/><strong>Sous-Espèce : </strong>
         </al><a href="/fatercal/taxon/8/">genus species sub_species auteur8</a></li></ul>"""
@@ -406,7 +451,7 @@ class TaxonTestCase(TestCase):
         self.assertHTMLEqual(str_child_expected, str_child_output)
 
     def test_get_taxon_adv_search(self):
-        list_taxon_output = get_taxon_adv_search(Taxon, self.species.id, None)
+        list_taxon_output = get_taxon_adv_search(self.species.id, None)
         list_taxon_expected = [
             ('id_taxon', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece', 'sous-espece',
              'auteur(s)/date', 'date', 'collecteurs', 'identificateur', "date d'identification", 'altitude(m)',
@@ -415,8 +460,9 @@ class TaxonTestCase(TestCase):
             (7, 'order', 'family', '', 'genus', '', 'genus species', '', 'auteur7'),
             (8, None, 'order', 'family', '', 'genus', '', 'genus species', 'genus species sub_species', 'auteur8')]
         self.assertEqual(list_taxon_expected, list_taxon_output)
+
         auteur = 'auteur6'
-        list_taxon_output = get_taxon_adv_search(Taxon, None, auteur)
+        list_taxon_output = get_taxon_adv_search(None, auteur)
         list_taxon_expected = [
             ('id_taxon', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece', 'sous-espece',
              'auteur(s)/date', 'date', 'collecteurs', 'identificateur', "date d'identification", 'altitude(m)', 'pays',
@@ -434,7 +480,7 @@ class TaxonTestCase(TestCase):
              'altitude(m)', 'pays', 'region', 'commune', 'lieu dit', 'type de milieu', 'nombre', 'sexe',
              'capture/relacher', 'informations complementaires', 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc')
         ]
-        list_child_taxon, count_es = get_child_of_child(Taxon, self.species)
+        list_child_taxon, count_es = get_child_of_child(self.species)
         list_taxon_ouput = format_adv_search_child_for_export_sample(list_child_taxon[1], list_taxon)
         list_taxon_expected = [
             ('id_taxon', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece', 'sous-espece',
@@ -449,18 +495,19 @@ class TaxonTestCase(TestCase):
 class SampleTestClass(TestCase):
     def setUp(self):
         self.species = Taxon.objects.create(id=1, lb_nom="species", lb_auteur="auteur1",
-                                       rang=TaxrefRang.objects.create(rang='ES', lb_rang='Espece'))
-        self.sample = Prelevement.objects.create(id_taxref=self.species)
+                                            rang=TaxrefRang.objects.create(rang='ES', lb_rang='Espece'))
+        self.sample = Prelevement.objects.create(id_prelevement=10, id_taxref=self.species)
         Recolteur.objects.create(id_prelevement=self.sample, lb_auteur="auteur")
         self.species.id_ref = self.species
         self.species.save()
 
     def test_get_haverster(self):
         harvester_real = Recolteur.objects.get(lb_auteur="auteur")
-        harvester_found = get_recolteur(Recolteur, self.sample)
+        harvester_found = get_recolteur(self.sample)
         self.assertEqual(harvester_real.lb_auteur, harvester_found)
+
         harvester_real.delete()
-        harvester_found = get_recolteur(Recolteur, self.sample)
+        harvester_found = get_recolteur(self.sample)
         self.assertEqual(harvester_found, "Récolteur inconnu")
 
     def test_get_loc_from_sample(self):
@@ -468,6 +515,7 @@ class SampleTestClass(TestCase):
         region = Localisation.objects.create(nom='regions', loc_type=TypeLoc.objects.create(type='region'), id_sup=pays)
         ville = Localisation.objects.create(nom='town', loc_type=TypeLoc.objects.create(type='ville'), id_sup=region)
         self.assertEqual(get_loc_from_sample(self.sample), {})
+
         self.sample.id_loc = ville
         dict_loc_output = get_loc_from_sample(self.sample)
         dict_loc_expected = {
@@ -481,10 +529,12 @@ class SampleTestClass(TestCase):
         self.sample.altitude_max = 2
         self.sample.save()
         self.assertEqual(format_altitude_sample(self.sample), 2)
+
         self.sample.altitude_max = None
         self.sample.altitude_min = 1
         self.sample.save()
         self.assertEqual(format_altitude_sample(self.sample), 1)
+
         self.sample.altitude_max = 2
         self.sample.save()
         self.assertEqual(format_altitude_sample(self.sample), '1-2')
@@ -496,44 +546,51 @@ class SampleTestClass(TestCase):
             'altitude(m)': '1',
             'nombre': '2'
         }
-        result_output = verify_sample(line, Taxon, TypeEnregistrement, 1)
+        result_output = verify_sample(line, 1)
         result_expected = {
             'good': False,
             'message': 'Une erreur à été perçue à la ligne 1. L\'ID du taxon entrée n\'existe pas.'
         }
         self.assertEqual(result_expected, result_output)
+
         line['id_taxon'] = '1'
         line['capture/relacher'] = None
         result_expected['message'] = 'Une erreur à été perçue à la ligne 1. Le type d\'enregistrement ' \
                                      'dans le champ capture/relacher n\'existe pas ou n\'est pas renseigné.'
-        result_output = verify_sample(line, Taxon, TypeEnregistrement, 1)
+        result_output = verify_sample(line, 1)
         self.assertEqual(result_expected, result_output)
+
         line['capture/relacher'] = 'pays'
         line['x wgs 84'] = None
         line['y wgs 84'] = None
         result_expected['message'] = 'Une erreur à été perçue à la ligne 1. Les coordonnées pour ce prélèvements ' \
                                      'ne sont pas présentes.'
-        result_output = verify_sample(line, Taxon, TypeEnregistrement, 1)
+        result_output = verify_sample(line, 1)
         self.assertEqual(result_expected, result_output)
+
         line['x wgs 84'] = 'sduifsefh'
         line['y wgs 84'] = '12'
         result_expected['message'] = 'Une erreur à été perçue à la ligne 1. ' \
                                      'L\'un des nombres sur cette ligne contient des lettres'
-        result_output = verify_sample(line, Taxon, TypeEnregistrement, 1)
+        result_output = verify_sample(line, 1)
+
         self.assertEqual(result_expected, result_output)
+
         line['x wgs 84'] = '11'
         line['date'] = '2019-120'
         result_expected['message'] = 'Une erreur à été perçue à la ligne 1. ' \
                                      'La date entrée n\'est pas au bon format.'
-        result_output = verify_sample(line, Taxon, TypeEnregistrement, 1)
+        result_output = verify_sample(line, 1)
         self.assertEqual(result_expected, result_output)
+
         line['date'] = None
         result_expected['good'] = True
         result_expected['message'] = 'Une erreur à été perçue à la ligne 1.'
-        result_output = verify_sample(line, Taxon, TypeEnregistrement, 1)
+        result_output = verify_sample(line, 1)
         self.assertEqual(result_expected, result_output)
+
         line['date'] = '2019-03-19'
-        result_output = verify_sample(line, Taxon, TypeEnregistrement, 1)
+        result_output = verify_sample(line, 1)
         self.assertEqual(result_expected, result_output)
 
     def test_save_all_sample(self):
@@ -563,6 +620,7 @@ class SampleTestClass(TestCase):
         self.assertEqual(Localisation.objects.get(nom='secteur'), secteur)
         self.assertEqual(Localisation.objects.get(nom='nom'), nom)
         self.assertEqual(sample.id_loc, nom)
+
         region.delete()
         region.id_sup = pays
         secteur.delete()
@@ -575,6 +633,7 @@ class SampleTestClass(TestCase):
         self.assertEqual(Localisation.objects.get(nom='regions'), region)
         self.assertEqual(Localisation.objects.get(nom='secteur'), secteur)
         self.assertEqual(Localisation.objects.get(nom='nom'), nom)
+
         secteur.delete()
         nom.delete()
         secteur.id_sup = region
@@ -583,6 +642,7 @@ class SampleTestClass(TestCase):
         save_all_sample(list_sample)
         self.assertEqual(Localisation.objects.get(nom='secteur'), secteur)
         self.assertEqual(Localisation.objects.get(nom='nom'), nom)
+
         nom.delete()
         nom.id_sup = secteur
         line['loc']['secteur'] = None
@@ -591,17 +651,18 @@ class SampleTestClass(TestCase):
         self.assertEqual(Localisation.objects.get(nom='nom'), nom)
 
     def test_get_sample(self):
-        list_sample_output = get_sample(Prelevement, Recolteur, Taxon, None)
+        list_sample_output = get_sample(None)
         list_sample_expected = [('Code identification', 'Ordre', 'Famille', 'Sous-Famille', 'Genre', 'Sous-Genre',
                                  'Espece', 'Sous-Espece', 'Auteur(s)/date', 'Date', 'Collecteurs', 'Identificateur',
                                  "Date d'identification", 'Altitude(m)', 'Pays', 'Region', 'Commune', 'Lieu dit',
                                  'Type de milieu', 'Nombre', 'Sexe', 'Capture/relacher',
                                  'Informations complémentaires', 'Photo', 'X WGS 84', 'Y WGS 84', 'X RGNC', 'Y RGNC'),
-                                (5, None, None, None, None, None, None, None, 'auteur1', None, 'auteur', None, None,
+                                (10, None, None, None, None, None, None, None, 'auteur1', None, 'auteur', None, None,
                                  None, None, None, None, None, None, None, None, None, None, None, None, None)]
         self.assertEqual(list_sample_expected, list_sample_output)
+
         list_param = {'q': 'None Found'}
-        list_sample_output = get_sample(Prelevement, Recolteur, Taxon, list_param)
+        list_sample_output = get_sample(list_param)
         list_sample_expected = [('Code identification', 'Ordre', 'Famille', 'Sous-Famille', 'Genre', 'Sous-Genre',
                                  'Espece', 'Sous-Espece', 'Auteur(s)/date', 'Date', 'Collecteurs', 'Identificateur',
                                  "Date d'identification", 'Altitude(m)', 'Pays', 'Region', 'Commune', 'Lieu dit',
@@ -611,10 +672,11 @@ class SampleTestClass(TestCase):
 
     def test_get_specific_sample_search(self):
         list_param = None
-        list_not_proper = get_specific_search_sample(Prelevement, list_param)
+        list_not_proper = get_specific_search_sample(list_param)
         self.assertEqual(list_not_proper.count(), 1)
+
         list_param = {'q': 'species'}
-        list_not_proper = get_specific_search_sample(Prelevement, list_param)
+        list_not_proper = get_specific_search_sample(list_param)
         self.assertEqual(list_not_proper.first(), self.sample)
 
     def test_construct_sample(self):
@@ -656,8 +718,7 @@ class SampleTestClass(TestCase):
                              type_enregistrement=typeEn, date='2018', information_complementaire='', toponymie_x=1,
                              toponymie_y=2, gps=True, altitude_min=10, altitude_max=None)
         try:
-            result_output = construct_sample(line, Taxon, Prelevement, Localisation, Recolteur, TypeLoc,
-                                             TypeEnregistrement, HabitatDetail, 1)
+            result_output = construct_sample(line, 1)
             self.assertEqual(result_expected['loc'], result_output['loc'])
             self.assertEqual(result_expected['habitat'], result_output['habitat'])
             self.assertEqual(result_expected['list_harvester'], result_output['list_harvester'])
@@ -676,19 +737,87 @@ class SampleTestClass(TestCase):
             self.fail("La localisation n'est pas renseignée.")
         line['type de milieu'] = None
         result_expected['habitat'] = None
-        result_output = construct_sample(line, Taxon, Prelevement, Localisation, Recolteur, TypeLoc,
-                                           TypeEnregistrement, HabitatDetail, 1)
+        result_output = construct_sample(line, 1)
         self.assertEqual(result_expected['habitat'], result_output['habitat'])
+
         line['pays'] = None
         line['region'] = None
         line['commune'] = None
         line['lieu dit'] = None
         try:
-            construct_sample(line, Taxon, Prelevement, Localisation, Recolteur, TypeLoc, TypeEnregistrement,
-                             HabitatDetail, 1)
+            construct_sample(line, 1)
             self.fail("La localisation est pas renseignée.")
         except NotGoodSample:
             pass
+
+    def test_verify_and_save_sample(self):
+        pays = Localisation.objects.create(nom='country', loc_type=TypeLoc.objects.create(type='pays'))
+        region = Localisation.objects.create(nom='regions', loc_type=TypeLoc.objects.create(type='region'), id_sup=pays)
+        ville = Localisation.objects.create(nom='town', loc_type=TypeLoc.objects.create(type='ville'), id_sup=region)
+        Localisation.objects.create(nom='nom', loc_type=TypeLoc.objects.create(type='nom'), id_sup=ville)
+        TypeEnregistrement.objects.create(lb_type='type')
+        HabitatDetail.objects.create(nom="habitat")
+        extension = '.rb'
+        message_output = verify_and_save_sample(None, extension)
+        message_expected = "Le fichier n'est pas dans le bon format."
+        self.assertEqual(message_expected, message_output)
+
+        with open('test.csv', 'w', newline='') as csvfile:
+            fieldnames = ['not good']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerow({'not good': 'yes'})
+        with open('test.csv', 'r', newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            extension = '.csv'
+            message_output = verify_and_save_sample(reader, extension)
+            message_expected = "Le fichier n'a pas les bons noms de colonne ou une colonne est manquante."
+        self.assertEqual(message_expected, message_output)
+
+        with open('test.csv', 'w', newline='') as csvfile:
+            fieldnames = ['id_taxon', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece',
+                          'sous-espece', 'auteur(s)/date', 'date', 'collecteurs', 'identificateur',
+                          'date d\'identification', 'altitude(m)', 'pays', 'region', 'commune', 'lieu dit',
+                          'type de milieu', 'nombre', 'sexe', 'capture/relacher', 'informations complementaires',
+                          'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerow({'id_taxon': 1, 'pays': 'country', 'region': 'regions', 'commune': 'town',
+                             'lieu dit': 'nom', 'x wgs 84': '1', 'y wgs 84': '2', 'altitude(m)': '10', 'nombre': '0',
+                             'sexe': 'male', 'date': '2018', 'informations complementaires': '', 'collecteurs': '',
+                             'capture/relacher': 'type', 'type de milieu': 'habitat',})
+        with open('test.csv', 'r', newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            extension = '.csv'
+            message_output = verify_and_save_sample(reader, extension)
+            message_expected = "Tous les prélèvements ont tous été importé."
+        self.assertEqual(message_expected, message_output)
+        self.addCleanup(os.remove, 'test.csv')
+
+    def test_list_sample_for_map(self):
+        list_sample_output = list_sample_for_map(self.species)
+        list_sample_expected = []
+        self.assertEqual(list_sample_expected, list_sample_output)
+        self.sample.toponymie_x = 1
+        self.sample.toponymie_y = 2
+        self.sample.save()
+        list_sample_output = list_sample_for_map(self.species)
+        list_sample_expected = [{'id': 10, 'loc': None, 'default_loc': False, 'latitude': 2.0, 'longitude': 1.0,
+                                 't_enre': None, 'date': None, 'collection_museum': None}]
+        self.assertEqual(list_sample_expected, list_sample_output)
+        species_syn = Taxon.objects.create(id=2, id_ref=self.species, lb_nom="species_synonymous",
+                                           lb_auteur="auteur1", rang=self.species.rang)
+        country = Localisation.objects.create(nom='country', loc_type=TypeLoc.objects.create(type='pays'),
+                                              longitude=4, latitude=1)
+        Prelevement.objects.create(id_prelevement=2, id_taxref=species_syn, toponymie_x=1, toponymie_y=4,
+                                   type_enregistrement=TypeEnregistrement.objects.create(lb_type='pays'),
+                                   id_loc=country)
+        list_sample_output = list_sample_for_map(self.species)
+        list_sample_expected = [{'id': 10, 'loc': None, 'default_loc': False, 'latitude': 2.0, 'longitude': 1.0,
+                                 't_enre': None, 'date': None, 'collection_museum': None},
+                                {'id': 2, 'loc': 'country', 'default_loc': True, 'latitude': 4.0, 'longitude': 1.0,
+                                 't_enre': 'pays', 'date': None, 'collection_museum': None}]
+        self.assertEqual(list_sample_expected, list_sample_output)
 
 
 # Test function that are related to the model Localisation
@@ -711,7 +840,8 @@ class LocationTestCase(TestCase):
             'x wgs 84': '1',
             'y wgs 84': '2',
         }
-        self.assertEqual(None, get_loc_from_line(line, Localisation, TypeLoc))
+        self.assertEqual(None, get_loc_from_line(line))
+
         line['pays'] = 'New-Caledonia'
         line['region'] = 'Province Sud'
         line['commune'] = 'Koumac'
@@ -722,13 +852,14 @@ class LocationTestCase(TestCase):
             'secteur': None,
             'nom': self.nom
         }
-        dict_loc_output = get_loc_from_line(line, Localisation, TypeLoc)
+        dict_loc_output = get_loc_from_line(line)
         self.assertEqual(dict_loc_expected, dict_loc_output)
+
         line['pays'] = 'Pays'
         line['region'] = 'Region'
         line['commune'] = 'Commune'
         line['lieu dit'] = 'Lieu Dit'
-        dict_loc_output = get_loc_from_line(line, Localisation, TypeLoc)
+        dict_loc_output = get_loc_from_line(line)
         dict_loc_output['pays'].save()
         dict_loc_output['region'].save()
         dict_loc_output['secteur'].save()
@@ -751,6 +882,7 @@ class OtherTestCase(TestCase):
         }
         boolean = is_variable_good(line)
         self.assertEqual(False, boolean)
+
         line['x wgs 84'] = '1'
         line['altitude(m)'] = '2'
         boolean = is_variable_good(line)
@@ -773,6 +905,7 @@ class OtherTestCase(TestCase):
         }
         dict_output = get_variable_in_good_format(line)
         self.assertEqual(dict_expected, dict_output)
+
         line['x wgs 84'] = 10
         line['y wgs 84'] = 12
         line['altitude(m)'] = '15-16'
@@ -785,8 +918,10 @@ class OtherTestCase(TestCase):
         dict_output = get_variable_in_good_format(line)
         self.assertEqual(dict_expected, dict_output)
 
-    def test_get_form_advanced_search(self):
-        pass
-
     def test_is_admin(self):
-        pass
+        user = User.objects.create_user('temporary', 'temporary@gmail.com', 'temporary')
+        my_group = Group.objects.create(name='Admin')
+        self.assertFalse(is_admin(user))
+
+        my_group.user_set.add(user)
+        self.assertTrue(is_admin(user))

@@ -1,17 +1,15 @@
-from .models import *
 from django.http import Http404
 from django.contrib import admin
-from django.db.models import F, Q
+from django.db.models import F
 from django.template import loader
-from django.http import HttpResponse
-from django.core.exceptions import ValidationError
+from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
 from .forms import AllTaxon, TaxonChangeSup, SearchAdvanced, ChooseData, UploadFileCsv
-from .function import get_form_advanced_search, constr_hierarchy_tree_adv_search, get_taxon_from_search, is_admin,\
-    get_taxon_personal, get_sample, get_taxons_for_sample, verify_sample, save_all_sample, \
-    construct_sample, NotGoodSample, get_taxon_adv_search
+from .function import constr_hierarchy_tree_adv_search, get_taxon_from_search, is_admin,\
+    get_taxon_personal, get_sample, get_taxons_for_sample, get_taxon_adv_search, change_ref_taxon, change_sup_taxon,\
+    verify_and_save_sample, list_sample_for_map
+from .models import Taxon
 
-import json
 import csv
 import codecs
 import datetime
@@ -94,82 +92,56 @@ class AltitudeSpecialFilter(admin.SimpleListFilter):
 @login_required()
 def change_taxon_ref(request, id_taxon):
     """
-    View for changing the superior of a taxon
+    View for changing the validity, reference of a taxon
     :param request: an request object (see Django doc)
     :param id_taxon: The id specific to the taxon we want to change the referent.
     :return: an HttpResponse Object (see Django doc)
     """
-
+    message, error = None, None
     taxon_to_change = Taxon.objects.get(id=id_taxon)
     if taxon_to_change == taxon_to_change.id_ref:
         # The user has finished changing the data in the form and send it back
         if request.method == 'POST':
             form = AllTaxon(request.POST)
-            message = "Le Taxon {} a bien été mis à jour".format(taxon_to_change.nom_complet)
             if form.is_valid():
-                list_syn = Taxon.objects.filter(id_ref=taxon_to_change)
-                list_child = Taxon.objects.filter(id_sup=taxon_to_change)
-                for child in list_child:
-                    child.id_sup = form.cleaned_data['taxon']
-                    child.save()
-                for syn in list_syn:
-                    syn.id_ref = form.cleaned_data['taxon']
-                    syn.save()
-                if form.cleaned_data['taxon'] != form.cleaned_data['taxon'].id_ref:
-                    form.cleaned_data['taxon'].id_ref = form.cleaned_data['taxon']
-                    form.cleaned_data['taxon'].id_sup = taxon_to_change.id_sup
-                    form.cleaned_data['taxon'].save()
-                taxon_to_change.id_ref = form.cleaned_data['taxon']
-                taxon_to_change.id_sup = None
-                taxon_to_change.save()
-                template = loader.get_template('fatercal/return_change_taxon.html')
-                context = {
-                    'taxon_to_change': taxon_to_change,
-                    'message': message,
-                    'user': request.user.__str__(),
-                }
-                return HttpResponse(template.render(context, request))
+                if taxon_to_change.id_ref == form.cleaned_data['taxon'].id_ref:
+                    error = "Mettez un référent différent de celui existant."
+                    template = loader.get_template('fatercal/change_taxon.html')
+                else:
+                    change_ref_taxon(taxon_to_change, form.cleaned_data)
+                    message = "Le Taxon {} a bien été mis à jour".format(taxon_to_change.nom_complet)
+                    template = loader.get_template('fatercal/return_change_taxon.html')
             else:
-                form = AllTaxon()
                 template = loader.get_template('fatercal/change_taxon.html')
-                context = {
-                    'error': 'Veuillez choisir un taxon parmi ceux proposés.',
-                    'taxon_to_change': taxon_to_change,
-                    'form': form,
-                    'user': request.user.__str__(),
-                }
-                return HttpResponse(template.render(context, request))
+                error = 'Veuillez choisir un taxon parmi ceux proposés.'
+
         else:
-            form = AllTaxon()
             template = loader.get_template('fatercal/change_taxon.html')
-            context = {
-                'error': None,
-                'taxon_to_change': taxon_to_change,
-                'form': form,
-                'user': request.user.__str__(),
-            }
-            return HttpResponse(template.render(context, request))
+            error = None
     else:
         template = loader.get_template('fatercal/return_change_taxon.html')
         message = 'Le taxon {} n\'est pas un taxon valide. Retour a la page du taxon.' \
             .format(taxon_to_change.nom_complet)
-        context = {
-            'taxon_to_change': taxon_to_change,
-            'message': message,
-            'user': request.user.__str__(),
-        }
-        return HttpResponse(template.render(context, request))
+    form = AllTaxon()
+    context = {
+        'form': form,
+        'taxon_to_change': taxon_to_change,
+        'message': message,
+        'error': error,
+        'user': request.user.__str__(),
+    }
+    return HttpResponse(template.render(context, request))
 
 
 @login_required()
 def change_taxon_sup(request, id_taxon):
     """
-    View for changing the validity, reference of a taxon
+    View for changing the superior of a taxon
     :param request: an request object (see Django doc)
     :param id_taxon: The id specific to one taxon
     :return: an HttpResponse Object (see Django doc)
     """
-
+    form, message, error = None, None, None
     taxon_to_change = Taxon.objects.get(id=id_taxon)
     # The user has finished changing the data in the form and send it back
     if taxon_to_change == taxon_to_change.id_ref:
@@ -178,70 +150,30 @@ def change_taxon_sup(request, id_taxon):
             message = "Le Taxon {} a bien été mis à jour".format(taxon_to_change.nom_complet)
             if form.is_valid():
                 if taxon_to_change != form.cleaned_data['taxon_superieur']:
-                    taxon_to_change.id_sup = form.cleaned_data['taxon_superieur']
-                    try:
-                        taxon_to_change.clean()
-                        error = ''
-                        taxon_to_change.save()
-                        template = loader.get_template('fatercal/return_change_taxon.html')
-                        context = {
-                            'error': error,
-                            'taxon_to_change': taxon_to_change,
-                            'message': message,
-                            'user': request.user.__str__(),
-                        }
-                        return HttpResponse(template.render(context, request))
-                    except ValidationError as e:
-                        error = e.message
-                        form = TaxonChangeSup()
-                        template = loader.get_template('fatercal/change_taxon.html')
-                        context = {
-                            'error': error,
-                            'taxon_to_change': taxon_to_change,
-                            'form': form,
-                            'user': request.user.__str__(),
-                        }
-                        return HttpResponse(template.render(context, request))
+                    template, error = change_sup_taxon(taxon_to_change, form.cleaned_data)
                 else:
                     form = TaxonChangeSup()
                     template = loader.get_template('fatercal/change_taxon.html')
-                    context = {
-                        'error': 'Veuillez choisir un taxon autre que lui même.',
-                        'taxon_to_change': taxon_to_change,
-                        'form': form,
-                        'user': request.user.__str__(),
-                    }
-                    return HttpResponse(template.render(context, request))
+                    error = 'Ce taxon ne peut pas être son propre supérieur.'
             else:
                 form = TaxonChangeSup()
                 template = loader.get_template('fatercal/change_taxon.html')
-                context = {
-                    'error': 'Veuillez choisir un taxon parmi ceux proposés.',
-                    'taxon_to_change': taxon_to_change,
-                    'form': form,
-                    'user': request.user.__str__(),
-                }
-                return HttpResponse(template.render(context, request))
+                error = 'Veuillez choisir un taxon parmi ceux proposés.'
         else:
             form = TaxonChangeSup()
             template = loader.get_template('fatercal/change_taxon.html')
-            context = {
-                'taxon_to_change': taxon_to_change,
-                'form': form,
-                'user': request.user.__str__(),
-            }
-            return HttpResponse(template.render(context, request))
     else:
         template = loader.get_template('fatercal/return_change_taxon.html')
         message = 'Le taxon {} n\'est pas un taxon valide. Retour a la page du taxon.' \
                   ''.format(taxon_to_change.nom_complet)
-        context = {
-            'error': None,
-            'taxon_to_change': taxon_to_change,
-            'message': message,
-            'user': request.user.__str__(),
-        }
-        return HttpResponse(template.render(context, request))
+    context = {
+        'error': error,
+        'form': form,
+        'taxon_to_change': taxon_to_change,
+        'message': message,
+        'user': request.user.__str__(),
+    }
+    return HttpResponse(template.render(context, request))
 
 
 @login_required()
@@ -259,24 +191,16 @@ def change_validity_to_valid(request, id_taxon):
         taxon_to_change.id_ref = taxon_to_change
         taxon_to_change.save()
         template = loader.get_template('fatercal/return_change_taxon.html')
-        message = 'Le taxon est devenu un taxon valide.'.format(
-            taxon_to_change.nom_complet)
-        context = {
-            'taxon_to_change': taxon_to_change,
-            'message': message,
-            'user': request.user.__str__(),
-        }
-        return HttpResponse(template.render(context, request))
+        message = 'Le taxon est devenu un taxon valide.'.format(taxon_to_change.nom_complet)
     else:
         template = loader.get_template('fatercal/return_change_taxon.html')
-        message = 'Le taxon {} est déjà un taxon valide.'.format(
-            taxon_to_change.nom_complet)
-        context = {
-            'taxon_to_change': taxon_to_change,
-            'message': message,
-            'user': request.user.__str__(),
-        }
-        return HttpResponse(template.render(context, request))
+        message = 'Le taxon {} est déjà un taxon valide.'.format(taxon_to_change.nom_complet)
+    context = {
+        'taxon_to_change': taxon_to_change,
+        'message': message,
+        'user': request.user.__str__(),
+    }
+    return HttpResponse(template.render(context, request))
 
 
 @login_required()
@@ -293,7 +217,7 @@ def advanced_search(request):
             taxon = form.cleaned_data['taxon']
             auteur = form.cleaned_data['auteur']
             form = SearchAdvanced(initial={'auteur': auteur})
-            hierarchy_tree, count_es = constr_hierarchy_tree_adv_search(Taxon, taxon, auteur)
+            hierarchy_tree, count_es = constr_hierarchy_tree_adv_search(taxon, auteur)
             context = {
                 'list_taxon': hierarchy_tree,
                 'auteur': auteur,
@@ -302,10 +226,13 @@ def advanced_search(request):
                 'form': form,
             }
             return HttpResponse(template.render(context, request))
-        else:
-            return get_form_advanced_search(SearchAdvanced, request)
-    else:
-        return get_form_advanced_search(SearchAdvanced, request)
+    template = loader.get_template('fatercal/advanced_search/change_form.html')
+    form = SearchAdvanced()
+    context = {
+        'form': form,
+        'count_es': -1
+    }
+    return HttpResponse(template.render(context, request))
 
 
 @login_required()
@@ -316,93 +243,27 @@ def update_map(request):
     :return: a JSON response
     """
     if request.method == 'GET':
-        if request.GET['taxon'] == '':
-            return HttpResponse(json.dumps(None), content_type="application/json")
-        else:
-            taxon = Taxon.objects.get(id=request.GET['taxon'])
-            if taxon is None:
-                return HttpResponse(json.dumps(None), content_type="application/json")
-            else:
-                list_sample = []
-                queryset = Prelevement.objects.filter(id_taxref=taxon.id)
-                if taxon.id == taxon.id_ref_id:
-                    queryset_synonymous = Taxon.objects.filter(id_ref=taxon.id).filter(~Q(id=taxon.id))
-                    for taxon in queryset_synonymous:
-                        queryset_synonymous_sample = Prelevement.objects.filter(id_taxref=taxon.id)
-                        for sample in queryset_synonymous_sample:
-                            if sample.toponymie_x is not None and sample.toponymie_y is not None:
-                                list_sample.append({
-                                    'sample_id': sample.id_prelevement,
-                                    'latitude': sample.toponymie_y,
-                                    'longitude': sample.toponymie_x,
-                                })
-                for sample in queryset:
-                    if sample.toponymie_x is not None and sample.toponymie_y is not None:
-                        default_loc = False
-                        if sample.type_enregistrement is None:
-                            t_enre = None
-                        else:
-                            t_enre = sample.type_enregistrement.lb_type
-                        if sample.id_loc is None:
-                            loc = None
-                        else:
-                            loc = sample.id_loc.nom
-                            if sample.toponymie_x == sample.id_loc.longitude and \
-                                    sample.id_loc.latitude == sample.toponymie_y:
-                                default_loc = True
-                        list_sample.append({
-                            'id': sample.id_prelevement,
-                            'loc': loc,
-                            'default_loc': default_loc,
-                            'latitude': sample.toponymie_y,
-                            'longitude': sample.toponymie_x,
-                            't_enre': t_enre,
-                            'date': sample.date,
-                            'collection_museum': sample.collection_museum,
-                        })
-                return HttpResponse(json.dumps(list_sample), content_type="application/json")
-    else:
-        return HttpResponse(json.dumps(None), content_type="application/json")
+        if bool(request.GET):
+            if request.GET['taxon'] != '':
+                taxon = Taxon.objects.get(id=request.GET['taxon'])
+                if taxon is not None:
+                    list_sample = list_sample_for_map(taxon)
+                    return JsonResponse(list_sample, safe=False, content_type="application/json")
+    return JsonResponse([], safe=False, content_type="application/json")
 
 
 @login_required()
 def map_sample(request):
     """
-    A view for displaying the map with each taxon with their sample
+    A view for displaying the map with the sample of a taxon
     :param request: request: an request object (see Django doc)
     :return: an HttpResponse object (see Django doc)
     """
-    # Generate a sequence of rows. The range is based on the maximum number of
-    # rows that can be handled by a single sheet in most spreadsheet
-    # applications.
-    if request.method == 'POST':
-        form = AllTaxon(request.POST)
-        if form.is_valid():
-            taxon = form.cleaned_data['taxon']
-            list_sample = []
-            queryset = Prelevement.objects.filter(id_taxref=taxon.id)
-            for sample in queryset.iterator():
-                list_sample.append({
-                    'id': sample.id_prelevement,
-                    'latitude': sample.toponymie_y,
-                    'longitude': sample.toponymie_x
-                })
-            template = loader.get_template('fatercal/prelevement/map_sample.html')
-            context = {
-                'form': form,
-                'list_sample': list_sample,
-                'error': '',
-            }
-            return HttpResponse(template.render(context, request))
-    else:
-        form = AllTaxon()
-        template = loader.get_template('fatercal/prelevement/map_sample.html')
-        context = {
-            'form': form,
-            'list_sample': [],
-            'error': '',
-        }
-        return HttpResponse(template.render(context, request))
+    template = loader.get_template('fatercal/prelevement/map_sample.html')
+    context = {
+        'form': AllTaxon(),
+    }
+    return HttpResponse(template.render(context, request))
 
 
 @login_required()
@@ -416,9 +277,9 @@ def extract_taxon_taxref(request):
     # Generate a sequence of rows. The range is based on the maximum number of
     # rows that can be handled by a single sheet in most spreadsheet
     # applications.
-    if is_admin(request):
+    if is_admin(request.user):
         param = None
-        rows = (idx for idx in get_taxon_from_search(Taxon, param))
+        rows = (idx for idx in get_taxon_from_search(param))
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref' + \
                                           str(datetime.datetime.now()) + '.csv"'
@@ -441,10 +302,10 @@ def extract_search_taxon_taxref(request):
     # Generate a sequence of rows. The range is based on the maximum number of
     # rows that can be handled by a single sheet in most spreadsheet
     # applications.
-    if is_admin(request):
+    if is_admin(request.user):
         try:
             list_param = request.GET
-            rows = (idx for idx in get_taxon_from_search(Taxon, list_param))
+            rows = (idx for idx in get_taxon_from_search(list_param))
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref_search' + \
                                               str(datetime.datetime.now()) + '.csv"'
@@ -465,11 +326,12 @@ def choose_search_data(request):
     :param request: an request object (see Django doc)
     :return: an HttpResponse object (see Django doc)
     """
+    list_param = None
     template = loader.get_template('fatercal/taxon/export_data_choose.html')
     if request.method == 'POST':
         form = ChooseData(request.POST)
         if form.is_valid():
-            rows = (idx for idx in get_taxon_personal(Taxon, form))
+            rows = (idx for idx in get_taxon_personal(form))
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref' + \
                                               str(datetime.datetime.now()) + '.csv"'
@@ -477,30 +339,23 @@ def choose_search_data(request):
             writer = csv.writer(response, delimiter=';')
             for row in rows:
                 writer.writerow(row)
-
             return response
         else:
             form = ChooseData()
             template = loader.get_template('fatercal/change_taxon.html')
-            context = {
-                'error': 'Veuillez choisir un taxon parmi ceux proposés.',
-                'form': form,
-                'user': request.user.__str__(),
-            }
-        return HttpResponse(template.render(context, request))
     else:
         list_param = request.GET
         if list_param is None:
             form = ChooseData()
         else:
             form = ChooseData(initial={key: value for (key, value) in list_param.items()})
-        context = {
-            'error': '',
-            'form': form,
-            'list_param': list_param,
-            'user': request.user.__str__(),
-        }
-        return HttpResponse(template.render(context, request))
+    context = {
+        'error': '',
+        'form': form,
+        'list_param': list_param,
+        'user': request.user.__str__(),
+    }
+    return HttpResponse(template.render(context, request))
 
 
 @login_required()
@@ -514,10 +369,10 @@ def extract_search_sample(request):
     # Generate a sequence of rows. The range is based on the maximum number of
     # rows that can be handled by a single sheet in most spreadsheet
     # applications.
-    if is_admin(request):
+    if is_admin(request.user):
         try:
             list_param = request.GET
-            rows = (idx for idx in get_sample(Prelevement, Recolteur, Taxon, list_param))
+            rows = (idx for idx in get_sample(list_param))
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="fatercal_search_sample_' + \
                                               str(datetime.datetime.now()) + '.csv"'
@@ -542,9 +397,9 @@ def export_for_import_sample(request):
     # Generate a sequence of rows. The range is based on the maximum number of
     # rows that can be handled by a single sheet in most spreadsheet
     # applications.
-    if is_admin(request):
+    if is_admin(request.user):
         list_param = request.GET
-        rows = (idx for idx in get_taxons_for_sample(list_param, Taxon))
+        rows = (idx for idx in get_taxons_for_sample(list_param))
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="fatercal_export_import' + \
                                           str(datetime.datetime.now()) + '.csv"'
@@ -563,41 +418,18 @@ def add_sample_by_csv(request):
     :param request: request: an request object (see Django doc)
     :return: an HttpResponse object (see Django doc)
     """
-    if is_admin(request):
+    if is_admin(request.user):
         template = loader.get_template('fatercal/prelevement/import_sample.html')
         message = ''
         if request.method == 'POST':
             form = UploadFileCsv(request.POST, request.FILES)
-            try:
-                if form.is_valid():
-                    filename = request.FILES['file'].name
-                    extension = filename[filename.rfind('.'):]
-                    valid_extensions = ['.csv', '.txt']
-                    if extension in valid_extensions:
-                        csv_file = csv.DictReader(codecs.iterdecode(request.FILES['file'], 'latin-1'), delimiter=';')
-                        list_dict_sample = []
-                        count = 1
-                        for row in csv_file:
-                            result = verify_sample(row, Taxon, TypeEnregistrement, count)
-                            if result['good']:
-                                result = construct_sample(row, Taxon, Prelevement, Localisation,
-                                                          Recolteur, TypeLoc, TypeEnregistrement, HabitatDetail, count)
-                                list_dict_sample.append(result)
-                            else:
-                                raise NotGoodSample(result['message'])
-                            count += 1
-                        save_all_sample(list_dict_sample)
-                        message = 'Tous les prélèvements ont tous été importé.'
-                    else:
-                        raise ValidationError(u'Unsupported file extension.')
-                else:
-                    message = "Veuillez donnez le fichier d'importation."
-            except ValidationError:
-                message = "Le fichier n'est pas dans le bon format."
-            except NotGoodSample as e:
-                message = e.message
-            except KeyError:
-                message = "Le fichier n'a pas les bon nom de colonne ou une colonne est manquante."
+            if form.is_valid():
+                filename = request.FILES['file'].name
+                extension = filename[filename.rfind('.'):]
+                csv_file = csv.DictReader(codecs.iterdecode(request.FILES['file'], 'latin-1'), delimiter=';')
+                message = verify_and_save_sample(csv_file, extension)
+            else:
+                message = "Veuillez donnez le fichier d'importation."
         form = UploadFileCsv()
         context = {
             'message': message,
@@ -619,11 +451,11 @@ def export_adv_search(request):
     # Generate a sequence of rows. The range is based on the maximum number of
     # rows that can be handled by a single sheet in most spreadsheet
     # applications.
-    if is_admin(request):
+    if is_admin(request.user):
         try:
             taxon = request.GET.get("id")
             auteur = request.GET.get("auteur")
-            rows = (idx for idx in get_taxon_adv_search(Taxon, taxon, auteur))
+            rows = (idx for idx in get_taxon_adv_search(taxon, auteur))
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="fatercal_adv_export_for_sample' + \
                                               str(datetime.datetime.now()) + '.csv"'

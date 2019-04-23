@@ -1,18 +1,65 @@
-from django.http import HttpResponse
-from django.template import loader
-from django.db.models import F, Q
-from .variable import regex_date
 import re
 
+from django.core.exceptions import ValidationError
+from django.db.models import F, Q
+from django.template import loader
 
-def get_recolteur(recolteur, prelev):
+from .models import Taxon, Prelevement, Localisation, TypeEnregistrement, Recolteur, TypeLoc, HabitatDetail
+from .variable import regex_date
+
+
+def change_ref_taxon(taxon_to_change, cleaned_data):
+    """
+    Change the ref of the taxon
+    :param taxon_to_change:
+    :param cleaned_data:
+    :return:
+    """
+    list_syn = Taxon.objects.filter(id_ref=taxon_to_change)
+    list_child = Taxon.objects.filter(id_sup=taxon_to_change)
+    for child in list_child:
+        child.id_sup = cleaned_data['taxon']
+        child.save()
+    for syn in list_syn:
+        syn.id_ref = cleaned_data['taxon']
+        syn.save()
+    if cleaned_data['taxon'] != cleaned_data['taxon'].id_ref:
+        cleaned_data['taxon'].id_ref = cleaned_data['taxon']
+        cleaned_data['taxon'].id_sup = taxon_to_change.id_sup
+        cleaned_data['taxon'].save()
+    taxon_to_change.id_ref = cleaned_data['taxon']
+    taxon_to_change.id_sup = None
+    taxon_to_change.save()
+
+
+def change_sup_taxon(taxon_to_change, cleaned_data):
+    """
+    Change the superior of the taxon
+    :param taxon_to_change:
+    :param cleaned_data:
+    :return: the template and an error (if its got one)
+    """
+    taxon_to_change.id_sup = cleaned_data['taxon_superieur']
+    try:
+        taxon_to_change.clean()
+        error = ''
+        taxon_to_change.save()
+        template = loader.get_template('fatercal/return_change_taxon.html')
+        return template, error
+    except ValidationError as e:
+        template = loader.get_template('fatercal/change_taxon.html')
+        error = e.message
+        return template, error
+
+
+def get_recolteur(prelev):
     """
     Get the Harvesteur's for a specific sample
     :param recolteur:
     :param prelev: the object
     :return: a string
     """
-    list_recolt = recolteur.objects.filter(id_prelevement=prelev.id_prelevement)
+    list_recolt = Recolteur.objects.filter(id_prelevement=prelev.id_prelevement)
     if len(list_recolt) > 0:
         str_recolt = ''
         first = True
@@ -60,17 +107,16 @@ def get_msg(taxon):
     return None, None, None, None
 
 
-def get_taxon_from_search(taxons, list_param):
+def get_taxon_from_search(list_param):
     """
     This function get all Information needed from all taxon from the user's search parameter
-    :param taxons: The model which is connected to the table Taxon in the database
     :param list_param: a dict which contains the parameters
     :return: a list of tuple
     """
     if list_param is None:
-        list_not_proper = taxons.objects.all()
+        list_not_proper = Taxon.objects.all()
     else:
-        list_not_proper = get_specific_search_taxon(taxons, list_param)
+        list_not_proper = get_specific_search_taxon(list_param)
     list_taxon = [
         ('REGNE', 'PHYLUM', 'CLASSE', 'ORDRE', 'FAMILLE', 'GROUP1_INPN', 'GROUP2_INPN', 'ID', 'ID_REF', 'ID_SUP',
          'CD_NOM', 'CD_TAXSUP', 'CD_SUP', 'CD_REF', 'RANG', 'LB_NOM', 'LB_AUTEUR', 'NOM_COMPLET', 'NOM_COMPLET_HTML',
@@ -119,14 +165,13 @@ def construct_cleaned_taxon(taxon):
     return tupple
 
 
-def get_taxon_personal(taxons, form):
+def get_taxon_personal(form):
     """
     Get the list of taxon the user get from its search
-    :param taxons: The model which is connected to the table Taxon in the database
     :param form: an form object (See Django doc)
     :return: a list
     """
-    list_not_proper = get_specific_search_taxon(taxons, form.cleaned_data)
+    list_not_proper = get_specific_search_taxon(form.cleaned_data)
     if 'q' in form.cleaned_data:
         del form.cleaned_data['q']
     if 'nc__status__exact' in form.cleaned_data:
@@ -224,19 +269,16 @@ def construct_cleaned_taxon_search(taxon, cleaned_data):
     return cleaned_taxon
 
 
-def get_sample(samples, recolteur, taxons, param):
+def get_sample(param):
     """
     This function get all Information needed from all or specific sample
-    :param samples: The model which is connected to the table Prelevement in the database
-    :param recolteur: The model which is connected to the table Recolteur in the database
-    :param taxons: The model which is connected to the table Taxon in the database
     :param param: the parameter's if the user want to export his research
     :return: a list of tuple
     """
     if param is None:
-        list_not_proper = samples.objects.all()
+        list_not_proper = Prelevement.objects.all()
     else:
-        list_not_proper = get_specific_search_sample(samples, param)
+        list_not_proper = get_specific_search_sample(param)
     list_sample = [
         ('Code identification', 'Ordre', 'Famille', 'Sous-Famille', 'Genre', 'Sous-Genre', 'Espece',
          'Sous-Espece', 'Auteur(s)/date', 'Date', 'Collecteurs', 'Identificateur', "Date d'identification",
@@ -244,9 +286,9 @@ def get_sample(samples, recolteur, taxons, param):
          'Informations complémentaires', 'Photo', 'X WGS 84', 'Y WGS 84', 'X RGNC', 'Y RGNC')
     ]
     for sample in list_not_proper.iterator():
-        harvesters = get_recolteur(recolteur, sample)
+        harvesters = get_recolteur(sample)
         dict_loc = get_loc_from_sample(sample)
-        taxon = taxons.objects.get(id=sample.id_taxref_id)
+        taxon = Taxon.objects.get(id=sample.id_taxref_id)
         if taxon.id != taxon.id_ref_id:
             dict_hierarchy = get_hierarchy_to_dict(taxon.id_ref)
         else:
@@ -294,14 +336,13 @@ def format_altitude_sample(sample):
         return "{}-{}".format(sample.altitude_min, sample.altitude_max)
 
 
-def get_specific_search_taxon(taxons, list_param):
+def get_specific_search_taxon(list_param):
     """
     Filter from the user's parameter
-    :param taxons: The model which is connected to the table Taxon in the database
     :param list_param:
     :return: a list of taxon
     """
-    list_not_proper = taxons.objects.all()
+    list_not_proper = Taxon.objects.all()
     if 'q' in list_param:
         if list_param['q'] != '':
             list_not_proper = list_not_proper.filter(Q(lb_auteur__icontains=list_param['q']) |
@@ -321,14 +362,13 @@ def get_specific_search_taxon(taxons, list_param):
     return list_not_proper
 
 
-def get_specific_search_sample(samples, list_param):
+def get_specific_search_sample(list_param):
     """
     Filter from the user's parameter's
-    :param samples: The model which is connected to the table Prelevement in the database
     :param list_param: a list of parameter if the user want to export his research
     :return: a list filtered
     """
-    list_not_proper = samples.objects.all()
+    list_not_proper = Prelevement.objects.all()
     if list_param is not None:
         if 'q' in list_param:
             if list_param['q'] != '':
@@ -338,20 +378,19 @@ def get_specific_search_sample(samples, list_param):
     return list_not_proper
 
 
-def get_taxon_child(taxon, child, count_es):
+def get_taxon_child(child, count_es):
     """
     This function will give us all the child of the child of a taxon and returning it into a list
     For that we have to do a recursive function
-    :param taxon: The model which is connected to the table Taxon in the database
     :param child: the current taxon from who we want the child
     :param count_es:
     :return: the new list of taxon we want
     """
-    lchild = taxon.objects.filter(id_sup=child.id)
+    lchild = Taxon.objects.filter(id_sup=child.id)
     if lchild:
         list_child = []
         for child2 in lchild:
-            list_child_temp, count_es = get_taxon_child(taxon, child2, count_es)
+            list_child_temp, count_es = get_taxon_child(child2, count_es)
             list_child.append([child2, list_child_temp])
         if child.rang.rang == 'ES' or child.rang.rang == 'SSES':
             count_es = count_es + 1
@@ -362,23 +401,22 @@ def get_taxon_child(taxon, child, count_es):
         return None, count_es
 
 
-def get_search_results_auteur_by_genus(taxons, search_term):
+def get_search_results_auteur_by_genus(search_term):
     """
     The goal of this function is to retun a list of genus related by a author
-    :param taxons: The model which is connected to the table Taxon in the database
     :param search_term: the term the user entered
     :return: the list of children
     """
-    queryset = taxons.objects.filter(Q(lb_auteur__icontains=search_term) & Q(rang='GN'))
+    queryset = Taxon.objects.filter(Q(lb_auteur__icontains=search_term) & Q(rang='GN'))
     list_taxon = []
     count_es = 0
     if len(queryset) > 0:
         for taxon in queryset:
             if taxon.id_ref_id == taxon.id:
-                list_child = taxons.objects.filter(id_sup=taxon.id)
+                list_child = Taxon.objects.filter(id_sup=taxon.id)
                 list_temp_taxon = []
                 for child in list_child:
-                    list_temp_child, count_es = get_taxon_child(taxons, child, count_es)
+                    list_temp_child, count_es = get_taxon_child(child, count_es)
                     list_temp_taxon.append([child, list_temp_child])
                 list_taxon.append([taxon, list_temp_taxon])
         return list_taxon, count_es
@@ -387,31 +425,29 @@ def get_search_results_auteur_by_genus(taxons, search_term):
         return error, 0
 
 
-def get_child_of_child(taxons, taxon):
+def get_child_of_child(taxon):
     """
     The goal of this function is to retun in a list of list all the children of a specific taxon
-    :param taxons: The model which is connected to the table Taxon in the database
     :param taxon: the taxon the user choose
     :return: the list of children
     """
     list_taxon = []
     count_es = 0
-    list_child = taxons.objects.filter(id_sup=taxon.id)
+    list_child = Taxon.objects.filter(id_sup=taxon.id)
     list_temp_taxon = []
     for child in list_child:
-        list_temp_child, count_es = get_taxon_child(taxons, child, count_es)
+        list_temp_child, count_es = get_taxon_child(child, count_es)
         list_temp_taxon.append([child, list_temp_child])
     list_taxon.append(taxon)
     list_taxon.append(list_temp_taxon)
     return list_taxon, count_es
 
 
-def constr_hierarchy_tree_adv_search(taxons, taxon, auteur):
+def constr_hierarchy_tree_adv_search(taxon, auteur):
     """
     From a search term, we get the taxonomic rank, then we search for its children. Finally we construct the
     hierarchy tree from these data. Also we return the number of species and of sub-species inherited from the taxon
     entered by the user
-    :param taxons: The model which is connected to the table Taxon in the database
     :param taxon: the taxon the user choose
     :param auteur: a string if the user want to search by author or not
     :return: a string
@@ -421,7 +457,7 @@ def constr_hierarchy_tree_adv_search(taxons, taxon, auteur):
             html_hierarchy = 'Veuillez remplir le champ de recherche !'
             count_es = 0
         else:
-            list_taxon, count_es = get_search_results_auteur_by_genus(taxons, auteur)
+            list_taxon, count_es = get_search_results_auteur_by_genus(auteur)
             if type(list_taxon) is str:
                 return list_taxon, 0
             html_hierarchy = ''
@@ -431,18 +467,18 @@ def constr_hierarchy_tree_adv_search(taxons, taxon, auteur):
                 html_hierarchy_begin, html_hierarchy_end = constr_hierarchy_tree_branch_parents(list_hierarchy)
                 html_hierarchy_child = ''
                 html_hierarchy_child = constr_hierarchy_tree_branch_adv_search_child(l_taxon[1],
-                                                                                    count + 1, html_hierarchy_child)
+                                                                                     count + 1, html_hierarchy_child)
                 html_taxon = '<li class="folder"><label><strong>{} :</strong> {} {}</li>' \
                     .format(l_taxon[0].rang, l_taxon[0].lb_nom, l_taxon[0].lb_auteur)
                 html_hierarchy_end = html_hierarchy_child + '</ul></ul></li>'
                 html_hierarchy += html_hierarchy_begin + html_taxon + html_hierarchy_end + '</div>'
     else:
-        list_taxon, count_es = get_child_of_child(taxons, taxon)
+        list_taxon, count_es = get_child_of_child(taxon)
         list_hierarchy, count = taxon.get_hierarchy()
         html_hierarchy_begin, html_hierarchy_end = constr_hierarchy_tree_branch_parents(list_hierarchy)
         html_hierarchy_child = ''
         html_hierarchy_child = constr_hierarchy_tree_branch_adv_search_child(list_taxon[1],
-                                                                            count + 1, html_hierarchy_child)
+                                                                             count + 1, html_hierarchy_child)
         html_taxon = '<li class="folder"><label><strong>{} :</strong> {} {}</li>' \
             .format(taxon.rang, taxon.lb_nom, taxon.lb_auteur)
         html_hierarchy_end = html_hierarchy_child + '</ul></ul></li>'
@@ -518,31 +554,15 @@ def constr_hierarchy_tree_branch_child(list_child, nb):
     return str_child
 
 
-def get_form_advanced_search(search_advanced, request):
-    """
-    Construct the default form for advanced search
-    :param search_advanced: a form (Django doc)
-    :param request: a request (Django doc)
-    :return: an HttpResponse (Django doc)
-    """
-    template = loader.get_template('fatercal/advanced_search/change_form.html')
-    form = search_advanced()
-    context = {
-        'form': form,
-        'count_es': -1
-    }
-    return HttpResponse(template.render(context, request))
-
-
-def get_taxons_for_sample(list_param, taxons):
+def get_taxons_for_sample(list_param):
     """
     Construct a csv file with research result for importing sample for these taxon
     :return: a list of tuple
     """
     if list_param is None:
-        list_not_proper = taxons.objects.all()
+        list_not_proper = Taxon.objects.all()
     else:
-        list_not_proper = get_specific_search_taxon(taxons, list_param)
+        list_not_proper = get_specific_search_taxon(list_param)
     list_taxon = [
         ('id_taxon', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece',
          'sous-espece', 'auteur(s)/date', 'date', 'collecteurs', 'identificateur', "date d'identification",
@@ -585,12 +605,10 @@ def get_hierarchy_to_dict(taxon):
     return dict_hierarchy
 
 
-def verify_sample(line, taxons, type_enregistrement, count):
+def verify_sample(line, count):
     """
     This function verify if all the parameter's with condition are good
     :param line: The line in the csv file
-    :param taxons: The model which is connected to the table Taxon in the database
-    :param type_enregistrement: The model which is connected to the table TypeEnregistrement in the database
     :param count: the line number we check
     :return: a boolean
     """
@@ -598,8 +616,8 @@ def verify_sample(line, taxons, type_enregistrement, count):
         'good': False,
         'message': 'Une erreur à été perçue à la ligne {}.'.format(count)
     }
-    if taxons.objects.filter(id=line['id_taxon']).count() > 0:
-        if type_enregistrement.objects.filter(lb_type=line['capture/relacher']).count() > 0:
+    if Taxon.objects.filter(id=line['id_taxon']).count() > 0:
+        if TypeEnregistrement.objects.filter(lb_type=line['capture/relacher']).count() > 0:
             if line['x wgs 84'] is not None and line['y wgs 84'] is not None:
                 if is_variable_good(line):
                     if line['date'] is None or line['date'] == '':
@@ -643,18 +661,10 @@ def is_variable_good(line):
         return False
 
 
-def construct_sample(line, taxons, prelevements, localisations, recolteurs, type_loc, type_enregistrements, type_milieu,
-                     count):
+def construct_sample(line, count):
     """
     Construct the sample to import into the database from a line in the csv file
     :param line: The line in the csv file
-    :param taxons: The model which is connected to the table Taxon in the database
-    :param prelevements: The model which is connected to the table Prelevement in the database
-    :param localisations: The model which is connected to the table Localisation in the database
-    :param recolteurs: The model which is connected to the table Recolteur in the database
-    :param type_loc: The model which is connected to the table TypeLoc in the database
-    :param type_enregistrements: The model which is connected to the table TypeLoc in the database
-    :param type_milieu: The model which is connected to the table HabitatDetail in the database
     :param count: an int which indicate the csv line where at
     :return: a dictionnary
     """
@@ -664,31 +674,31 @@ def construct_sample(line, taxons, prelevements, localisations, recolteurs, type
         'list_harvester': []
     }
     variable = get_variable_in_good_format(line)
-    result['loc'] = get_loc_from_line(line, localisations, type_loc)
-    type_enregistrement = type_enregistrements.objects.get(lb_type=line['capture/relacher'])
+    result['loc'] = get_loc_from_line(line)
+    type_enregistrement = TypeEnregistrement.objects.get(lb_type=line['capture/relacher'])
     if line['type de milieu'] is not None and line['type de milieu'].strip() != '':
-        habitat = type_milieu.objects.filter(nom=line['type de milieu']).first()
+        habitat = HabitatDetail.objects.filter(nom=line['type de milieu']).first()
         if habitat is None:
-            habitat = type_milieu(nom=line['type de milieu'])
+            habitat = HabitatDetail(nom=line['type de milieu'])
     else:
         habitat = None
     result['habitat'] = habitat
     if result['loc'] is None:
         raise NotGoodSample("Une erreur à la ligne {}. ".format(count) + "La localisation n'est pas indiqué dans "
                                                                          "l'un des 4 champs.")
-    sample = prelevements(id_taxref=taxons.objects.filter(id=line['id_taxon']).first(),
-                          nb_taxon_present=variable['nombre'],
-                          type_specimen=line['sexe'],
-                          type_enregistrement=type_enregistrement, date=line['date'],
-                          information_complementaire=line['informations complementaires'],
-                          toponymie_x=variable['x wgs 84'], toponymie_y=variable['y wgs 84'], gps=True,
-                          altitude_min=variable['altitude_min'], altitude_max=variable['altitude_max'])
+    sample = Prelevement(id_taxref=Taxon.objects.filter(id=line['id_taxon']).first(),
+                         nb_taxon_present=variable['nombre'],
+                         type_specimen=line['sexe'],
+                         type_enregistrement=type_enregistrement, date=line['date'],
+                         information_complementaire=line['informations complementaires'],
+                         toponymie_x=variable['x wgs 84'], toponymie_y=variable['y wgs 84'], gps=True,
+                         altitude_min=variable['altitude_min'], altitude_max=variable['altitude_max'])
     result['sample'] = sample
     if line['collecteurs'] != '':
         recolteur = line['collecteurs']
         list_harvester = []
         if recolteur.find(',') == -1:
-            list_harvester.append(recolteurs(lb_auteur=recolteur.strip()))
+            list_harvester.append(Recolteur(lb_auteur=recolteur.strip()))
         else:
             while recolteur is not None:
                 if recolteur.find(',') == -1:
@@ -697,52 +707,50 @@ def construct_sample(line, taxons, prelevements, localisations, recolteurs, type
                 else:
                     harvester = recolteur[:recolteur.find(',')]
                     recolteur = recolteur[recolteur.find(',') + 1:]
-                list_harvester.append(recolteurs(lb_auteur=harvester.strip()))
+                list_harvester.append(Recolteur(lb_auteur=harvester.strip()))
         result['list_harvester'] = list_harvester
     return result
 
 
-def get_loc_from_line(line, localisations, type_loc):
+def get_loc_from_line(line):
     """
     Return a dictionnary of localisation from the line
     :param line: The line in the csv file
-    :param localisations: The model which is connected to the table Localisation in the database
-    :param type_loc: The model which is connected to the table TypeLoc in the database
     :return: a dictionnary or None
     """
     if (line['lieu dit'] is None or line['lieu dit'] == '') or (line['commune'] is None or line['commune'] == '') or \
             ((line['region'] is None or line['region']) == '') or ((line['pays'] is None or line['pays']) == ''):
         return None
     else:
-        pays = localisations.objects.filter(
+        pays = Localisation.objects.filter(
             nom=line['pays']
         ).first()
         if pays is None:
-            pays = localisations(nom=line['pays'], latitude=line['x wgs 84'], longitude=line['y wgs 84'],
-                                 loc_type=type_loc.objects.get(type='Pays'))
-        region = localisations.objects.filter(
+            pays = Localisation(nom=line['pays'], latitude=line['x wgs 84'], longitude=line['y wgs 84'],
+                                loc_type=TypeLoc.objects.get(type='Pays'))
+        region = Localisation.objects.filter(
             nom=line['region']
         ).first()
         if region is None:
-            region = localisations(nom=line['region'], latitude=line['x wgs 84'], longitude=line['y wgs 84'],
-                                   loc_type=type_loc.objects.get(type='Region'))
+            region = Localisation(nom=line['region'], latitude=line['x wgs 84'], longitude=line['y wgs 84'],
+                                  loc_type=TypeLoc.objects.get(type='Region'))
         else:
             pays = None
-        secteur = localisations.objects.filter(
+        secteur = Localisation.objects.filter(
             nom=line['commune']
         ).first()
         if secteur is None:
-            secteur = localisations(nom=line['commune'], latitude=line['x wgs 84'], longitude=line['y wgs 84'],
-                                    loc_type=type_loc.objects.get(type='Secteur'))
+            secteur = Localisation(nom=line['commune'], latitude=line['x wgs 84'], longitude=line['y wgs 84'],
+                                   loc_type=TypeLoc.objects.get(type='Secteur'))
         else:
             region = None
             pays = None
-        nom = localisations.objects.filter(
+        nom = Localisation.objects.filter(
             nom=line['lieu dit']
         ).first()
         if nom is None:
-            nom = localisations(nom=line['lieu dit'], latitude=line['x wgs 84'], longitude=line['y wgs 84'],
-                                loc_type=type_loc.objects.get(type='nom'))
+            nom = Localisation(nom=line['lieu dit'], latitude=line['x wgs 84'], longitude=line['y wgs 84'],
+                               loc_type=TypeLoc.objects.get(type='nom'))
         else:
             secteur = None
             region = None
@@ -824,10 +832,9 @@ def save_all_sample(list_dict_sample):
             harvest.save()
 
 
-def get_taxon_adv_search(taxons, taxon_id, auteur):
+def get_taxon_adv_search(taxon_id, auteur):
     """
     This function will get the child taxon of a taxon or an taxon's author choose by the user
-    :param taxons: The model which is connected to the table Taxon in the database
     :param taxon_id: a taxon's ID
     :param auteur: a string
     :return: a list of tuple
@@ -839,8 +846,8 @@ def get_taxon_adv_search(taxons, taxon_id, auteur):
          'capture/relacher', 'informations complementaires', 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc')
     ]
     if taxon_id is not None:
-        taxon = taxons.objects.get(id=taxon_id)
-        list_child_taxon, count_es = get_child_of_child(taxons, taxon)
+        taxon = Taxon.objects.get(id=taxon_id)
+        list_child_taxon, count_es = get_child_of_child(taxon)
         dict_hierarchy = get_hierarchy_to_dict(taxon)
         list_taxon.append((taxon.id, dict_hierarchy.get('Ordre'), dict_hierarchy.get('Famille'),
                            dict_hierarchy.get('Sous-Famille'), dict_hierarchy.get('Genre'),
@@ -848,7 +855,7 @@ def get_taxon_adv_search(taxons, taxon_id, auteur):
                            dict_hierarchy.get('Sous-Espèce'), taxon.lb_auteur))
         list_taxon = format_adv_search_child_for_export_sample(list_child_taxon[1], list_taxon)
     elif auteur is not None:
-        list_child_taxon, count_es = get_search_results_auteur_by_genus(taxons, auteur)
+        list_child_taxon, count_es = get_search_results_auteur_by_genus(auteur)
         if type(list_taxon) is str:
             return list_taxon
         for l_taxon in list_child_taxon:
@@ -879,13 +886,85 @@ def format_adv_search_child_for_export_sample(list_child_taxon, list_taxon):
     return list_taxon
 
 
-def is_admin(request):
+def verify_and_save_sample(csv_file, extension):
+    """
+    This function verify all sample contain in the file return a message if the sample have been saved or not
+    :param csv_file: a DictReader object which read the file
+    :param extension: a string which indicate the extension of the file we inspect
+    :return: a string
+    """
+    try:
+        valid_extensions = ['.csv', '.txt']
+        if extension in valid_extensions:
+            list_dict_sample = []
+            count = 1
+            for row in csv_file:
+                result = verify_sample(row, count)
+                if result['good']:
+                    result = construct_sample(row, count)
+                    list_dict_sample.append(result)
+                else:
+                    raise NotGoodSample(result['message'])
+                count += 1
+            save_all_sample(list_dict_sample)
+            message = 'Tous les prélèvements ont tous été importé.'
+        else:
+            raise ValidationError(u'Unsupported file extension.')
+    except ValidationError:
+        message = "Le fichier n'est pas dans le bon format."
+    except NotGoodSample as e:
+        message = e.message
+    except KeyError:
+        message = "Le fichier n'a pas les bons noms de colonne ou une colonne est manquante."
+    return message
+
+
+def list_sample_for_map(taxon):
+    """
+    Get info on sample when it is located (longitude and latitude is given)
+    :param taxon: a taxon object from the model Taxon
+    :return: a list of dict
+    """
+    list_sample = []
+    queryset = Prelevement.objects.filter(id_taxref=taxon.id)
+    if taxon.id == taxon.id_ref_id:
+        queryset_taxon_synonymous = Taxon.objects.filter(id_ref=taxon.id).filter(~Q(id=taxon.id))
+        for taxon in queryset_taxon_synonymous:
+            queryset_sample_of_synonymous = Prelevement.objects.filter(id_taxref=taxon.id)
+            queryset = queryset | queryset_sample_of_synonymous
+    for sample in queryset:
+        if sample.toponymie_x is not None and sample.toponymie_y is not None:
+            default_loc = False
+            if sample.type_enregistrement is None:
+                t_enre = None
+            else:
+                t_enre = sample.type_enregistrement.lb_type
+            if sample.id_loc is None:
+                loc = None
+            else:
+                loc = sample.id_loc.nom
+                if sample.toponymie_x == sample.id_loc.latitude and sample.id_loc.longitude == sample.toponymie_y:
+                    default_loc = True
+            list_sample.append({
+                'id': sample.id_prelevement,
+                'loc': loc,
+                'default_loc': default_loc,
+                'latitude': sample.toponymie_y,
+                'longitude': sample.toponymie_x,
+                't_enre': t_enre,
+                'date': sample.date,
+                'collection_museum': sample.collection_museum,
+            })
+    return list_sample
+
+
+def is_admin(user):
     """
     Verify if the user is in the group Admin
-    :param request: An request object (See Django Doc)
+    :param user: An user object (See Django Doc)
     :return: a boolean
     """
-    for group in request.user.groups.all():
+    for group in user.groups.all():
         if group.name == "Admin":
             return True
     return False
