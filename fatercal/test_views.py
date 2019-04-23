@@ -1,5 +1,6 @@
 from django.test import TestCase
 from .views import *
+from .models import TaxrefRang, Prelevement, Recolteur
 from django.contrib.auth.models import User, Group
 from django.utils.encoding import force_text
 import json
@@ -228,7 +229,7 @@ class SampleTestClass(TestCase):
     def setUp(self):
         self.user = User.objects.create_user('temporary', 'temporary@gmail.com', 'temporary')
         self.species = Taxon.objects.create(id=1, lb_nom="species", lb_auteur="auteur1",
-                                       rang=TaxrefRang.objects.create(rang='ES', lb_rang='Espece'))
+                                            rang=TaxrefRang.objects.create(rang='ES', lb_rang='Espece'))
         self.sample = Prelevement.objects.create(id_prelevement=1, id_taxref=self.species)
         Recolteur.objects.create(id_prelevement=self.sample, lb_auteur="auteur")
         self.species.id_ref = self.species
