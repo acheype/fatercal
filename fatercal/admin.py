@@ -210,11 +210,10 @@ class TaxonModify(admin.ModelAdmin):
         :param change:
         :return: nothing
         """
-        if obj.nom_complet is None or obj.nom_complet is '':
-            if obj.lb_auteur is None:
-                obj.nom_complet = obj.lb_nom
-            else:
-                obj.nom_complet = obj.lb_nom + ' ' + obj.lb_auteur
+        if obj.lb_auteur is None:
+            obj.nom_complet = obj.lb_nom
+        else:
+            obj.nom_complet = obj.lb_nom + ' ' + obj.lb_auteur
         super(TaxonModify, self).save_model(request, obj, form, change)
         # When a user want to create a new valid taxon to refer itself
         if obj.id_ref is None:
