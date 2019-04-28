@@ -288,7 +288,7 @@ class TaxonModify(admin.ModelAdmin):
                 .format(prelev.id_loc, prelev.type_enregistrement, prelev.date, prelev.nb_taxon_present,
                         prelev.collection_museum, prelev.type_specimen, prelev.code_specimen, prelev.altitude_min,
                         prelev.altitude_max, prelev.mode_de_collecte, prelev.toponyme, prelev.toponymie_x,
-                        prelev.toponymie_y, get_recolteur(Recolteur, prelev), prelev.id_prelevement)
+                        prelev.toponymie_y, get_recolteur(prelev), prelev.id_prelevement)
         board_prelevement += "</table></br><a href='/fatercal/prelevement/add?id_taxref={}'>Ajouter un Prelevement</a>"\
             .format(obj.id)
         return mark_safe(board_prelevement)
