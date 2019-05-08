@@ -1,0 +1,19 @@
+{% extends 'admin/base_site.html' %}
+
+{% load static %}
+
+{% block branding %}
+    <div class="head">
+        <h1 id="site-name">
+            <a href="/">Fatercal</a>
+        </h1>
+    </div>
+{% endblock %}
+{% block content %}
+    <fieldset class="module aligned ">
+        <div class="form-row field-lb_nom">
+    {{ message }}
+            <strong><a href="/fatercal/taxon/{{ taxon_to_change.id }}"><br/><br/> Retour a la page du taxon.</a></strong>
+        </div>
+    </fieldset>
+{% endblock %}

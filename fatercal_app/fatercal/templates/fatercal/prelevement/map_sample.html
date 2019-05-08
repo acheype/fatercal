@@ -1,0 +1,40 @@
+{% extends 'admin/base_site.html' %}
+
+{% block title %}
+    Carte des Prélèvements | Fatercal
+{% endblock %}
+
+{% block branding %}
+    <div class="head">
+        <h1 id="site-name">
+            <a href="/">Fatercal</a>
+        </h1>
+    </div>
+{% endblock %}
+
+{% load staticfiles %}
+{% block extrahead %}
+    <link rel="stylesheet" href="{% static 'open_layers/css/ol.css' %}">
+    <script type="text/javascript" src="{% static 'admin/js/jquery.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/jquery.init.js' %}"></script>
+    <script type="text/javascript" src="{% static 'open_layers/build/ol.js'' %}"></script>
+    <script type="text/javascript" src="{% static 'open_layers/map_sample.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+    <body onload="init_map()">
+    <fieldset class="module aligned ">
+        <h1>Carte des prélèvements</h1>
+        <form >
+            {% csrf_token %}
+            {{ form }}
+        </form>
+        <input type="submit" onclick="update_map()" class="sumbit_taxon" value="Recherche!" />
+        {{ form.media }}
+    </fieldset><br>
+    <fieldset class="module aligned ">
+        <div id="selected_icon"></div>
+        <div id="map" class="map"></div>
+    </fieldset>
+    </body>
+{% endblock %}

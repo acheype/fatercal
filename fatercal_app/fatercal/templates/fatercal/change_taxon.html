@@ -1,0 +1,38 @@
+{% extends 'admin/base_site.html' %}
+
+{% load static %}
+
+{% block branding %}
+    <div class="head">
+        <h1 id="site-name">
+            <a href="/">Fatercal</a>
+        </h1>
+    </div>
+{% endblock %}
+{% block content %}
+<fieldset class="module aligned ">
+    <div class="form-row field-lb_nom">
+        {% load static %}
+        <h1>{{ taxon_to_change }}</h1>
+        <ul>
+        {% if taxon_to_change.id_sup != None %}
+            <li> <a href="/fatercal/taxon/{{ taxon_to_change.id }}">Supérieur : {{ taxon_to_change.id_sup }}</a></li>
+        {% else %}
+                {% if taxon_to_change.id_ref_id == taxon_to_change.id %}
+                Il n'a pas de supérieur Hiérarchique
+                {% endif %}
+        {% endif %}
+        </ul>
+        <div>
+            <p>{{ error }}</p>
+            <form action="" method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <input type="submit" />
+            </form>
+        </div>
+
+        {{ form.media }}
+    </div>
+</fieldset>
+{% endblock %}

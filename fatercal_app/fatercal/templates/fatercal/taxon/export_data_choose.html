@@ -1,0 +1,36 @@
+{% extends 'admin/base_site.html' %}
+
+{% load static %}
+{% block title %}
+    Recherche Avancée | Fatercal
+{% endblock %}
+{% block branding %}
+<style>
+    input[type=checkbox] { display: block; }
+</style>
+    <div class="head">
+        <h1 id="site-name">
+            <a href="/">Fatercal</a>
+        </h1>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="breadcrumbs initialized">
+        <a href="/">Accueil</a>
+        <span class="icon-arrow-right breadcrumbs-separator"></span> <a href="/fatercal/">Fatercal</a>
+        <span class="icon-arrow-right breadcrumbs-separator"></span> <a href="/fatercal/taxon/">Taxon</a>
+        <span class="icon-arrow-right breadcrumbs-separator"></span> Export de données
+    </div><br>
+    <fieldset class="module aligned ">
+        <div>
+            <h1>Choix champs à exporter:</h1>
+            <form action="" method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <br>
+                <input type="submit" value="Exporter !"/>
+            </form><br>
+        </div>
+    </fieldset>
+{% endblock %}
