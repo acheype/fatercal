@@ -2,7 +2,7 @@ version: '3'
 services:
     webapp:
         container_name: fatercal-web
-        image: lschaeffer/fatercal-web:2.2.1
+        image: lschaeffer/fatercal-web:2.2.2
         ports:
             - "80:80"
         links:
@@ -11,7 +11,7 @@ services:
             - DJANGO_DEBUG=false
             - POSTGRES_HOST=postgres
             - POSTGRES_DB=fatercal
-        env_file: ./fatercal-web.env
+        env_file: fatercal-web.env
         # please define the variables DJANGO_SECRET_KEY (think to double any '$' character) and POSTGRES_PASSWORD in
         # fatercal-web.env file.
         # example of the environment file content :
@@ -22,13 +22,13 @@ services:
         container_name: fatercal-db
         image: postgres:9.6.6
         volumes:
-            - /data/fatercal/postgresql:/var/lib/postgresql/data
+            - /home/postgresql:/var/lib/postgresql/data
         ports:
             - "5432:5432"
         environment:
             - POSTGRES_DB=fatercal
             - POSTGRES_USER=fatercal
-        env_file: ./fatercal-db.env
+        env_file: fatercal-db.env
         # please define the variables POSTGRES_PASSWORD in fatercal-web.env file.
         # example of the environment file content :
         # POSTGRES_PASSWORD=ftc

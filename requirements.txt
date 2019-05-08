@@ -1,5 +1,0 @@
-Django==2.2
-django-jet==1.0.8
-psycopg2==2.7.7
-django-ajax-selects==1.7.1
-numpy==1.14.0
