@@ -1,0 +1,28 @@
+ServerName localhost
+<VirtualHost *:80>
+
+    ServerAdmin adrien.cheype@ird.fr
+    DocumentRoot /app
+
+    Alias /static /app/static
+    <Directory /app/static>
+        Require all granted
+    </Directory>
+
+    <Directory /app/fatercal-site>
+        <Files "wsgi.py">
+            Require all granted
+        </Files>
+    </Directory>
+
+    WSGIDaemonProcess fatercal python-path=/app
+    WSGIProcessGroup fatercal
+    WSGIScriptAlias / /app/fatercal-site/wsgi.py
+
+    ErrorLog /dev/stderr
+    CustomLog /dev/stdout vhost_combined
+
+</VirtualHost>
+
+# vim: syntax=apache ts=4 sw=4 sts=4 sr noet
+
