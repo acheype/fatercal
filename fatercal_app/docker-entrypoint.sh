@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-# certification
-#certbot --apache -d fatercal-dev.ird.nc
+# certification uniquement la premiere fois
+#certbot --apache -d fatercal.ird.nc
 
 echo "Test the postgres connection..."
 until PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -U $POSTGRES_DB -c '\l'; do

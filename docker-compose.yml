@@ -5,6 +5,7 @@ services:
         image: lschaeffer/fatercal-web:2.2-4
         volumes:
             - /etc/letsencrypt:/etc/letsencrypt
+            - /tmp/:/var/log/letsencrypt
         ports:
             - "80:80"
             - "443:443"
