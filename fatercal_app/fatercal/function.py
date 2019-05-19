@@ -1,11 +1,14 @@
 import re
 
 from django.core.exceptions import ValidationError
+from django.db import connection
 from django.db.models import F, Q
 from django.template import loader
 
-from .models import Taxon, Prelevement, Localisation, TypeEnregistrement, Recolteur, TypeLoc, HabitatDetail
+from .models import Taxon, Prelevement, Localisation, TypeEnregistrement, Recolteur, TypeLoc, HabitatDetail, \
+    TaxrefExport
 from .variable import regex_date
+import os
 
 
 def change_ref_taxon(taxon_to_change, cleaned_data):
@@ -128,6 +131,29 @@ def get_taxon_from_search(list_param):
         if 'sp.' not in taxon.lb_nom:
             tupple = construct_cleaned_taxon(taxon)
             list_taxon.append(tupple)
+    return list_taxon
+
+
+def get_taxon_from_search_taxref(list_param):
+    """
+    This function get all Information needed from all taxon from the user's search parameter
+    :param list_param: a dict which contains the parameters
+    :return: a list of tuple
+    """
+    list_not_proper = get_specific_search_taxon_taxref(list_param)
+    list_taxon = [
+        ('REGNE', 'PHYLUM', 'CLASSE', 'ORDRE', 'FAMILLE', 'GROUP1_INPN', 'GROUP2_INPN', 'ID', 'ID_REF', 'ID_SUP',
+         'CD_NOM', 'CD_TAXSUP', 'CD_SUP', 'CD_REF', 'RANG', 'LB_NOM', 'LB_AUTEUR', 'NOM_COMPLET', 'NOM_COMPLET_HTML',
+         'NOM_VALIDE', 'NOM_VERN', 'NOM_VERN_ENG', 'HABITAT', 'NC', 'NON PRESENT DANS TAXREF',
+         'CD_REF DIFFERENT', 'CD_SUP DIFFERENT', 'VALIDITY DIFFERENT')
+    ]
+    for taxon in list_not_proper:
+        taxref_format = (taxon.regne, taxon.phylum, taxon.classe, taxon.ordre, taxon.famille, taxon.group1_inpn,
+                         taxon.group2_inpn, taxon.id, taxon.id_ref, taxon.id_sup, taxon.cd_nom, taxon.cd_taxsup,
+                         taxon.cd_sup, taxon.cd_ref, taxon.rang, taxon.lb_nom, taxon.lb_auteur, taxon.nom_complet,
+                         taxon.nom_complet_html, taxon.nom_valide, taxon.nom_vern, taxon.nom_vern_eng, taxon.habitat,
+                         taxon.nc, taxon.non_present, taxon.cd_ref_diff, taxon.cd_sup_diff, taxon.validity_diff)
+        list_taxon.append(taxref_format)
     return list_taxon
 
 
@@ -353,6 +379,32 @@ def get_specific_search_taxon(list_param):
     if 'rang__rang__exact' in list_param:
         if list_param['rang__rang__exact'] != '':
             list_not_proper = list_not_proper.filter(rang__rang=list_param['rang__rang__exact'])
+    if 'valide' in list_param:
+        if list_param['valide'] != '':
+            if list_param['valide'] == 'valide':
+                list_not_proper = list_not_proper.filter(id=F('id_ref'))
+            else:
+                list_not_proper = list_not_proper.filter(~Q(id=F('id_ref')))
+    return list_not_proper
+
+
+def get_specific_search_taxon_taxref(list_param):
+    """
+    Filter from the user's parameter
+    :param list_param:
+    :return: a list of taxon
+    """
+    list_not_proper = TaxrefExport.objects.all()
+    if 'q' in list_param:
+        if list_param['q'] != '':
+            list_not_proper = list_not_proper.filter(Q(lb_auteur__icontains=list_param['q']) |
+                                                     Q(lb_nom__icontains=list_param['q']))
+    if 'nc__status__exact' in list_param:
+        if list_param['nc__status__exact'] != '':
+            list_not_proper = list_not_proper.filter(nc=list_param['nc__status__exact'])
+    if 'rang__rang__exact' in list_param:
+        if list_param['rang__rang__exact'] != '':
+            list_not_proper = list_not_proper.filter(rang=list_param['rang__rang__exact'])
     if 'valide' in list_param:
         if list_param['valide'] != '':
             if list_param['valide'] == 'valide':
@@ -968,6 +1020,14 @@ def is_admin(user):
         if group.name == "Admin":
             return True
     return False
+
+
+def create_db_view_test():
+    with connection.cursor() as cursor:
+        cursor.execute(open(os.getcwd() + "/sql_script/create_type_taxref_data.sql", "r").read())
+        cursor.execute(open(os.getcwd() + "/sql_script/function_get_taxon_to_taxref.sql", "r").read())
+        cursor.execute(open(os.getcwd() + "/sql_script/function_get_all_taxon_to_taxref.sql", "r").read())
+        cursor.execute(open(os.getcwd() + "/sql_script/create_materialized_view_taxref_export.sql", "r").read())
 
 
 class NotGoodSample(Exception):

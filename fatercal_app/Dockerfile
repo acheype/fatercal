@@ -38,6 +38,15 @@ COPY index.html /var/www/html/index.html
 # install python dependencies
 RUN pip3 install -r /app/requirements.txt
 
+# configure cron
+RUN apt-get install -y cron
+RUN service cron start
+
+COPY cronjob/cron-psql /etc/cron.d/cron-psql
+RUN chmod 0644 /etc/cron.d/cron-psql
+RUN crontab /etc/cron.d/cron-psql
+RUN crontab /etc/cron.d/cron-psql
+
 # configure the apache server
 RUN /bin/bash -c "source /etc/apache2/envvars"
 RUN mkdir -p /var/run/apache2; chown $APACHE_UID /var/run/apache2
@@ -66,3 +75,4 @@ RUN chmod +x /docker-entrypoint.sh
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["apache2","-D","FOREGROUND"]
+CMD cron

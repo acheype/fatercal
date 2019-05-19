@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from .forms import AllTaxon, TaxonChangeSup, SearchAdvanced, ChooseData, UploadFileCsv
 from .function import constr_hierarchy_tree_adv_search, get_taxon_from_search, is_admin,\
     get_taxon_personal, get_sample, get_taxons_for_sample, get_taxon_adv_search, change_ref_taxon, change_sup_taxon,\
-    verify_and_save_sample, list_sample_for_map
+    verify_and_save_sample, list_sample_for_map, get_taxon_from_search_taxref
 from .models import Taxon
 
 import csv
@@ -303,9 +303,8 @@ def extract_search_taxon_taxref(request):
     # rows that can be handled by a single sheet in most spreadsheet
     # applications.
     if is_admin(request.user):
-        try:
             list_param = request.GET
-            rows = (idx for idx in get_taxon_from_search(list_param))
+            rows = (idx for idx in get_taxon_from_search_taxref(list_param))
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref_search' + \
                                               str(datetime.datetime.now()) + '.csv"'
@@ -314,8 +313,6 @@ def extract_search_taxon_taxref(request):
             for row in rows:
                 writer.writerow(row)
             return response
-        except AttributeError:
-            raise Http404("This page doesn't exist.")
     raise Http404("This page doesn't exist.")
 
 

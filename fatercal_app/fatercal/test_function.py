@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User, Group
-from fatercal.function import *
-from fatercal.models import TaxrefStatus, TaxrefHabitat, TaxrefRang, TypeEnregistrement
+from .function import *
+from .models import TaxrefStatus, TaxrefHabitat, TaxrefRang, TypeEnregistrement
 from .forms import ChooseData
 import os
 import csv
@@ -53,6 +53,7 @@ class TaxonTestCase(TestCase):
         self.phylum.save()
         self.kingdom.id_ref = self.kingdom
         self.kingdom.save()
+        create_db_view_test()
 
     def test_change_ref_taxon(self):
         second_species = Taxon.objects.create(id=10, lb_nom="second_species", lb_auteur="auteur10",
@@ -169,6 +170,27 @@ class TaxonTestCase(TestCase):
         list_not_proper = get_specific_search_taxon(dict_param)
         self.assertEqual(list_not_proper.first(), kingdom)
 
+    def test_get_specific_taxon_search_taxref(self):
+        dict_param = {}
+        list_not_proper = get_specific_search_taxon_taxref(dict_param)
+        self.assertEqual(list_not_proper.count(), 9)
+
+        dict_param = {'q': 'genus species'}
+        list_not_proper = get_specific_search_taxon_taxref(dict_param)
+        taxref_export_expected = TaxrefExport.objects.get(lb_nom='genus species')
+        self.assertEqual(list_not_proper.first(), taxref_export_expected)
+
+        self.species.save()
+        dict_param = {'nc__status__exact': 'A'}
+        taxref_export_expected = None
+        list_not_proper = get_specific_search_taxon_taxref(dict_param)
+        self.assertEqual(list_not_proper.first(), taxref_export_expected)
+
+        dict_param = {'rang__rang__exact': 'KD'}
+        taxref_export_expected = TaxrefExport.objects.get(lb_nom="kingdom")
+        list_not_proper = get_specific_search_taxon_taxref(dict_param)
+        self.assertEqual(list_not_proper.first(), taxref_export_expected)
+
     def test_get_taxon_child(self):
         self.sub_species = Taxon.objects.get(lb_nom="genus species sub_species")
         list_child, nb = get_taxon_child(self.genus, 0)
@@ -232,6 +254,63 @@ class TaxonTestCase(TestCase):
                                ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 9, 7, None, None, None,
                                 None, None, 'ES', 'species_synonymous', 'auteur9', None, None, 'genus species', None,
                                 None, None, None, 'x', None, None, None)]
+        self.assertEqual(list_taxon_expected, list_taxon_output)
+
+        param = {'q': 'species'}
+        list_taxon_output = get_taxon_from_search(param)
+        list_taxon_expected = [('REGNE', 'PHYLUM', 'CLASSE', 'ORDRE', 'FAMILLE', 'GROUP1_INPN', 'GROUP2_INPN', 'ID',
+                                'ID_REF', 'ID_SUP', 'CD_NOM', 'CD_TAXSUP', 'CD_SUP', 'CD_REF', 'RANG', 'LB_NOM',
+                                'LB_AUTEUR', 'NOM_COMPLET', 'NOM_COMPLET_HTML', 'NOM_VALIDE', 'NOM_VERN',
+                                'NOM_VERN_ENG', 'HABITAT', 'NC', 'NON PRESENT DANS TAXREF', 'CD_REF DIFFERENT',
+                                'CD_SUP DIFFERENT', 'VALIDITY DIFFERENT'),
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 7, 7, 6, None, None, None,
+                                None, 'ES', 'genus species', 'auteur7', 'genus species auteur7', None, 'genus species',
+                                None, None, None, None, 'x', None, None, None),
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 8, 8, 7, None, None, None,
+                                None, 'SSES', 'genus species sub_species', 'auteur8',
+                                'genus species sub_species auteur8', None, 'genus species sub_species', None, None,
+                                None, None, 'x', None, None, None),
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 9, 7, None, None, None,
+                                None, None, 'ES', 'species_synonymous', 'auteur9', None, None, 'genus species', None,
+                                None, None, None, 'x', None, None, None)]
+        self.assertEqual(list_taxon_expected, list_taxon_output)
+
+    def test_get_taxon_from_search_taxref(self):
+        param = {}
+        list_taxon_output = get_taxon_from_search_taxref(param)
+        list_taxon_expected = [('REGNE', 'PHYLUM', 'CLASSE', 'ORDRE', 'FAMILLE', 'GROUP1_INPN', 'GROUP2_INPN', 'ID',
+                                'ID_REF', 'ID_SUP', 'CD_NOM', 'CD_TAXSUP', 'CD_SUP', 'CD_REF', 'RANG', 'LB_NOM',
+                                'LB_AUTEUR', 'NOM_COMPLET', 'NOM_COMPLET_HTML', 'NOM_VALIDE', 'NOM_VERN',
+                                'NOM_VERN_ENG', 'HABITAT', 'NC', 'NON PRESENT DANS TAXREF', 'CD_REF DIFFERENT',
+                                'CD_SUP DIFFERENT', 'VALIDITY DIFFERENT'),
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 9, 7, None, None, None,
+                                None, None, 'ES', 'species_synonymous', 'auteur9', None, None, None, None, None, None,
+                                None, 'x', None, None, None),
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 8, 8, 7, None, None, None,
+                                None, 'SSES', 'genus species sub_species', 'auteur8',
+                                'genus species sub_species auteur8', None, None, None, None, None, None, 'x', None,
+                                None, None),
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 7, 7, 6, None, None, None,
+                                None, 'ES', 'genus species', 'auteur7', 'genus species auteur7', None, None, None, None,
+                                None, None, 'x', None, None, None),
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 6, 6, 5, None, None, None,
+                                None, 'GN', 'genus', 'auteur6', 'genus auteur6', None, None, None, None, None, None,
+                                'x', None, None, None),
+                               ('kingdom', 'phylum', 'classe', 'order', None, None, None, 5, 5, 4, None, None, None,
+                                None, 'FM', 'family', 'auteur5', 'family auteur5', None, None, None, None, None, None,
+                                'x', None, None, None),
+                               ('kingdom', 'phylum', 'classe', None, None, None, None, 4, 4, 3, None, None, None, None,
+                                'OR', 'order', 'auteur4', 'order auteur4', None, None, None, None, None, None, 'x',
+                                None, None, None),
+                               ('kingdom', 'phylum', None, None, None, None, None, 3, 3, 2, None, None, None, None,
+                                'CL', 'classe', 'auteur3', 'classe auteur3', None, None, None, None, None, None, 'x',
+                                None, None, None),
+                               ('kingdom', None, None, None, None, None, None, 2, 2, 1, None, None, None, None, 'PH',
+                                'phylum', 'auteur2', 'phylum auteur2', None, None, None, None, None, None, 'x', None,
+                                None, None),
+                               ('kingdom', None, None, None, None, None, None, 1, 1, None, None, None, None, None, 'KD',
+                                'kingdom', 'auteur1', 'kingdom auteur1', None, None, None, None, None, None, 'x', None,
+                                None, None)]
         self.assertEqual(list_taxon_expected, list_taxon_output)
 
         param = {'q': 'species'}

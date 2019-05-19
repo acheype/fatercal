@@ -331,3 +331,38 @@ class Vernaculaire(models.Model):
 
     def __str__(self):
         return self.nom_vern
+
+
+class TaxrefExport(models.Model):
+    regne = models.CharField(max_length=250, verbose_name='Régne')
+    phylum = models.CharField(max_length=250, verbose_name='Régne')
+    classe = models.CharField(max_length=250, verbose_name='Régne')
+    ordre = models.CharField(max_length=250, verbose_name='Régne')
+    famille = models.CharField(max_length=250, verbose_name='Régne')
+    group1_inpn = models.CharField(max_length=250, verbose_name='Group1 INPN')
+    group2_inpn = models.CharField(max_length=250, verbose_name='Group2 INPN')
+    id = models.BigIntegerField()
+    id_ref = models.BigIntegerField()
+    id_sup = models.BigIntegerField()
+    cd_nom = models.IntegerField(unique=True, blank=True, null=True)
+    cd_taxsup = models.IntegerField(unique=True, blank=True, null=True)
+    cd_ref = models.IntegerField(blank=True, null=True)
+    cd_sup = models.IntegerField(blank=True, null=True)
+    rang = models.CharField(primary_key=True, max_length=4)
+    lb_nom = models.CharField(max_length=250, verbose_name='Nom')
+    lb_auteur = models.CharField(max_length=250, blank=True, null=True, verbose_name='Auteur')
+    nom_complet = models.CharField(max_length=250, blank=True, null=True)
+    nom_complet_html = models.CharField(max_length=250, blank=True, null=True)
+    nom_valide = models.CharField(max_length=100, blank=True, null=True)
+    nom_vern = models.CharField(max_length=100, blank=True, null=True)
+    nom_vern_eng = models.CharField(max_length=100, blank=True, null=True)
+    habitat = models.CharField(max_length=100, blank=True, null=True)
+    nc = models.CharField(max_length=4, blank=True, null=True)
+    non_present = models.CharField(max_length=4, blank=True, null=True)
+    cd_ref_diff = models.CharField(max_length=4, blank=True, null=True)
+    cd_sup_diff = models.CharField(max_length=4, blank=True, null=True)
+    validity_diff = models.CharField(max_length=4, blank=True, null=True)
+
+    class Meta:
+            managed = False
+            db_table = 'taxref_export'

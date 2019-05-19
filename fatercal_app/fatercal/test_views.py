@@ -1,5 +1,6 @@
 from django.test import TestCase
 from .views import *
+from .function import create_db_view_test
 from .models import TaxrefRang, Prelevement, Recolteur
 from django.contrib.auth.models import User, Group
 from django.utils.encoding import force_text
@@ -52,6 +53,7 @@ class TaxonTestCase(TestCase):
         self.phylum.save()
         self.kingdom.id_ref = self.kingdom
         self.kingdom.save()
+        create_db_view_test()
 
     def test_change_taxon_ref(self):
         second_species = Taxon.objects.create(id=10, lb_nom="second_species", lb_auteur="auteur10",

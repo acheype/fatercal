@@ -14,6 +14,42 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
+            name='TaxrefExport',
+            fields=[
+                ('regne', models.CharField(max_length=250, verbose_name='Régne')),
+                ('phylum', models.CharField(max_length=250, verbose_name='Régne')),
+                ('classe', models.CharField(max_length=250, verbose_name='Régne')),
+                ('ordre', models.CharField(max_length=250, verbose_name='Régne')),
+                ('famille', models.CharField(max_length=250, verbose_name='Régne')),
+                ('group1_inpn', models.CharField(max_length=250, verbose_name='Group1 INPN')),
+                ('group2_inpn', models.CharField(max_length=250, verbose_name='Group2 INPN')),
+                ('id', models.BigIntegerField()),
+                ('id_ref', models.BigIntegerField()),
+                ('cd_nom', models.IntegerField(blank=True, null=True, unique=True)),
+                ('cd_taxsup', models.IntegerField(blank=True, null=True)),
+                ('cd_ref', models.IntegerField(blank=True, null=True)),
+                ('cd_sup', models.IntegerField(blank=True, null=True)),
+                ('rang', models.CharField(max_length=4, primary_key=True, serialize=False)),
+                ('lb_nom', models.CharField(max_length=250, verbose_name='Nom')),
+                ('lb_auteur', models.CharField(blank=True, max_length=250, null=True, verbose_name='Auteur')),
+                ('nom_complet', models.CharField(blank=True, max_length=250, null=True)),
+                ('nom_complet_html', models.CharField(blank=True, max_length=250, null=True)),
+                ('nom_valide', models.CharField(blank=True, max_length=100, null=True)),
+                ('nom_vern', models.CharField(blank=True, max_length=100, null=True)),
+                ('nom_vern_eng', models.CharField(blank=True, max_length=100, null=True)),
+                ('habitat', models.CharField(blank=True, max_length=100, null=True)),
+                ('nc', models.CharField(blank=True, max_length=4, null=True)),
+                ('non_present', models.CharField(blank=True, max_length=4, null=True)),
+                ('cd_ref_diff', models.CharField(blank=True, max_length=4, null=True)),
+                ('cd_sup_diff', models.CharField(blank=True, max_length=4, null=True)),
+                ('validity_diff', models.CharField(blank=True, max_length=4, null=True)),
+            ],
+            options={
+                'db_table': 'taxref_export',
+                'managed': False,
+            },
+        ),
+        migrations.CreateModel(
             name='DocsUses',
             fields=[
                 ('id_docuse', models.AutoField(primary_key=True, serialize=False)),

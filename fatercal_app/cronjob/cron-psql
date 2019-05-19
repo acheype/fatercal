@@ -1,0 +1,1 @@
+0 22 * * * PGPASSWORD=$POSTGRES_PASSWORD psql -h fatercal.ird.nc -U $POSTGRES_DB -c "REFRESH MATERIALIZED VIEW taxref_export;"
