@@ -39,7 +39,7 @@ services:
 
     cron:
         container_name: fatercal-cron
-        image: lschaeffer/fatercal-web:2.2-4
+        image: lschaeffer/fatercal-cron:1.0
         volumes:
             - /tmp/:/var/log/letsencrypt
         links:
