@@ -36,3 +36,20 @@ services:
         # please define the variables POSTGRES_PASSWORD in fatercal-web.env file.
         # example of the environment file content :
         # POSTGRES_PASSWORD=ftc
+
+    cron:
+        container_name: fatercal-cron
+        image: lschaeffer/fatercal-web:2.2-4
+        volumes:
+            - /tmp/:/var/log/letsencrypt
+        links:
+            - "postgres"
+        environment:
+            - POSTGRES_HOST=postgres
+            - POSTGRES_DB=fatercal
+        env_file: fatercal-web.env
+        # please define the variables DJANGO_SECRET_KEY (think to double any '$' character) and POSTGRES_PASSWORD in
+        # fatercal-web.env file.
+        # example of the environment file content :
+        # DJANGO_SECRET_KEY=_4k52&$$59@7mas*mgmj7cipas*2+dz5h3nahw@po!3&q8^vhex
+        # POSTGRES_PASSWORD=ftc
