@@ -40,8 +40,8 @@ services:
     cron:
         container_name: fatercal-cron
         image: lschaeffer/fatercal-cron:1.0
-        volumes:
-            - /tmp/:/var/log/letsencrypt
+        ports:
+            - "29:25"
         links:
             - "postgres"
         environment:

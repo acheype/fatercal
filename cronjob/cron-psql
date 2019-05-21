@@ -1,1 +1,3 @@
-0 22 * * * echo "$(PGPASSWORD=$POSTGRES_PASSWORD psql -h fatercal.ird.nc -U $POSTGRES_DB -c "REFRESH MATERIALIZED VIEW taxref_export;") $(date '+%A %W %Y %X')" >> /var/log/cron_psql.log
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
+
+* 22 * * * PGPASSWORD=$POSTGRES_PASSWORD psql -h fatercal.ird.nc -U $POSTGRES_DB -c "REFRESH MATERIALIZED VIEW taxref_export;" >> /var/log/cron.log 2>&1
