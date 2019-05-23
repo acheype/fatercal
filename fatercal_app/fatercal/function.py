@@ -515,6 +515,8 @@ def constr_hierarchy_tree_adv_search(taxon, auteur):
             list_taxon, count_es = get_search_results_auteur_by_species(auteur)
             if type(list_taxon) is str:
                 return list_taxon, 0
+            else:
+                count_es = count_es + 1
             html_hierarchy = ''
             for l_taxon in list_taxon:
                 html_hierarchy += '<div>'

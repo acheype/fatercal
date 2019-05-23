@@ -491,7 +491,7 @@ class TaxonTestCase(TestCase):
         <ul><li><al><label class="tree_label" for="c7"/><strong>Sous-Espèce : </strong></al>
         <a href="/fatercal/taxon/8/">genus species sub_species auteur8</a></li></ul></ul></ul></li></div>"""
         self.assertEqual(html_hierarchy_expected, html_hierarchy_output)
-        self.assertEqual(nb_output, 1)
+        self.assertEqual(nb_output, 2)
 
     def test_constr_hierarchy_tree_branch_parents(self):
         list_hierarchy, nb = self.species.get_hierarchy()
