@@ -407,15 +407,15 @@ class TaxonTestCase(TestCase):
                                          None, None, None, None, None)
         self.assertEqual(cleaned_taxon_search_expected, cleaned_taxon_search_output)
 
-    def test_get_search_results_auteur_by_genus(self):
-        result_output = get_search_results_auteur_by_genus('auteur6')
-        result_expected = ([[self.genus, [[self.species, [[self.sub_species, None]]]]]], 2)
+    def test_get_search_results_auteur_by_species(self):
+        result_output = get_search_results_auteur_by_species('auteur7')
+        result_expected = ([[self.species, [[self.sub_species, None]]]], 1)
         self.assertEqual(result_expected, result_output)
 
         self.genus.delete()
         self.species.id_sup = None
         self.species.save()
-        result_output = get_search_results_auteur_by_genus('auteur6')
+        result_output = get_search_results_auteur_by_species('auteur6')
         result_expected = ('Aucun résultat trouvé.', 0)
         self.assertEqual(result_expected, result_output)
 
@@ -473,8 +473,8 @@ class TaxonTestCase(TestCase):
         self.assertEqual(html_hierarchy_expected, html_hierarchy_output)
         self.assertEqual(nb_output, 1)
 
-        html_hierarchy_output, nb_output = constr_hierarchy_tree_adv_search(None, 'auteur6')
-        html_hierarchy_expected = """<div><ul class="tree"><br/><al><al><al><al><al><al>
+        html_hierarchy_output, nb_output = constr_hierarchy_tree_adv_search(None, 'auteur7')
+        html_hierarchy_expected = """<div><ul class="tree"><br/><al><al><al><al><al><al><al>
     <li><label class="tree_label" for="c1">
             <strong>Regne : </strong></al><a href="/fatercal/taxon/1/">kingdom auteur1</a>
             <ul><li><label class="tree_label" for="c2">
@@ -485,13 +485,13 @@ class TaxonTestCase(TestCase):
             <strong>Ordre : </strong></al><a href="/fatercal/taxon/4/">order auteur4</a>
             <ul><li><label class="tree_label" for="c5">
             <strong>Famille : </strong></al><a href="/fatercal/taxon/5/">family auteur5</a>
-            <ul><li class="folder"><label><strong>Genre :</strong> genus auteur6</li>
-        <ul><li><al><label class="tree_label" for="c6"/><strong>Espèce : </strong></al>
-        <a href="/fatercal/taxon/7/">genus species auteur7</a>
+            <ul><li><label class="tree_label" for="c6">
+            <strong>Genre : </strong></al><a href="/fatercal/taxon/6/">genus auteur6</a>
+            <ul><li class="folder"><label><strong>Espèce :</strong> genus species auteur7</li>
         <ul><li><al><label class="tree_label" for="c7"/><strong>Sous-Espèce : </strong></al>
-        <a href="/fatercal/taxon/8/">genus species sub_species auteur8</a></li></ul></li></ul></ul></ul></li></div>"""
+        <a href="/fatercal/taxon/8/">genus species sub_species auteur8</a></li></ul></ul></ul></li></div>"""
         self.assertEqual(html_hierarchy_expected, html_hierarchy_output)
-        self.assertEqual(nb_output, 2)
+        self.assertEqual(nb_output, 1)
 
     def test_constr_hierarchy_tree_branch_parents(self):
         list_hierarchy, nb = self.species.get_hierarchy()
@@ -540,14 +540,22 @@ class TaxonTestCase(TestCase):
             (8, None, 'order', 'family', '', 'genus', '', 'genus species', 'genus species sub_species', 'auteur8')]
         self.assertEqual(list_taxon_expected, list_taxon_output)
 
-        auteur = 'auteur6'
+        auteur = 'not found'
+        list_taxon_output = get_taxon_adv_search(None, auteur)
+        list_taxon_expected = [
+            ('id_taxon', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece', 'sous-espece',
+             'auteur(s)/date', 'date', 'collecteurs', 'identificateur', "date d'identification", 'altitude(m)', 'pays',
+             'region', 'commune', 'lieu dit', 'type de milieu', 'nombre', 'sexe', 'capture/relacher',
+             'informations complementaires', 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc')]
+        self.assertEqual(list_taxon_expected, list_taxon_output)
+
+        auteur = 'auteur7'
         list_taxon_output = get_taxon_adv_search(None, auteur)
         list_taxon_expected = [
             ('id_taxon', 'ordre', 'famille', 'sous-famille', 'genre', 'sous-genre', 'espece', 'sous-espece',
              'auteur(s)/date', 'date', 'collecteurs', 'identificateur', "date d'identification", 'altitude(m)', 'pays',
              'region', 'commune', 'lieu dit', 'type de milieu', 'nombre', 'sexe', 'capture/relacher',
              'informations complementaires', 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc'),
-            (6, None, 'order', 'family', '', 'genus', '', '', '', 'auteur6'),
             (7, None, 'order', 'family', '', 'genus', '', 'genus species', '', 'auteur7'),
             (8, None, 'order', 'family', '', 'genus', '', 'genus species', 'genus species sub_species', 'auteur8')]
         self.assertEqual(list_taxon_expected, list_taxon_output)

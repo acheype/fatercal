@@ -456,13 +456,13 @@ def get_taxon_child(child, count_es):
         return None, count_es
 
 
-def get_search_results_auteur_by_genus(search_term):
+def get_search_results_auteur_by_species(search_term):
     """
     The goal of this function is to retun a list of genus related by a author
     :param search_term: the term the user entered
     :return: the list of children
     """
-    queryset = Taxon.objects.filter(Q(lb_auteur__icontains=search_term) & Q(rang='GN'))
+    queryset = Taxon.objects.filter(Q(lb_auteur__icontains=search_term) & Q(rang='ES'))
     list_taxon = []
     count_es = 0
     if len(queryset) > 0:
@@ -512,7 +512,7 @@ def constr_hierarchy_tree_adv_search(taxon, auteur):
             html_hierarchy = 'Veuillez remplir le champ de recherche !'
             count_es = 0
         else:
-            list_taxon, count_es = get_search_results_auteur_by_genus(auteur)
+            list_taxon, count_es = get_search_results_auteur_by_species(auteur)
             if type(list_taxon) is str:
                 return list_taxon, 0
             html_hierarchy = ''
@@ -910,8 +910,8 @@ def get_taxon_adv_search(taxon_id, auteur):
                            dict_hierarchy.get('Sous-Espèce'), taxon.lb_auteur))
         list_taxon = format_adv_search_child_for_export_sample(list_child_taxon[1], list_taxon)
     elif auteur is not None:
-        list_child_taxon, count_es = get_search_results_auteur_by_genus(auteur)
-        if type(list_taxon) is str:
+        list_child_taxon, count_es = get_search_results_auteur_by_species(auteur)
+        if type(list_child_taxon) is str:
             return list_taxon
         for l_taxon in list_child_taxon:
             dict_hierarchy = get_hierarchy_to_dict(l_taxon[0])
