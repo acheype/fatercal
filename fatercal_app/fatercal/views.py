@@ -279,7 +279,7 @@ def extract_taxon_taxref(request):
     # applications.
     if is_admin(request.user):
         param = None
-        rows = (idx for idx in get_taxon_from_search(param))
+        rows = (idx for idx in get_taxon_from_search_taxref(param))
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref' + \
                                           str(datetime.datetime.now()) + '.csv"'

@@ -140,7 +140,10 @@ def get_taxon_from_search_taxref(list_param):
     :param list_param: a dict which contains the parameters
     :return: a list of tuple
     """
-    list_not_proper = get_specific_search_taxon_taxref(list_param)
+    if list_param is None:
+        list_not_proper = TaxrefExport.objects.all()
+    else:
+        list_not_proper = get_specific_search_taxon_taxref(list_param)
     list_taxon = [
         ('REGNE', 'PHYLUM', 'CLASSE', 'ORDRE', 'FAMILLE', 'GROUP1_INPN', 'GROUP2_INPN', 'ID', 'ID_REF', 'ID_SUP',
          'CD_NOM', 'CD_TAXSUP', 'CD_SUP', 'CD_REF', 'RANG', 'LB_NOM', 'LB_AUTEUR', 'NOM_COMPLET', 'NOM_COMPLET_HTML',
