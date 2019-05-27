@@ -72,9 +72,6 @@ ELSE IF taxon_t.autre is FALSE THEN
 END IF;
 END IF;
 
-IF taxon_t.rang = 'KD' THEN
-    result.regne = taxon_t.lb_nom;
-END IF;
 result.id = taxon_t.id;
 result.id_ref = taxon_t.id_ref;
 result.id_sup = taxon_t.id_sup;
@@ -87,8 +84,13 @@ result.lb_auteur = taxon_t.lb_auteur;
 result.nom_complet = taxon_t.nom_complet;
 result.habitat = taxon_t.habitat;
 result.nc = taxon_t.nc;
+SELECT nom_vern INTO result.nom_vern FROM vernaculaire WHERE id_taxref=taxon_id AND pays='fra';
+SELECT nom_vern INTO result.nom_vern_eng FROM vernaculaire WHERE id_taxref=taxon_id AND pays='eng';
 RETURN result;
 END;
 $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
+
+
+  SELECT * FROM get_taxon_to_taxref(2)

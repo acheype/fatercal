@@ -291,9 +291,9 @@ class TaxonTestCase(TestCase):
                                 None, 'SSES', 'genus species sub_species', 'auteur8',
                                 'genus species sub_species auteur8', None, None, None, None, None, None, None, None,
                                 None, 'x', None, None, None),
-                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 7, 7, 6, None, None,
-                                None, None, 'ES', 'genus species', 'auteur7', 'genus species auteur7', None, None, None,
-                                None, None, None, None, None, None, 'x', None, None, None),
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 7, 7, 6, None, None, None,
+                                None, 'ES', 'genus species', 'auteur7', 'genus species auteur7', None, None, None, None,
+                                None, None, None, None, None, 'x', None, None, None),
                                ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 6, 6, 5, None, None, None,
                                 None, 'GN', 'genus', 'auteur6', 'genus auteur6', None, None, None, None, None, None,
                                 None, None, None, 'x', None, None, None),
@@ -309,10 +309,9 @@ class TaxonTestCase(TestCase):
                                ('kingdom', None, None, None, None, None, None, 2, 2, 1, None, None, None, None, 'PH',
                                 'phylum', 'auteur2', 'phylum auteur2', None, None, None, None, None, None, None, None,
                                 None, 'x', None, None, None),
-                               ('kingdom', None, None, None, None, None, None, 1, 1, None, None, None, None, None,
-                                'KD', 'kingdom', 'auteur1', 'kingdom auteur1', None, None, None, None, None, None, None,
-                                None, None, 'x', None, None, None)]
-
+                               (None, None, None, None, None, None, None, 1, 1, None, None, None, None, None, 'KD',
+                                'kingdom', 'auteur1', 'kingdom auteur1', None, None, None, None, None, None, None, None,
+                                None, 'x', None, None, None)]
         self.assertEqual(list_taxon_expected, list_taxon_output)
 
         param = {'q': 'species'}
