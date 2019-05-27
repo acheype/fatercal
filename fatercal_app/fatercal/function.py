@@ -155,7 +155,7 @@ def get_taxon_from_search_taxref(list_param):
                          taxon.group2_inpn, taxon.id, taxon.id_ref, taxon.id_sup, taxon.cd_nom, taxon.cd_taxsup,
                          taxon.cd_sup, taxon.cd_ref, taxon.rang, taxon.lb_nom, taxon.lb_auteur, taxon.nom_complet,
                          taxon.nom_complet_html, taxon.nom_valide, taxon.nom_vern, taxon.nom_vern_eng, taxon.habitat,
-                         taxon.grande_terre, taxon.iles_loyautee, taxon.autre, taxon.nc, taxon.non_present,
+                         taxon.nc, taxon.grande_terre, taxon.iles_loyautee, taxon.autre, taxon.non_present,
                          taxon.cd_ref_diff, taxon.cd_sup_diff, taxon.validity_diff)
         list_taxon.append(taxref_format)
     return list_taxon
