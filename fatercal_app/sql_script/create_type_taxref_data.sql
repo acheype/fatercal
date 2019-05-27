@@ -23,7 +23,12 @@ CREATE TYPE public.taxref_data AS
     nom_vern_eng character varying(100),
     habitat character varying(100),
     nc character varying(4),
+    grande_terre character varying(50),
+    iles_loyautee character varying(50),
+    autre character varying(50),
     non_present character varying(4),
     cd_ref_diff character varying(4),
     cd_sup_diff character varying(4),
     validity_diff character varying(4));
+ALTER TYPE public.taxref_data
+  OWNER TO postgres;

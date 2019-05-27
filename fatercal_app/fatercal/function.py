@@ -147,15 +147,16 @@ def get_taxon_from_search_taxref(list_param):
     list_taxon = [
         ('REGNE', 'PHYLUM', 'CLASSE', 'ORDRE', 'FAMILLE', 'GROUP1_INPN', 'GROUP2_INPN', 'ID', 'ID_REF', 'ID_SUP',
          'CD_NOM', 'CD_TAXSUP', 'CD_SUP', 'CD_REF', 'RANG', 'LB_NOM', 'LB_AUTEUR', 'NOM_COMPLET', 'NOM_COMPLET_HTML',
-         'NOM_VALIDE', 'NOM_VERN', 'NOM_VERN_ENG', 'HABITAT', 'NC', 'NON PRESENT DANS TAXREF',
-         'CD_REF DIFFERENT', 'CD_SUP DIFFERENT', 'VALIDITY DIFFERENT')
+         'NOM_VALIDE', 'NOM_VERN', 'NOM_VERN_ENG', 'HABITAT', 'NC', 'GRANDE_TERRE', 'ILES_LOYAUTEE', 'AUTRE',
+         'NON PRESENT DANS TAXREF', 'CD_REF DIFFERENT', 'CD_SUP DIFFERENT', 'VALIDITY DIFFERENT')
     ]
     for taxon in list_not_proper:
         taxref_format = (taxon.regne, taxon.phylum, taxon.classe, taxon.ordre, taxon.famille, taxon.group1_inpn,
                          taxon.group2_inpn, taxon.id, taxon.id_ref, taxon.id_sup, taxon.cd_nom, taxon.cd_taxsup,
                          taxon.cd_sup, taxon.cd_ref, taxon.rang, taxon.lb_nom, taxon.lb_auteur, taxon.nom_complet,
                          taxon.nom_complet_html, taxon.nom_valide, taxon.nom_vern, taxon.nom_vern_eng, taxon.habitat,
-                         taxon.nc, taxon.non_present, taxon.cd_ref_diff, taxon.cd_sup_diff, taxon.validity_diff)
+                         taxon.grande_terre, taxon.iles_loyautee, taxon.autre, taxon.nc, taxon.non_present,
+                         taxon.cd_ref_diff, taxon.cd_sup_diff, taxon.validity_diff)
         list_taxon.append(taxref_format)
     return list_taxon
 

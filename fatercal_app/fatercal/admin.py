@@ -4,7 +4,7 @@ from django.utils.safestring import mark_safe
 from django.db.models.signals import post_save
 from itertools import chain
 
-from fatercal.views import ValidSpecialFilter, AltitudeSpecialFilter
+from .views import ValidSpecialFilter, AltitudeSpecialFilter
 from .models import Taxon, Localisation, Prelevement, Recolteur, Hote, PlanteHote, Vernaculaire, Iso6393
 from .function import get_recolteur, constr_hierarchy_tree_branch_parents, constr_hierarchy_tree_branch_child, is_admin
 

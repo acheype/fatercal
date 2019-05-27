@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION get_taxon_to_taxref(taxon_id integer)
+CREATE OR REPLACE FUNCTION public.get_taxon_to_taxref(taxon_id integer)
   RETURNS taxref_data AS
 $BODY$
 DECLARE taxon_t taxon%ROWTYPE;
@@ -6,7 +6,7 @@ DECLARE taxon_t taxon%ROWTYPE;
 	taxon_ref taxon%ROWTYPE;
 	taxon_superior_id integer;
 	result taxref_data;
-	
+
 BEGIN
 
 SELECT * INTO taxon_t FROM taxon WHERE id=taxon_id;
@@ -16,7 +16,7 @@ IF taxon_t.id != taxon_t.id_ref THEN
 ELSE
     SELECT id_sup INTO taxon_superior_id FROM taxon WHERE id=taxon_t.id;
 END IF;
-WHILE taxon_superior_id is not Null 
+WHILE taxon_superior_id is not Null
 LOOP
     SELECT * INTO taxon_superior FROM taxon WHERE id=taxon_superior_id;
     IF taxon_superior.rang = 'KD' THEN
@@ -50,6 +50,28 @@ END IF;
 END IF;
 END IF;
 END IF;
+
+IF taxon_t.grande_terre is TRUE THEN
+    result.grande_terre = 'Présent';
+ELSE IF taxon_t.grande_terre is FALSE THEN
+    result.grande_terre = 'Non Présent';
+END IF;
+END IF;
+
+IF taxon_t.iles_loyautee is TRUE THEN
+    result.iles_loyautee = 'Présent';
+ELSE IF taxon_t.iles_loyautee is FALSE THEN
+    result.iles_loyautee= 'Non Présent';
+END IF;
+END IF;
+
+IF taxon_t.autre is TRUE THEN
+    result.autre = 'Présent';
+ELSE IF taxon_t.autre is FALSE THEN
+    result.autre= 'Non Présent';
+END IF;
+END IF;
+
 IF taxon_t.rang = 'KD' THEN
     result.regne = taxon_t.lb_nom;
 END IF;
@@ -68,4 +90,5 @@ result.nc = taxon_t.nc;
 RETURN result;
 END;
 $BODY$
-  LANGUAGE plpgsql VOLATILE;
+  LANGUAGE plpgsql VOLATILE
+  COST 100;
