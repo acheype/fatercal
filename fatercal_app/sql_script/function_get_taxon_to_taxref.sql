@@ -91,3 +91,6 @@ END;
 $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
+
+
+  SELECT * FROM get_taxon_to_taxref(2)
