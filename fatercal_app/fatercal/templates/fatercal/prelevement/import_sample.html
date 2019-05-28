@@ -13,7 +13,7 @@
 <fieldset class="module aligned ">
     <h1>Importation de données Prélèvements</h1>
         {% load static %}
-            <p>{{ message }}</p>
+            <p>{{ message | safe }}</p>
             <form enctype="multipart/form-data" action="" method="post">
                 {% csrf_token %}
                 {{ form }}

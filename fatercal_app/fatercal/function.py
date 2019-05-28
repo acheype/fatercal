@@ -953,6 +953,8 @@ def verify_and_save_sample(csv_file, extension):
     """
     try:
         valid_extensions = ['.csv', '.txt']
+        list_error_message = []
+        message = ''
         if extension in valid_extensions:
             list_dict_sample = []
             count = 1
@@ -962,16 +964,19 @@ def verify_and_save_sample(csv_file, extension):
                     result = construct_sample(row, count)
                     list_dict_sample.append(result)
                 else:
-                    raise NotGoodSample(result['message'])
+                    list_error_message.append(result['message'])
                 count += 1
-            save_all_sample(list_dict_sample)
-            message = 'Tous les prélèvements ont tous été importé.'
+            if len(list_error_message) == 0:
+                save_all_sample(list_dict_sample)
+                message = 'Tous les prélèvements ont tous été importé.'
+            else:
+                message = 'Les prélèvements du fichiers n\'ont pas été intégré. <br>'
+                for message_error in list_error_message:
+                    message = message + message_error + '<br>'
         else:
             raise ValidationError(u'Unsupported file extension.')
     except ValidationError:
         message = "Le fichier n'est pas dans le bon format."
-    except NotGoodSample as e:
-        message = e.message
     except KeyError:
         message = "Le fichier n'a pas les bons noms de colonne ou une colonne est manquante."
     return message
