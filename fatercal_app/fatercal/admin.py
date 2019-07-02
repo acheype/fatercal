@@ -349,7 +349,7 @@ class TaxonModify(admin.ModelAdmin):
                 .format(obj.rang, obj.lb_nom, obj.lb_auteur)
         else:
             str_taxon = '<li class="folder"><label><strong>{} :</strong><a href="/fatercal/taxon/{}/"> {} {}</a> ' \
-                .format(obj.id_ref.rang, obj.id_ref_id, obj.id_ref.lb_nom, obj.lb_auteur)
+                .format(obj.id_ref.rang, obj.id_ref_id, obj.id_ref.lb_nom, obj.id_ref.lb_auteur)
         str_child = constr_hierarchy_tree_branch_child(list_child, nb)
         if str_child == '':
             return mark_safe('<ul class="tree"><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end)
