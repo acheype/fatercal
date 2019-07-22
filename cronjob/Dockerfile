@@ -1,5 +1,5 @@
 FROM ubuntu:18.10
-MAINTAINER laurent.schaeffer313@gmail.com
+LABEL author="laurent.schaeffer313@gmail.com"
 
 # Set Env Variable
 ENV TZ=Pacific/Noumea

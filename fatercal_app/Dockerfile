@@ -1,5 +1,5 @@
 FROM ubuntu:18.10
-MAINTAINER laurent.schaeffer313@gmail.com
+LABEL author="laurent.schaeffer313@gmail.com"
 
 # apache-httpd environment variables
 ENV APACHE_UID 33
