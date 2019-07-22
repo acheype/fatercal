@@ -85,7 +85,7 @@ def send_mail():
     msg['Subject'] = 'Mis à jour Fatercal'
     # me == the sender's email address
     # family = the list of all recipients' email addresses
-    msg['From'] = "laurent.schaeffer@ird.fr"
+    msg['From'] = os.environ['SENDER_MAIL']
     msg['To'] = os.environ['RECEIVER_MAIL']
 
     body = "Voici les mises à jour de Fatercal depuis le mois dernier"
