@@ -10,7 +10,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 from sql import GET_LAST_SEND_DATE, GET_TAXON_FROM_ID
-from sql import GET_UPDATE_FROM_FATERCAL
+from sql import GET_UPDATE_FROM_FATERCAL, INSERT_LAST_SEND_DATE
 
 
 def start_connection():
@@ -22,7 +22,7 @@ def start_connection():
     conn = p2.connect(
         dbname='fatercal',
         host=os.environ['POSTGRES_HOST'],
-        user='fatercal',
+        user=os.environ['POSTGRES_USER'],
         password=os.environ['POSTGRES_PASSWORD']
     )
     return conn
@@ -77,6 +77,7 @@ def create_csv(conn, list_id):
 def send_mail():
     """
     Send mail
+    :return: N/A
     """
     smtp_server = os.environ['SMTP_SERVER']
 
@@ -102,3 +103,13 @@ def send_mail():
 
     with smtplib.SMTP(smtp_server) as server:
         server.sendmail(msg['From'], msg['To'], msg.as_string())
+
+def update_last_send_date(conn):
+    """
+    Update the database with the current date in the table last_update
+    :param conn: a connector to the database
+    :return: N/A
+    """
+    curr = conn.cursor()
+    curr.execute(INSERT_LAST_SEND_DATE)
+    conn.commit()

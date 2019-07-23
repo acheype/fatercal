@@ -8,6 +8,13 @@ WHERE date = (SELECT MAX(date) FROM last_update)
 AND type LIKE 'IN';
 """
 
+"""
+Sql script to insert the current date when we send mail to taxref
+"""
+INSERT_LAST_SEND_DATE = """
+INSERT INTO last_update
+VALUES(NOW(), 'IN', 'Fatercal');
+"""
 
 """
 Sql script to get a list of id of updated taxon from fatercal

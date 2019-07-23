@@ -57,4 +57,7 @@ services:
             - DEBUG=false
             - POSTGRES_HOST=postgres
             - POSTGRES_DB=fatercal
-        env_file: fatercal-web.env
+            - POSTGRES_USER=fatercal
+        env_file:
+            - fatercal-db.env
+            - fatercal-api.env
