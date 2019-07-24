@@ -50,11 +50,11 @@ services:
         container_name: fatercal-api
         image: lschaeffer/fatercal-api:1.0
         ports:
-            - "5000:5000"
+            - "81:81"
         links:
             - "postgres"
         environment:
-            - DEBUG=false
+            - DEBUG=True
             - POSTGRES_HOST=postgres
             - POSTGRES_DB=fatercal
             - POSTGRES_USER=fatercal
