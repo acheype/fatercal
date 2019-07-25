@@ -13,7 +13,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN mkdir /app
 
 # Give the right of the folder and file inside to the application
-RUN chown -R www-data .
+RUN chown -R www-data /app
 
 COPY . /app
 WORKDIR /app
