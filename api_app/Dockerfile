@@ -11,6 +11,10 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # copy the application files
 RUN mkdir /app
+
+# Give the right of the folder and file inside to the application
+RUN chown -R www-data .
+
 COPY . /app
 WORKDIR /app
 

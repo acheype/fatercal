@@ -59,7 +59,7 @@ def create_csv(conn, list_id):
     :return: the file name (String)
     """
     curr = conn.cursor()
-    file_name = "taxref_update_fatercal.csv"
+    file_name = os.getcwd() + "/taxref_update_fatercal.csv"
     with open(file_name, 'w') as csv_file:
         writer = csv.writer(csv_file, delimiter=";", lineterminator='\n')
         writer.writerow(
@@ -94,7 +94,7 @@ def send_mail():
     msg.attach(MIMEText(body, 'plain'))
 
     part = MIMEBase('application', "octet-stream")
-    part.set_payload(open("taxref_update_fatercal.csv", "rb").read())
+    part.set_payload(open(os.getcwd() + "/taxref_update_fatercal.csv", "rb").read())
     encoders.encode_base64(part)
 
     part.add_header('Content-Disposition', 'attachment', filename='taxref_update_fatercal.csv')
