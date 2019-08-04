@@ -22,7 +22,6 @@ def send_to_taxref_update():
             list_id = find_manual_update(conn)
             if list_id:
                 filee = create_csv(conn, list_id)
-                print(filee)
                 send_mail(taxref_subject, os.environ['RECEIVER_TAXREF'], [filee], taxref_body)
                 update_last_send_date(conn)
             else:
