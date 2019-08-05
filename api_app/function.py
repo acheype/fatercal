@@ -92,7 +92,7 @@ def send_mail(subject, receiver, list_file, body):
     Arguments:
         subject {String} -- The subject of the mail
         receiver {String} -- The personn who will receive the mail
-        list_file {Dict} -- Dict with the location and name of the files we want to send with the mail
+        list_file {List} -- A list of dict with the location and name of the files we want to send with the mail
         body {String} -- The body of the mail
     """
     smtp_server = os.environ['SMTP_SERVER']
