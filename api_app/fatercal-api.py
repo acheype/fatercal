@@ -12,9 +12,10 @@ app = Flask(__name__)
 
 @app.route("/api/update_to_taxref")
 def send_to_taxref_update():
-    """
-    Send a mail with a csv containing all change to taxon from a date
-    :return: a json file
+    """ Send a mail with a csv containing all change to taxon from a date
+    
+    Returns:
+        json -- a json file
     """
     try:
         conn = start_connection()
@@ -38,22 +39,23 @@ def send_to_taxref_update():
 
 @app.route("/api/update_from_taxref")
 def get_update_from_taxref():
-    """
-    Search all the update and send mail to the admin site if there are
+    """ Search all the update and send mail to the admin site if there are
     update or if any taxon has been erased in taxref
-    :return: a json file
+    
+    Returns:
+        json -- a json file
     """
     try:
         conn = start_connection()
         if conn is not None:
-            new_version = is_version_different(conn)
+            new_version, taxref_version = is_version_different(conn)
             if new_version:
-                list_taxon_diff, list_taxon_erased = get_update_taxref(conn)
+                list_taxon_diff, list_taxon_erased = get_update_taxref(conn, taxref_version)
                 if list_taxon_diff:
                     insert_update_taxref(conn, list_taxon_diff)
-                    fatercal_body = create_body_mail_update_taxref(list_taxon_diff, list_taxon_erased)
-                    if fatercal_body is not None:
-                        send_mail(fatercal_subject, os.environ['RECEIVER_FATERCAL'], [],fatercal_body)
+                fatercal_body = create_body_mail_update_taxref(list_taxon_diff, list_taxon_erased)
+                if fatercal_body is not None:
+                    send_mail(fatercal_subject, os.environ['RECEIVER_FATERCAL'], [],fatercal_body)
                 return jsonify('Succes')
             return('Error 404: Not Found')
         else:

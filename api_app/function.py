@@ -17,9 +17,10 @@ from sql import GET_VERSION_TAXREF, INSERT_INTO_TAXREF_UPDATE
 
 
 def start_connection():
-    """
-    Start the connection to the database
-    :return: return a connector to the database
+    """ Create a new database session and return a new connection object
+    
+    Returns:
+        connection -- a connector to the database
     """
     # Connect to database
     conn = p2.connect(
@@ -31,19 +32,21 @@ def start_connection():
     return conn
 
 def stop_connection(conn):
-    """
-    Stop the connection to the database
-    :param conn: a connector to the database
-    :return: N/A
+    """ Stop the connection to the database
+    
+    Arguments:
+        conn {connection} -- a connector to the database
     """
     conn.close()
 
 def find_manual_update(conn):
-    """
-    Find all update of taxon since the last time
-    we send a mail to taxref
-    :param conn: a connector to the database
-    :return: a list of dict containing id of taxon
+    """ Find all update of taxon since the last time we data to taxref
+    
+    Arguments:
+        conn {connection} -- a connector to the database
+    
+    Returns:
+        List -- a list of dict containing id of taxon
     """
     dict_curr = conn.cursor(cursor_factory=extras.DictCursor)
     dict_curr.execute(GET_LAST_SEND_DATE)
@@ -55,11 +58,14 @@ def find_manual_update(conn):
     return list_id
 
 def create_csv(conn, list_id):
-    """
-    Create a csv file
-    :param conn: a connector to the database
-    :param list_id: a list of dict containing id of taxon
-    :return: the file name (String)
+    """ Create a csv with the info of taxon fatercal updated
+    
+    Arguments:
+        conn {connection} -- a connector to the database
+        list_id {List} -- list of dict containing id of taxon
+    
+    Returns:
+        [Dict] -- Dict with the location and name of the csv
     """
     curr = conn.cursor()
     filee = {
@@ -81,13 +87,13 @@ def create_csv(conn, list_id):
     return filee
 
 def send_mail(subject, receiver, list_file, body):
-    """
-    Send a mail
-    :param subject: a string which contains the subject of the mail
-    :param receiver: a string which contains the personn who will receive the mail
-    :param list_file: a list of dict which contains the location and name of the files we want to send with the mail
-    :param body: a string which contains the body of the mail
-    :return: N/A
+    """ Send a mail
+    
+    Arguments:
+        subject {String} -- The subject of the mail
+        receiver {String} -- The personn who will receive the mail
+        list_file {Dict} -- Dict with the location and name of the files we want to send with the mail
+        body {String} -- The body of the mail
     """
     smtp_server = os.environ['SMTP_SERVER']
 
@@ -111,10 +117,10 @@ def send_mail(subject, receiver, list_file, body):
         server.sendmail(msg['From'], msg['To'], msg.as_string())
 
 def update_last_send_date(conn):
-    """
-    Update the database with the current date in the table last_update
-    :param conn: a connector to the database
-    :return: N/A
+    """ Update the database with the current date in the table last_update
+    
+    Arguments:
+        conn {connection} -- a connector to the database
     """
     curr = conn.cursor()
     curr.execute(INSERT_LAST_SEND_DATE)
@@ -122,10 +128,13 @@ def update_last_send_date(conn):
     conn.commit()
 
 def is_version_different(conn):
-    """
-    Compare the version we have of taxref with the latest version
-    :param conn: a connector to the database
-    :return: N/A
+    """ Compare the version we have of taxref with the latest version
+    
+    Arguments:
+        conn {connection} -- a connector to the database
+    
+    Returns:
+        Boolean, String or None if not found -- True if it find a new version (with the number)
     """
     curr = conn.cursor()
     curr.execute(GET_VERSION_TAXREF)
@@ -135,16 +144,24 @@ def is_version_different(conn):
         "https://taxref.mnhn.fr/api/taxrefVersions/" + str(int(version_taxref_fatercal) + 1)
     )
     if response.status_code == 404:
-        return False
+        return False, None
     taxref_version = response.json()['id']
-    return True
+    return True, taxref_version
 
-def get_update_taxref(conn):
+def get_update_taxref(conn, taxref_version):
+    """ Get the update from taxref with their API
+    
+    Arguments:
+        conn {connection} -- a connector to the database
+        taxref_version {String} -- The taxref version we import update from
+    
+    Returns:
+        List, List -- Return two list with updated and erased taxon
+    """
     dict_curr = conn.cursor(cursor_factory=extras.DictCursor)
     dict_curr.execute(GET_TAXREF_TAXON)
     list_dict_taxon_fater = dict_curr.fetchall()
     dict_curr.close()
-    i = 0
     list_taxon_diff = []
     list_taxon_erased = []
     for taxon_fatercal in list_dict_taxon_fater:
@@ -157,17 +174,25 @@ def get_update_taxref(conn):
             )
         else:
             taxon_taxref = response.json()
-            taxon_diff = create_dict_taxref_update(taxon_fatercal, taxon_taxref)
-            if taxon_diff is not  None:
+            taxon_diff = create_dict_taxref_update(taxon_fatercal, taxon_taxref, taxref_version)
+            if taxon_diff is not None:
                 list_taxon_diff.append(taxon_diff)
-        i=1+i
-        if i == 10:
-            break
     return list_taxon_diff, list_taxon_erased
 
 
 
-def create_dict_taxref_update(taxon_fatercal, taxon_taxref):
+def create_dict_taxref_update(taxon_fatercal, taxon_taxref, taxref_version):
+    """ Create a tuple which contains all the info we need 
+    for update
+    
+    Arguments:
+        taxon_fatercal {Dict} -- a dict about a taxon from fatercal
+        taxon_taxref {Dict} -- a dict about a taxon from taxref
+        taxref_version {String} -- The taxref version we import update from
+    
+    Returns:
+        Tuple -- A tuple which contains info on an updated taxon
+    """
     taxon_diff = None
     if taxon_taxref['habitat'] is not None:
         taxon_taxref['habitat'] = int(taxon_taxref['habitat'])
@@ -187,7 +212,8 @@ def create_dict_taxref_update(taxon_fatercal, taxon_taxref):
             taxon_taxref['parentId'], taxon_taxref['referenceId'],
             taxon_taxref['rankId'], taxon_taxref['scientificName'],
             taxon_taxref['authority'], taxon_taxref['fullName'],
-            taxon_taxref['habitat'], taxon_taxref['nc'], datetime.now())
+            taxon_taxref['habitat'], taxon_taxref['nc'], datetime.now(),
+            taxref_version)
     return taxon_diff
 
 def insert_update_taxref(conn, list_taxon_diff):
@@ -199,10 +225,19 @@ def insert_update_taxref(conn, list_taxon_diff):
     conn.commit()
 
 def create_body_mail_update_taxref(list_taxon_diff, list_taxon_erased):
-    fatercal_body = None 
+    """ Create the body of a mail to send
+    
+    Arguments:
+        list_taxon_diff {List} -- Contains all taxon which is different in taxref
+        list_taxon_erased {List} -- Contains all taxon erased from taxref
+
+    Returns:
+        String -- The body of the mail
+    """
+
+    fatercal_body = None
     if list_taxon_diff and list_taxon_erased:
-        fatercal_body = """
-        Une mise a jour depuis taxref attend la validation de plusieurs taxon
+        fatercal_body = """Une mise a jour depuis taxref attend la validation de plusieurs taxon
         Un ou plusieurs taxon ont été suprimé de taxref.
         Voici le nom complet et le cd_nom des taxon supprimé
         """

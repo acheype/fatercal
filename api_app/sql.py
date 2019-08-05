@@ -57,6 +57,9 @@ SELECT MAX(taxrefversion)
 FROM taxon;
 """
 
+"""
+Sql query to insert the taxon from taxref with their new data
+"""
 INSERT_INTO_TAXREF_UPDATE = """
 INSERT INTO taxref_update
 VALUES %s;
