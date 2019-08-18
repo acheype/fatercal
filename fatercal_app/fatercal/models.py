@@ -369,3 +369,22 @@ class TaxrefExport(models.Model):
     class Meta:
             managed = False
             db_table = 'taxref_export'
+
+
+class TaxrefUpdate(models.Model):
+    taxon_id = models.ForeignKey('Taxon', db_column='taxon_id', verbose_name='Taxon', on_delete=models.DO_NOTHING)
+    cd_nom = models.IntegerField(unique=True, blank=True, null=True)
+    cd_ref = models.IntegerField(blank=True, null=True)
+    cd_sup = models.IntegerField(blank=True, null=True)
+    rang = models.CharField(max_length=4)
+    lb_nom = models.CharField(max_length=250, verbose_name='Nom')
+    lb_auteur = models.CharField(max_length=250, blank=True, null=True, verbose_name='Auteur')
+    nom_complet = models.CharField(max_length=250, blank=True, null=True)
+    habitat = models.SmallIntegerField()
+    nc = models.CharField(max_length=4, blank=True, null=True)
+    date = models.DateTimeField(auto_now=False, auto_now_add=False)
+    taxrefversion = models.CharField(max_length=250, verbose_name='Nom')
+
+    class Meta:
+            managed = False
+            db_table = 'taxref_update'

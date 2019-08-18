@@ -1,16 +1,19 @@
 from django.http import Http404
 from django.contrib import admin
-from django.db.models import F
+from django.db.models import F, Q
 from django.template import loader
 from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
-from .forms import AllTaxon, TaxonChangeSup, SearchAdvanced, ChooseData, UploadFileCsv
+from .forms import AllTaxon, TaxonChangeSup, SearchAdvanced, ChooseData, UploadFileCsv, \
+    ChooseTaxonToUpdate
 from .function import constr_hierarchy_tree_adv_search, get_taxon_from_search, is_admin,\
     get_taxon_personal, get_sample, get_taxons_for_sample, get_taxon_adv_search, change_ref_taxon, change_sup_taxon,\
-    verify_and_save_sample, list_sample_for_map, get_taxon_from_search_taxref
+    verify_and_save_sample, list_sample_for_map, get_taxon_from_search_taxref, get_taxref_update
 from .models import Taxon
 
 import csv
+import json
+import requests
 import codecs
 import datetime
 
@@ -464,3 +467,23 @@ def export_adv_search(request):
             raise Http404("This page doesn't exist.")
     else:
         raise Http404("This page doesn't exist.")
+
+@login_required()
+def update_from_taxref(request):
+    """
+    This page allow the user to choose the update from taxref to apply to Fatercal
+    It takes the taxon with a cd_nom and search with taxref api if it has
+    :param request: request: an request object (see Django doc)
+    :return: an HttpResponse object (see Django doc)
+    """
+    if is_admin(request.user):
+        template = loader.get_template('fatercal/taxon/choose_taxon.html')
+        list_dict_taxon, taxref_version = get_taxref_update()
+        form = ChooseTaxonToUpdate(list_dict_taxon)
+        context = {
+            'form': form,
+            'list_dict': list_dict_taxon
+        }
+        return HttpResponse(template.render(context, request))
+    else:
+        raise Http404("This page doesn't exist")

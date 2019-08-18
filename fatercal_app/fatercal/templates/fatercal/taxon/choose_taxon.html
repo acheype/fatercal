@@ -1,0 +1,54 @@
+{% extends 'admin/base_site.html' %}
+
+{% load static %}
+{% block title %}
+    Recherche Avancée | Fatercal
+{% endblock %}
+{% block branding %}
+<style>
+    input[type=checkbox] { display: block; }
+</style>
+    <div class="head">
+        <h1 id="site-name">
+            <a href="/">Fatercal</a>
+        </h1>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="breadcrumbs initialized">
+        <a href="/">Accueil</a>
+        <span class="icon-arrow-right breadcrumbs-separator"></span> <a href="/fatercal/">Fatercal</a>
+        <span class="icon-arrow-right breadcrumbs-separator"></span> <a href="/fatercal/taxon/">Taxon</a>
+        <span class="icon-arrow-right breadcrumbs-separator"></span> Mise à jour depuis Taxref
+    </div><br>
+    {% if list_dict %}
+        <fieldset class="module aligned">
+            <div>
+                <h1>Choix Taxon mise à jour:</h1>
+                <form action="" method="post">
+                    {% csrf_token %}
+                    <table border="2">
+                        {{ form }}
+                    </table>
+                    <br>
+                    <input type="submit" value="Exporter !"/>
+                </form><br>
+            </div>
+        </fieldset>
+        <br>
+        <fieldset class="module aligned">
+        <div>
+            <h1> Voici la différence de ces taxons</h1>
+        {% for taxon in list_dict %}
+            <h2> {{ taxon.taxon_name }}: </h2>
+            <p>{{taxon.diff}}</p>
+        {% endfor %}
+        </div>
+        </fieldset>
+    {% else %}
+        <fieldset class="module aligned">
+        <h1>Aucune mise a jour depuis Taxref</h1>
+        </fieldset>
+    {% endif %}
+{% endblock %}

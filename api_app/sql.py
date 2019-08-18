@@ -61,6 +61,8 @@ FROM taxon;
 Sql query to insert the taxon from taxref with their new data
 """
 INSERT_INTO_TAXREF_UPDATE = """
-INSERT INTO taxref_update
+INSERT INTO taxref_update (taxon_id, cd_nom, cd_sup,
+cd_ref, rang, lb_nom, lb_auteur, nom_complet, habitat,
+nc, date, taxrefversion)
 VALUES %s;
 """

@@ -15,5 +15,6 @@ urlpatterns = [
     path('import_sample/', views.add_sample_by_csv, name='Import sample'),
     path('export_adv_search/', views.export_adv_search, name='Export advanced search taxon'),
     path('map_sample/', views.map_sample, name='Map Sample'),
-    path('update_map/', views.update_map, name='Update Map')
+    path('update_map/', views.update_map, name='Update Map'),
+    path('update_from_taxref/', views.update_from_taxref, name='Update from Taxref')
 ]
