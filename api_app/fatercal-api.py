@@ -1,12 +1,12 @@
 import os
 from distutils.util import strtobool
+import json
 import psycopg2 as p2
-from flask import Flask, jsonify
-from variable import fatercal_subject, taxref_subject, taxref_body
-from function import start_connection, find_manual_update, is_version_different, get_update_taxref
-from function import stop_connection, create_csv, send_mail, update_last_send_date, insert_update_taxref
-from function import create_body_mail_update_taxref
-
+from flask import Flask, abort
+from variable import fatercal_subject, fatercal_body, taxref_subject, taxref_body
+from function import start_connection, find_manual_update, is_version_different, get_list_taxon_taxref_nc
+from function import stop_connection, create_csv_format_taxref, send_mail, update_last_send_date, insert_update_taxref
+from function import filter_list_taxon, seek_deleted_taxon_in_taxref, seek_referenced_taxon_in_taxref
 
 app = Flask(__name__)
 
@@ -16,26 +16,24 @@ def send_to_taxref_update():
     
     Returns:
         json -- a json file
+        abort -- end the process if error
     """
     try:
         conn = start_connection()
-        if conn is not None:
-            list_id = find_manual_update(conn)
-            if list_id:
-                filee = create_csv(conn, list_id)
-                send_mail(taxref_subject, os.environ['RECEIVER_TAXREF'], [filee], taxref_body)
-                update_last_send_date(conn)
-            else:
-                filee = None
-            stop_connection(conn)
-            if filee is not None:
-                os.remove(filee['location'])
-            return jsonify("Succes")
+        list_id = find_manual_update(conn)
+        if list_id:
+            filee = create_csv_format_taxref(conn, list_id)
+            send_mail(taxref_subject, os.environ['RECEIVER_TAXREF'], [filee], taxref_body)
+            update_last_send_date(conn)
         else:
-            return jsonify('Error 500')
+            filee = None
+        stop_connection(conn)
+        if filee is not None:
+            os.remove(filee['location'])
+        return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
     except p2.DatabaseError as exception:
         print(exception)
-        return jsonify("Error 500")
+        rabort(500)
 
 @app.route("/api/update_from_taxref")
 def get_update_from_taxref():
@@ -44,25 +42,25 @@ def get_update_from_taxref():
     
     Returns:
         json -- a json file
+        abort -- end the process if error
     """
     try:
         conn = start_connection()
-        if conn is not None:
-            new_version, taxref_version = is_version_different(conn)
-            if new_version:
-                list_taxon_diff, list_taxon_erased = get_update_taxref(conn, taxref_version)
-                if list_taxon_diff:
-                    insert_update_taxref(conn, list_taxon_diff)
-                fatercal_body = create_body_mail_update_taxref(list_taxon_diff, list_taxon_erased)
-                if fatercal_body is not None:
-                    send_mail(fatercal_subject, os.environ['RECEIVER_FATERCAL'], [],fatercal_body)
-                return jsonify('Succes')
-            return('Error 404: Not Found')
+        is_diff, taxref_version = is_version_different(conn)
+        if is_diff:
+            list_taxon = get_list_taxon_taxref_nc(taxref_version)
+            if list_taxon is not None:
+                seek_deleted_taxon_in_taxref(conn, list_taxon)
+                seek_referenced_taxon_in_taxref(conn, list_taxon)
+                list_taxon_update = filter_list_taxon(conn, list_taxon, taxref_version)
+                insert_update_taxref(conn, list_taxon_update)
+            send_mail(fatercal_subject, os.environ['RECEIVER_FATERCAL'], [],fatercal_body)
+            return json.dumps({'New_version':True}), 200, {'ContentType':'application/json'} 
         else:
-            return jsonify('Error 500')
+            return json.dumps({'New_version':False}), 200, {'ContentType':'application/json'}
     except p2.DatabaseError as exception:
         print(exception)
-        return jsonify("Error 500")
+        abort(500)
 
 
 if __name__ == '__main__':

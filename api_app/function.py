@@ -11,9 +11,10 @@ from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-from sql import GET_LAST_SEND_DATE, GET_TAXON_FROM_ID, GET_TAXREF_TAXON
-from sql import GET_UPDATE_FROM_FATERCAL, INSERT_LAST_SEND_DATE
-from sql import GET_VERSION_TAXREF, INSERT_INTO_TAXREF_UPDATE
+from sql import GET_LAST_SEND_DATE, GET_TAXON_FROM_ID, GET_TAXON_WITH_CD_NOM
+from sql import GET_UPDATE_FROM_FATERCAL, INSERT_LAST_SEND_DATE, GET_TAXREF_TAXON
+from sql import GET_VERSION_TAXREF_TAXON, INSERT_INTO_TAXREF_UPDATE, UPDATE_SET_NOT_REFERENCED
+from sql import UPDATE_SET_REFERENCED, GET_FATERCAL_TAXON, GET_VERSION_TAXREF_UPDATE
 
 
 def start_connection():
@@ -57,7 +58,7 @@ def find_manual_update(conn):
     dict_curr.close()
     return list_id
 
-def create_csv(conn, list_id):
+def create_csv_format_taxref(conn, list_id):
     """ Create a csv with the info of taxon fatercal updated
     
     Arguments:
@@ -134,54 +135,69 @@ def is_version_different(conn):
         conn {connection} -- a connector to the database
     
     Returns:
-        Boolean, String or None if not found -- True if it find a new version (with the number)
+        Boolean, String or None -- True if it find a new version (with the number)
     """
     curr = conn.cursor()
-    curr.execute(GET_VERSION_TAXREF)
+    curr.execute(GET_VERSION_TAXREF_UPDATE)
     version_taxref_fatercal = curr.fetchone()[0]
-
+    if version_taxref_fatercal is None:
+        curr.execute(GET_VERSION_TAXREF_TAXON)
+        version_taxref_fatercal = curr.fetchone()[0]
+    if version_taxref_fatercal is None:
+        raise p2.DatabaseError()
     response = requests.get(
         "https://taxref.mnhn.fr/api/taxrefVersions/" + str(int(version_taxref_fatercal) + 1)
     )
+    curr.close()
     if response.status_code == 404:
         return False, None
     taxref_version = response.json()['id']
     return True, taxref_version
 
-def get_update_taxref(conn, taxref_version):
-    """ Get the update from taxref with their API
+def get_list_taxon_taxref_nc(taxref_version):
+    """ Get a list of taxon of New-Caledonia from taxref with their API
+    and have Animalia as a parent
     
     Arguments:
-        conn {connection} -- a connector to the database
         taxref_version {String} -- The taxref version we import update from
     
     Returns:
-        List, List -- Return two list with updated and erased taxon
+        List -- Return a list of dict containing all taxon of nc referenced in taxref
     """
-    dict_curr = conn.cursor(cursor_factory=extras.DictCursor)
-    dict_curr.execute(GET_TAXREF_TAXON)
-    list_dict_taxon_fater = dict_curr.fetchall()
-    dict_curr.close()
-    list_taxon_diff = []
-    list_taxon_erased = []
-    for taxon_fatercal in list_dict_taxon_fater:
+    size = 1
+    count = 1
+    list_taxon = []
+    list_taxon_not_filter = []
+    # We get all taxon by browsing throught 'page' (See Taxref API doc)
+    while size != 0:
         response = requests.get(
-            "https://taxref.mnhn.fr/api/taxa/" + str(taxon_fatercal['cd_nom'])
+            "https://taxref.mnhn.fr/api/taxa/search?territories=nc&page={}".format(count)
         )
         if response.status_code == 404:
-            list_taxon_erased.append(
-                "Nom complet:" + taxon_fatercal['nom_complet'] + " CD_NOM:" + str(taxon_fatercal['cd_nom'])
-            )
+            list_taxon_temp = None
+            if list_taxon_not_filter == []:
+                list_taxon_not_filter = None
+            size = 0
         else:
-            taxon_taxref = response.json()
-            taxon_diff = create_dict_taxref_update(taxon_fatercal, taxon_taxref, taxref_version)
-            if taxon_diff is not None:
-                list_taxon_diff.append(taxon_diff)
-    return list_taxon_diff, list_taxon_erased
+            list_taxon_temp = response.json().get('_embedded', None)
+            if list_taxon_temp is None:
+                size = 0
+            else:
+                size = len(list_taxon_temp['taxa'])
+                if size != 0:
+                    list_taxon_not_filter = list_taxon_not_filter + list_taxon_temp['taxa']
+        count = count + 1
+    if list_taxon_not_filter:
+        for taxon in list_taxon_not_filter:
+            if taxon['kingdomName'] == 'Animalia':
+                list_taxon.append(taxon)
+    else:
+        list_taxon = list_taxon_not_filter
+    return list_taxon
 
 
 
-def create_dict_taxref_update(taxon_fatercal, taxon_taxref, taxref_version):
+def create_tuple_taxref_update(taxon_fatercal, taxon_taxref, taxref_version):
     """ Create a tuple which contains all the info we need 
     for update
     
@@ -194,17 +210,17 @@ def create_dict_taxref_update(taxon_fatercal, taxon_taxref, taxref_version):
         Tuple -- A tuple which contains info on an updated taxon
     """
     taxon_diff = None
+    is_different = False
     if taxon_taxref['habitat'] is not None:
         taxon_taxref['habitat'] = int(taxon_taxref['habitat'])
-    is_different = False
     if taxon_fatercal['cd_sup'] != taxon_taxref['parentId'] or \
     taxon_fatercal['cd_ref'] != taxon_taxref['referenceId'] or \
     taxon_fatercal['rang'] != taxon_taxref['rankId'] or \
     taxon_fatercal['lb_nom'] != taxon_taxref['scientificName'] or \
     taxon_fatercal['lb_auteur'] != taxon_taxref['authority'] or \
     taxon_fatercal['nom_complet'] != taxon_taxref['fullName'] or \
-    taxon_fatercal['habitat'] != taxon_taxref['habitat'] or \
-    taxon_fatercal['nc'] != taxon_taxref['nc']:
+    (taxon_fatercal['habitat'] != taxon_taxref['habitat'] and taxon_taxref['habitat'] is not None) or \
+    (taxon_fatercal['nc'] != taxon_taxref['nc'] and taxon_taxref['nc'] is not None):
         is_different = True
 
     if is_different:
@@ -217,6 +233,12 @@ def create_dict_taxref_update(taxon_fatercal, taxon_taxref, taxref_version):
     return taxon_diff
 
 def insert_update_taxref(conn, list_taxon_diff):
+    """ Insert taxon in the table taxref_update
+    
+    Arguments:
+        conn {connection} -- a connector to the database
+        list_taxon_diff {List} -- a list of tuple
+    """
     curr = conn.cursor()
     extras.execute_values(curr,
         INSERT_INTO_TAXREF_UPDATE,
@@ -224,31 +246,82 @@ def insert_update_taxref(conn, list_taxon_diff):
     curr.close()
     conn.commit()
 
-def create_body_mail_update_taxref(list_taxon_diff, list_taxon_erased):
-    """ Create the body of a mail to send
+def filter_list_taxon(conn, list_taxon, taxref_version):
+    """ Filter the list of taxon for update or insert
     
     Arguments:
-        list_taxon_diff {List} -- Contains all taxon which is different in taxref
-        list_taxon_erased {List} -- Contains all taxon erased from taxref
-
+        conn {connection} -- a connector to the database
+        list_taxon {List} -- List of dict
+        taxref_version {Integer} -- current version of taxref
+    
     Returns:
-        String -- The body of the mail
+        List -- a list of tuple
     """
+    dict_curr = conn.cursor(cursor_factory=extras.DictCursor)
+    list_taxon_update = []
+    for taxon_taxref in list_taxon:
+        # We check if the taxon exist in Fatercal
+        dict_curr.execute(GET_TAXON_WITH_CD_NOM, [taxon_taxref['id']])
+        taxon_fatercal = dict_curr.fetchone()
+        # Taxon with no id will be inserted as new taxon
+        if taxon_fatercal is None:
+            list_taxon_update.append((
+                None, taxon_taxref['id'], taxon_taxref['parentId'],
+                taxon_taxref['referenceId'], taxon_taxref['rankId'],
+                taxon_taxref['scientificName'], taxon_taxref['authority'],
+                taxon_taxref['fullName'], taxon_taxref['habitat'],
+                taxon_taxref['nc'], datetime.now(), taxref_version)
+            )
+        # Taxon with an existant id will be updated if there's a diff
+        else:
+            taxon_diff = create_tuple_taxref_update(
+                taxon_fatercal, taxon_taxref, taxref_version)
+            if taxon_diff is not None:
+                list_taxon_update.append(taxon_diff)
+    dict_curr.close()
+    return list_taxon_update
 
-    fatercal_body = None
-    if list_taxon_diff and list_taxon_erased:
-        fatercal_body = """Une mise a jour depuis taxref attend la validation de plusieurs taxon
-        Un ou plusieurs taxon ont été suprimé de taxref.
-        Voici le nom complet et le cd_nom des taxon supprimé
-        """
-        for taxon in list_taxon_erased:
-            fatercal_body = fatercal_body + taxon
-    elif list_taxon_diff and not list_taxon_erased:
-        fatercal_body = """Une mise a jour depuis taxref attend la validation de plusieurs taxon"""
-    elif not list_taxon_diff and list_taxon_erased:
-        fatercal_body = """Un ou plusieurs taxon ont été suprimé de taxref.
-        Voici le nom complet et le cd_nom des taxon supprimé
-        """
-        for taxon in list_taxon_erased:
-            fatercal_body = fatercal_body + taxon
-    return fatercal_body
+def seek_deleted_taxon_in_taxref(conn, list_taxon_taxref):
+    """ Delete cd_nom reference in Fatercal taxon when Taxref delete these taxon
+    
+    Arguments:
+        conn {connection} -- a connector to the database
+        list_taxon_taxref {List} -- a list of dict
+    """
+    dict_curr = conn.cursor(cursor_factory=extras.DictCursor)
+    dict_curr.execute(GET_TAXREF_TAXON)
+    list_taxon_fatercal = dict_curr.fetchall()
+    dict_curr.close()
+    curr = conn.cursor()
+    for fatercal_taxon in list_taxon_fatercal:
+        taxref_taxon = next(
+            (taxref_taxon for taxref_taxon in list_taxon_taxref
+                if taxref_taxon['id'] == fatercal_taxon['cd_nom']), None)
+        if taxref_taxon is None:
+            curr.execute(UPDATE_SET_NOT_REFERENCED, [fatercal_taxon['id']])
+    curr.close()
+
+def seek_referenced_taxon_in_taxref(conn, list_taxon_taxref):
+    """ Update cd_nom reference in Fatercal taxon's when Taxref add these taxon
+    
+    Arguments:
+        conn {connection} -- a connector to the database
+        list_taxon_taxref {List} -- a list of dict
+    """
+    dict_curr = conn.cursor(cursor_factory=extras.DictCursor)
+    dict_curr.execute(GET_FATERCAL_TAXON)
+    list_taxon_fatercal = dict_curr.fetchall()
+    dict_curr.close()
+    curr = conn.cursor()
+    for fatercal_taxon in list_taxon_fatercal:
+        taxref_taxon = next(
+            (taxref_taxon for taxref_taxon in list_taxon_taxref 
+                if taxref_taxon['scientificName'] == fatercal_taxon['lb_nom']), None)
+        if taxref_taxon is not None:
+            curr.execute(GET_TAXON_WITH_CD_NOM, [taxref_taxon['id']])
+            temp_taxon = curr.fetchone()
+            if temp_taxon is None:
+                curr.execute(UPDATE_SET_REFERENCED,
+                    [taxref_taxon['id'], taxref_taxon['parentId'],
+                    taxref_taxon['referenceId'], fatercal_taxon['id']])
+    curr.close()
