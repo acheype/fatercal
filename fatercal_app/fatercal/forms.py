@@ -1,6 +1,7 @@
 from django import forms
 from django.utils.safestring import mark_safe
-from .models import Taxon
+from django.db.models import Q, Max
+from .models import Taxon, TaxrefUpdate
 from ajax_select.fields import AutoCompleteSelectField
 
 
@@ -52,9 +53,15 @@ class UploadFileCsv(forms.Form):
     file = forms.FileField(required=True, label='Fichier d\'import')
 
 class ChooseTaxonToUpdate(forms.Form):
-    taxrefversion = forms.IntegerField(widget=forms.HiddenInput(), required=True)
-    def __init__(self, list_dict_taxon,  *args, **kwargs):
+    time = forms.DateTimeField(widget=forms.HiddenInput())
+    taxrefversion = forms.IntegerField(widget=forms.HiddenInput())
+    def __init__(self, *args, **kwargs):
         super(ChooseTaxonToUpdate, self).__init__(*args, **kwargs)
-        for taxon in list_dict_taxon:
-            self.fields["t_{}".format(taxon['cd_nom'])] = forms.BooleanField(
-                required=True, label=mark_safe("{}".format(taxon['taxon_name'])))
+        taxref_version = TaxrefUpdate.objects.aggregate(Max('taxrefversion'))
+        self.fields['choices'] = forms.ModelMultipleChoiceField(
+            queryset=TaxrefUpdate.objects.filter(
+                Q(taxrefversion=taxref_version['taxrefversion__max']) 
+                & ~Q(taxon_id=None)
+            ),
+            required=False,
+            widget=forms.CheckboxSelectMultiple)

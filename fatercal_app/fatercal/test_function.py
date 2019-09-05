@@ -1,10 +1,14 @@
 from django.test import TestCase
 from django.contrib.auth.models import User, Group
 from .function import *
-from .models import TaxrefStatus, TaxrefHabitat, TaxrefRang, TypeEnregistrement
+from .models import TaxrefStatus, TaxrefHabitat, TaxrefRang
+from .models import TypeEnregistrement, TaxrefUpdate
 from .forms import ChooseData
+
 import os
 import csv
+import pytz
+import datetime
 
 
 # Test function that are related to the model Taxon
@@ -578,7 +582,270 @@ class TaxonTestCase(TestCase):
              'informations complementaires', 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc'),
             (8, None, 'order', 'family', '', 'genus', '', 'genus species', 'genus species sub_species', 'auteur8')]
         self.assertEqual(list_taxon_expected, list_taxon_ouput)
+    
+    def test_get_taxref_update(self):
+        status = TaxrefStatus.objects.create(status="P", lb_status="Présent")
+        habitat = TaxrefHabitat.objects.create(habitat=2, lb_habitat="Terrestre")
+        self.species.cd_nom=1
+        self.species.cd_ref=1
+        self.species.cd_sup=2
+        self.genus.cd_nom= 2
+        self.genus.save()
+        self.species.save()
+        tz = pytz.timezone('Pacific/Noumea')
+        taxon_taxref = TaxrefUpdate.objects.create(
+            taxon_id=self.species, cd_nom=1,
+            cd_ref=1, cd_sup=2, rang='ES',
+            lb_nom='different_name', lb_auteur='different author',
+            nom_complet='different_name different author',
+            date=datetime.datetime.now(tz=tz).replace(tzinfo=pytz.UTC),
+            taxrefversion='11'
+        )
+        list_taxon, taxref_version = get_taxref_update()
+        list_taxon_expected = [
+            {
+                'taxon_name': self.species,
+                'cd_nom': '1',
+                'diff': "Le nom du taxon est différent. Nom Chez Fatercal: genus species, " \
+                "Chez taxref: different_name. Le nom de l'auteur de ce taxon est différent. Auteur " \
+                "Chez Fatercal: auteur7, Chez taxref: different author. "
+            }
+        ]
+        taxref_version_expected = "11"
+        self.assertEqual(list_taxon_expected, list_taxon)
+        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        
+        self.genus.cd_nom = None
+        self.genus.save()
+        taxon_taxref.habitat = None
+        taxon_taxref.nc = None
+        taxon_taxref.lb_nom = 'genus species'
+        taxon_taxref.lb_auteur = 'auteur7'
+        taxon_taxref.save()
+        list_taxon, taxref_version = get_taxref_update()
+        list_taxon_expected[0]['diff'] = "Le supérieur de ce taxon est différent et celui de Fatercal" \
+                    "n'existe pas chez Taxref. "
+        self.assertEqual(list_taxon_expected, list_taxon)
+        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
 
+        self.genus.cd_nom = 2
+        self.genus.save()
+        self.species.id_sup=None
+        self.species.save()
+        list_taxon, taxref_version = get_taxref_update()
+        list_taxon_expected[0]['diff'] = "Ce taxon n'a pas de supérieur dans fatercal et Taxref lui en a assigné un" \
+                    " Supérieur chez Taxref: genus auteur6"
+        self.assertEqual(list_taxon_expected, list_taxon)
+        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        
+        self.genus.cd_nom = None
+        self.genus.save()
+        list_taxon, taxref_version = get_taxref_update()
+        list_taxon_expected[0]['diff'] = "Ce taxon n'a pas de supérieur dans fatercal et Taxref lui en a assigné un" \
+                    " mais il n'exist pas chez fatercal. Cd_nom supérieur chez Taxref: 2"
+        self.assertEqual(list_taxon_expected, list_taxon)
+        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+
+        self.species.id_sup = self.genus
+        taxon_taxref.cd_sup = None
+        taxon_taxref.cd_ref = 3
+        self.species_syn.cd_nom = 3
+        self.species.save()
+        self.species_syn.save()
+        taxon_taxref.save()
+        list_taxon, taxref_version = get_taxref_update()
+        list_taxon_expected[0]['diff'] = "Le taxon est valide chez fatercal mais synonyme chez Taxref. " \
+            "Taxon référent chez Taxref: species_synonymous auteur9 (Non Valide)"
+        self.assertEqual(list_taxon_expected, list_taxon)
+        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        
+        self.species_syn.cd_nom = None
+        self.species_syn.save()
+        list_taxon, taxref_version = get_taxref_update()
+        list_taxon_expected[0]['diff'] = "Le taxon est valide chez fatercal mais synonyme chez Taxref. " \
+            "Cd_nom taxon référent chez Taxref: 3."
+        self.assertEqual(list_taxon_expected, list_taxon)
+        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        
+        self.species.cd_nom = None
+        self.species.save()
+        self.species_syn.cd_nom = 1
+        self.species_syn.save()
+        taxon_taxref.taxon_id = self.species_syn
+        taxon_taxref.cd_ref = 3
+        taxon_taxref.lb_nom = "species_synonymous"
+        taxon_taxref.lb_auteur = "auteur9"
+        taxon_taxref.save()
+        self.genus.cd_nom = 2
+        self.genus.save()
+        list_taxon, taxref_version = get_taxref_update()
+        list_taxon_expected[0]['taxon_name'] = self.species_syn
+        list_taxon_expected[0]['diff'] = "Le référent de ce taxon est différent et celui de Fatercal " \
+            "n'existe pas chez Taxref. " 
+        self.assertEqual(list_taxon_expected, list_taxon)
+        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        
+        self.species.cd_nom = 3
+        self.species.save()
+        taxon_taxref.cd_sup = 2
+        taxon_taxref.cd_ref = 1
+        taxon_taxref.save()
+        self.genus.cd_nom = None
+        self.genus.save()
+        list_taxon, taxref_version = get_taxref_update()
+        list_taxon_expected[0]['diff'] = "Le taxon est synonyme chez fatercal mais valide chez Taxref " \
+            "mais le taxon supérieur n'existe pas chez Fatercal Cd_nom taxon supérieur chez Taxref: 2. "
+        self.assertEqual(list_taxon_expected, list_taxon)
+        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        
+        self.genus.cd_nom = 2
+        self.genus.save()
+        list_taxon, taxref_version = get_taxref_update()
+        list_taxon_expected[0]['diff'] = "Le taxon est synonyme chez fatercal mais valide chez Taxref. " \
+            "Supérieur chez Taxref: genus auteur6. "
+        self.assertEqual(list_taxon_expected, list_taxon)
+        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+
+        taxon_taxref.cd_ref = 4
+        taxon_taxref.save()
+        list_taxon, taxref_version = get_taxref_update()
+        list_taxon_expected[0]['diff'] = "Le référent de ce taxon est différent " \
+            "et n'existe pas dans Fatercal. CD_NOM = 4. "
+        self.assertEqual(list_taxon_expected, list_taxon)
+        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+
+        self.sub_species.cd_nom = 4
+        self.sub_species.save()
+        list_taxon, taxref_version = get_taxref_update()
+        list_taxon_expected[0]['diff'] = "Le référent de ce taxon est différent. " \
+            "Référent chez fatercal: genus species auteur7, chez Taxref genus species sub_species auteur8. "
+        self.assertEqual(list_taxon_expected, list_taxon)
+        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+
+        taxon_taxref.cd_ref = 3
+        taxon_taxref.rang = "NEIF"
+        taxon_taxref.habitat = 154
+        taxon_taxref.nc = "NEIF"
+        taxon_taxref.save()
+        list_taxon, taxref_version = get_taxref_update()
+        list_taxon_expected[0]['diff'] = "Le rang est différent et n'existe pas chez Fatercal. " \
+            "Nouveau rang: NEIF. Un habitat a été spécifié pour ce taxon mais il n'existe pas chez fatercal. " \
+            "Nouvelle habitat: 154. Un status a été spécifié pour ce taxon mais il n'existe pas chez fatercal. Nouveau Status: NEIF. "
+        self.assertEqual(list_taxon_expected, list_taxon)
+        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+
+        taxon_taxref.rang = "ES"
+        taxon_taxref.save()
+        self.species_syn.nc = TaxrefStatus.objects.get(status="A")
+        self.species_syn.habitat = TaxrefHabitat.objects.get(habitat=1)
+        self.species_syn.save()
+        list_taxon, taxref_version = get_taxref_update()
+        list_taxon_expected[0]['diff'] = "L'habitat est différent et n'existe pas chez Fatercal. " \
+            "Nouvelle Habitat: 154. Le status est différent et n'existe pas chez Fatercal. Nouveau Status: NEIF"
+        self.assertEqual(list_taxon_expected, list_taxon)
+        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        
+        taxon_taxref.nc = "P"
+        taxon_taxref.habitat = 2
+        taxon_taxref.save()
+        list_taxon, taxref_version = get_taxref_update()
+        list_taxon_expected[0]['diff'] = "L'habitat est différent. " \
+            "Nouvelle Habitat: Terrestre. Le status est différent. Nouveau Status: Présent"
+        self.assertEqual(list_taxon_expected, list_taxon)
+        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+
+        self.species_syn.nc = None
+        self.species_syn.habitat = None
+        self.species_syn.save()
+        list_taxon, taxref_version = get_taxref_update()
+        list_taxon_expected[0]['diff'] = "Un habitat a été spécifié pour ce taxon. " \
+            "Nouvelle Habitat: Terrestre. Un status a été spécifié pour ce taxon. Nouveau Status: Présent. "
+        self.assertEqual(list_taxon_expected, list_taxon)
+        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+
+        taxon_taxref.nc = None
+        taxon_taxref.habitat = None
+        self.species_syn.save()
+        taxon_taxref.save()
+        list_taxon, taxref_version = get_taxref_update()
+        list_taxon_expected = []
+        self.assertEqual(list_taxon_expected, list_taxon)
+        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+
+    def test_update_taxon_from_taxref(self):
+        status = TaxrefStatus.objects.create(status="P", lb_status="Présent")
+        habitat = TaxrefHabitat.objects.create(habitat=2, lb_habitat="Terrestre")
+        tz = pytz.timezone('Pacific/Noumea')
+        time = datetime.datetime.now(tz=tz).replace(tzinfo=pytz.UTC)
+        self.species.cd_nom=1
+        self.species.cd_ref=1
+        self.species.cd_sup=2
+        self.species_syn.cd_nom = 4
+        self.genus.cd_nom= 2
+        self.genus.save()
+        self.species.save()
+        self.species_syn.save()
+        taxon_taxref = TaxrefUpdate.objects.create(
+            taxon_id=self.species, cd_nom=1,
+            cd_ref=1, cd_sup=2, rang='ES',
+            lb_nom='different name', lb_auteur='different author',
+            nom_complet='different_name different author',
+            nc="P",
+            habitat=2,
+            date=datetime.datetime.now(tz=tz).replace(tzinfo=pytz.UTC),
+            taxrefversion='11'
+        )
+        taxon_taxref_syn = TaxrefUpdate.objects.create(
+            taxon_id=self.species_syn, cd_nom=4,
+            cd_ref=4, cd_sup=2, rang='ES',
+            lb_nom='syn_name', lb_auteur='syn_author',
+            nom_complet='syn_name syn_author',
+            date=datetime.datetime.now(tz=tz).replace(tzinfo=pytz.UTC),
+            taxrefversion='11'
+        )
+        id_taxon = taxon_taxref.id
+        id_taxon_syn = taxon_taxref_syn.id
+        data = {
+            'choices': TaxrefUpdate.objects.filter(id=id_taxon),
+            'time': time
+        }
+        taxref_version = {'taxrefversion__max': 11}
+        update_taxon_from_taxref(data, taxref_version, "dummy_user")
+        TaxrefUpdate.objects.filter(id=id_taxon)
+        self.species = Taxon.objects.get(id=self.species.id)
+        self.species_syn = Taxon.objects.get(id=self.species_syn.id)
+        self.assertEqual(self.species.lb_nom, 'different name')
+        self.assertEqual(self.species.lb_auteur, 'different author')
+        self.assertEqual(self.species.taxrefversion, 11)
+        self.assertEqual(habitat, self.species.habitat)
+        self.assertEqual(status, self.species.nc)
+        self.assertEqual(TaxrefUpdate.objects.filter(id=id_taxon).exists(), False)
+        self.assertEqual(TaxrefUpdate.objects.filter(id=id_taxon_syn).exists(), False)
+        self.assertEqual(self.species_syn.source, 'Fatercal')
+        self.assertEqual(self.species_syn.utilisateur, 'dummy_user')
+        self.assertEqual(self.species_syn.taxrefversion, 11)
+        self.assertEqual(self.species.source, 'Taxref')
+        self.assertEqual(self.species.utilisateur, 'dummy_user')
+        self.assertEqual(self.species.taxrefversion, 11)
+
+        taxon_taxref.cd_ref = 4
+        taxon_taxref.cd_sup = None
+        taxon_taxref.save()
+        taxon_taxref_syn.save()
+        self.species_syn.cd_nom = 4
+        self.species_syn.save()
+        data = {
+            'choices': TaxrefUpdate.objects.all(),
+            'time': datetime.datetime.now(tz=tz).replace(tzinfo=pytz.UTC)
+        }
+        update_taxon_from_taxref(data, taxref_version, "dummy_user")
+        self.species = Taxon.objects.get(id=self.species.id)
+        self.species_syn = Taxon.objects.get(id=self.species_syn.id)
+        self.sub_species = Taxon.objects.get(id=self.sub_species.id)
+        self.assertEqual(self.sub_species.id_sup, self.species_syn)
+        self.assertEqual(self.species.id_ref, self.species_syn)
+        self.assertEqual(self.species_syn.id_ref, self.species_syn)
+        self.assertEqual(self.species_syn.id_sup, self.genus)
 
 # Test function that are related to the model Prelevement
 class SampleTestClass(TestCase):

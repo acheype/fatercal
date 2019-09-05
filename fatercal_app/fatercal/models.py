@@ -212,6 +212,10 @@ class Taxon(models.Model):
     sources = models.TextField(blank=True, null=True)
     id_espece = models.IntegerField(blank=True, null=True)
     reference_description = models.TextField(blank=True, null=True)
+    utilisateur = models.CharField(null=True, max_length=2500)
+    last_update = models.DateField(null=True, auto_now=False, auto_now_add=False)
+    source = models.CharField(null=True, max_length=2500)
+    taxrefversion = models.SmallIntegerField(null=True)
 
     def clean(self):
         """
@@ -380,11 +384,18 @@ class TaxrefUpdate(models.Model):
     lb_nom = models.CharField(max_length=250, verbose_name='Nom')
     lb_auteur = models.CharField(max_length=250, blank=True, null=True, verbose_name='Auteur')
     nom_complet = models.CharField(max_length=250, blank=True, null=True)
-    habitat = models.SmallIntegerField()
+    habitat = models.SmallIntegerField(null=True)
     nc = models.CharField(max_length=4, blank=True, null=True)
     date = models.DateTimeField(auto_now=False, auto_now_add=False)
     taxrefversion = models.CharField(max_length=250, verbose_name='Nom')
 
     class Meta:
-            managed = False
+            managed = True
             db_table = 'taxref_update'
+    
+    def __str__(self):
+        if self.lb_auteur is not None:
+            str_lb = str(self.lb_nom) + ' ' + str(self.lb_auteur)
+        else:
+            str_lb = str(self.lb_nom)
+        return str_lb

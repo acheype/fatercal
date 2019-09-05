@@ -6,7 +6,7 @@ from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
 from .forms import AllTaxon, TaxonChangeSup, SearchAdvanced, ChooseData, UploadFileCsv, \
     ChooseTaxonToUpdate
-from .function import constr_hierarchy_tree_adv_search, get_taxon_from_search, is_admin,\
+from .function import constr_hierarchy_tree_adv_search, get_taxon_from_search, is_admin, update_taxon_from_taxref, \
     get_taxon_personal, get_sample, get_taxons_for_sample, get_taxon_adv_search, change_ref_taxon, change_sup_taxon,\
     verify_and_save_sample, list_sample_for_map, get_taxon_from_search_taxref, get_taxref_update
 from .models import Taxon
@@ -16,6 +16,7 @@ import json
 import requests
 import codecs
 import datetime
+import pytz
 
 
 class ValidSpecialFilter(admin.SimpleListFilter):
@@ -477,13 +478,28 @@ def update_from_taxref(request):
     :return: an HttpResponse object (see Django doc)
     """
     if is_admin(request.user):
-        template = loader.get_template('fatercal/taxon/choose_taxon.html')
-        list_dict_taxon, taxref_version = get_taxref_update()
-        form = ChooseTaxonToUpdate(list_dict_taxon)
-        context = {
-            'form': form,
-            'list_dict': list_dict_taxon
-        }
-        return HttpResponse(template.render(context, request))
+        if request.method == 'POST':
+            list_dict_taxon, taxref_version = get_taxref_update()
+            form = ChooseTaxonToUpdate(request.POST)
+            print(form.is_valid())
+            if form.is_valid():
+                data = form.cleaned_data
+                update_taxon_from_taxref(data, taxref_version, request.user)
+                print(data)
+                return 'fsdf'
+        else:
+            tz = pytz.timezone('Pacific/Noumea')
+            template = loader.get_template('fatercal/taxon/choose_taxon.html')
+            list_dict_taxon, taxref_version = get_taxref_update()
+            form = ChooseTaxonToUpdate(
+                initial={
+                    'taxrefversion': int(taxref_version['taxrefversion__max']),
+                    'time': datetime.datetime.now(tz=tz).replace(tzinfo=pytz.UTC)
+                    })
+            context = {
+                'form': form,
+                'list_dict': list_dict_taxon
+            }
+            return HttpResponse(template.render(context, request))
     else:
         raise Http404("This page doesn't exist")
