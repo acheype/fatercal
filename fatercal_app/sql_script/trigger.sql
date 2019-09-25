@@ -227,3 +227,39 @@ DECLARE changed_column_taxon varchar(250);
 $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
+
+CREATE TRIGGER trigger_delete_taxon
+BEFORE DELETE
+ON public.taxon
+FOR EACH ROW
+EXECUTE PROCEDURE public.function_trigger_delete_taxon();
+
+CREATE TRIGGER trigger_insert_taxon
+  BEFORE INSERT
+  ON public.taxon
+  FOR EACH ROW
+  EXECUTE PROCEDURE public.function_trigger_insert_taxon();
+
+CREATE TRIGGER trigger_update_taxon
+  BEFORE UPDATE
+  ON public.taxon
+  FOR EACH ROW
+  EXECUTE PROCEDURE public.function_trigger_update_taxon();
+
+CREATE TRIGGER trigger_delete_prelevement
+  BEFORE DELETE
+  ON public.prelevement
+  FOR EACH ROW
+  EXECUTE PROCEDURE public.function_trigger_delete_prelevement();
+
+CREATE TRIGGER trigger_insert_prelevement
+  BEFORE INSERT
+  ON public.prelevement
+  FOR EACH ROW
+  EXECUTE PROCEDURE public.function_trigger_insert_prelevement();
+
+CREATE TRIGGER trigger_update_prelevement
+  BEFORE UPDATE
+  ON public.prelevement
+  FOR EACH ROW
+  EXECUTE PROCEDURE public.function_trigger_update_prelevement();
