@@ -3,6 +3,7 @@ from django.utils.safestring import mark_safe
 from django.db.models import Q, Max
 from .models import Taxon, TaxrefUpdate
 from ajax_select.fields import AutoCompleteSelectField
+from .variable import list_hierarchy
 
 
 class AllTaxon(forms.Form):
@@ -65,3 +66,36 @@ class ChooseTaxonToUpdate(forms.Form):
             ),
             required=False,
             widget=forms.CheckboxSelectMultiple)
+
+class ChooseTaxonToInsert(forms.Form):
+    time = forms.DateTimeField(widget=forms.HiddenInput())
+    count = forms.IntegerField(widget=forms.HiddenInput())
+    taxrefversion = forms.IntegerField(widget=forms.HiddenInput())
+    def __init__(self, *args, **kwargs):
+        super(ChooseTaxonToInsert, self).__init__(*args, **kwargs)
+        taxref_version = TaxrefUpdate.objects.aggregate(Max('taxrefversion'))
+        field = forms.ModelMultipleChoiceField(
+                    queryset=TaxrefUpdate.objects.filter(
+                        Q(taxrefversion=taxref_version['taxrefversion__max']) 
+                        & Q(taxon_id=None) & ~Q(rang__in=list_hierarchy)
+                    ),
+                    required=False,
+                    widget=forms.CheckboxSelectMultiple
+                )
+        if 'initial' in kwargs:
+            if 'rang' in kwargs['initial']:
+                if kwargs['initial']['rang'] == None:
+                    self.fields['choices'] = field
+                else:
+                    self.fields['choices'] = forms.ModelMultipleChoiceField(
+                        queryset=TaxrefUpdate.objects.filter(
+                            Q(taxrefversion=taxref_version['taxrefversion__max']) 
+                            & Q(taxon_id=None) & Q(rang=kwargs['initial']['rang'])
+                        ),
+                        required=False,
+                        widget=forms.CheckboxSelectMultiple
+                    )
+            else:
+                self.fields['choices'] = field
+        else: 
+            self.fields['choices'] = field

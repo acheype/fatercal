@@ -3,11 +3,10 @@ from django.contrib.auth.models import User, Group
 from .function import *
 from .models import TaxrefStatus, TaxrefHabitat, TaxrefRang
 from .models import TypeEnregistrement, TaxrefUpdate
-from .forms import ChooseData
+from .forms import ChooseData, ChooseTaxonToInsert
 
 import os
 import csv
-import pytz
 import datetime
 
 
@@ -16,30 +15,30 @@ class TaxonTestCase(TestCase):
     def setUp(self):
         self.status = TaxrefStatus.objects.create(status="A", lb_status="Absent")
         self.habitat = TaxrefHabitat.objects.create(habitat=1, lb_habitat="Marin")
-        self.kingdom = Taxon.objects.create(id=1, lb_nom="kingdom", lb_auteur="auteur1",
+        self.kingdom = Taxon.objects.create(lb_nom="kingdom", lb_auteur="auteur1",
                                             rang=TaxrefRang.objects.create(rang='KD', lb_rang='Regne'))
-        self.phylum = Taxon.objects.create(id=2, lb_nom="phylum", lb_auteur="auteur2",
+        self.phylum = Taxon.objects.create(lb_nom="phylum", lb_auteur="auteur2",
                                            rang=TaxrefRang.objects.create(rang='PH', lb_rang='Phylum'),
                                            id_sup=self.kingdom)
-        self.classe = Taxon.objects.create(id=3, lb_nom="classe", lb_auteur="auteur3",
+        self.classe = Taxon.objects.create(lb_nom="classe", lb_auteur="auteur3",
                                            rang=TaxrefRang.objects.create(rang='CL', lb_rang='Classe'),
                                            id_sup=self.phylum)
-        self.order = Taxon.objects.create(id=4, lb_nom="order", lb_auteur="auteur4",
+        self.order = Taxon.objects.create(lb_nom="order", lb_auteur="auteur4",
                                           rang=TaxrefRang.objects.create(rang='OR', lb_rang='Ordre'),
                                           id_sup=self.classe)
-        self.family = Taxon.objects.create(id=5, lb_nom="family", lb_auteur="auteur5",
+        self.family = Taxon.objects.create(lb_nom="family", lb_auteur="auteur5",
                                            rang=TaxrefRang.objects.create(rang='FM', lb_rang='Famille'),
                                            id_sup=self.order)
-        self.genus = Taxon.objects.create(id=6, lb_nom="genus", lb_auteur="auteur6",
+        self.genus = Taxon.objects.create(lb_nom="genus", lb_auteur="auteur6",
                                           rang=TaxrefRang.objects.create(rang='GN', lb_rang='Genre'),
                                           id_sup=self.family)
-        self.species = Taxon.objects.create(id=7, lb_nom="species", lb_auteur="auteur7",
+        self.species = Taxon.objects.create(lb_nom="species", lb_auteur="auteur7",
                                             rang=TaxrefRang.objects.create(rang='ES', lb_rang='Espèce'),
                                             id_sup=self.genus)
-        self.sub_species = Taxon.objects.create(id=8, lb_nom="sub_species", lb_auteur="auteur8",
+        self.sub_species = Taxon.objects.create(lb_nom="sub_species", lb_auteur="auteur8",
                                                 rang=TaxrefRang.objects.create(rang='SSES', lb_rang='Sous-Espèce'),
                                                 id_sup=self.species)
-        self.species_syn = Taxon.objects.create(id=9, id_ref=self.species, lb_nom="species_synonymous",
+        self.species_syn = Taxon.objects.create(id_ref=self.species, lb_nom="species_synonymous",
                                                 lb_auteur="auteur9", rang=self.species.rang)
         self.sub_species.id_ref = self.sub_species
         self.sub_species.save()
@@ -74,7 +73,7 @@ class TaxonTestCase(TestCase):
         self.assertEqual(self.species.id_ref, second_species)
 
     def test_change_sup_taxon(self):
-        second_genus = Taxon.objects.create(id=10, lb_nom="second_genus", lb_auteur="auteur10",
+        second_genus = Taxon.objects.create(lb_nom="second_genus", lb_auteur="auteur10",
                                             rang=self.genus.rang, id_sup=self.genus)
         second_genus.id_ref = second_genus
         second_genus.save()
@@ -84,7 +83,7 @@ class TaxonTestCase(TestCase):
         template_output, error_output = change_sup_taxon(self.species, cleaned_data)
         self.assertEqual(template_expected.render(), template_output.render())
         self.assertEqual(error_expected, error_output)
-        self.species = Taxon.objects.get(id=7)
+        self.species = Taxon.objects.get(id=self.species.id)
         self.assertEqual(self.species.id_sup, second_genus)
 
         cleaned_data = {'taxon_superieur': self.sub_species}
@@ -93,7 +92,7 @@ class TaxonTestCase(TestCase):
         template_output, error_output = change_sup_taxon(self.species, cleaned_data)
         self.assertEqual(template_expected.render(), template_output.render())
         self.assertEqual(error_expected, error_output)
-        self.species = Taxon.objects.get(id=7)
+        self.species = Taxon.objects.get(id=self.species.id)
         self.assertEqual(self.species.id_sup, second_genus)
 
     def test_get_superior(self):
@@ -133,7 +132,7 @@ class TaxonTestCase(TestCase):
 
     def test_construct_clean_taxon(self):
         self.assertEqual(construct_cleaned_taxon(self.species), ('kingdom', 'phylum', 'classe', 'order', 'family', None,
-                                                                 None, 7, 7, 6, None, None, None, None, 'ES',
+                                                                 None, self.species.id, self.species.id, self.genus.id, None, None, None, None, 'ES',
                                                                  'genus species', 'auteur7', 'genus species auteur7',
                                                                  None, 'genus species', None, None, None, None, 'x',
                                                                  None, None, None))
@@ -141,13 +140,13 @@ class TaxonTestCase(TestCase):
         self.species.nc = self.status
         self.species.id_sup = None
         self.species.save()
-        self.assertEqual(construct_cleaned_taxon(self.species), (None, None, None, None, None, None, None, 7, 7, None,
+        self.assertEqual(construct_cleaned_taxon(self.species), (None, None, None, None, None, None, None, self.species.id, self.species.id, None,
                                                                  None, None, None, None, 'ES', 'genus species',
                                                                  'auteur7', 'genus species auteur7', None,
                                                                  'genus species', None, None, 1, 'A', 'x', None, None,
                                                                  None))
 
-        self.assertEqual(construct_cleaned_taxon(self.species_syn), (None, None, None, None, None, None, None, 9, 7,
+        self.assertEqual(construct_cleaned_taxon(self.species_syn), (None, None, None, None, None, None, None, self.species_syn.id, self.species.id,
                                                                      None, None, None, None, None, 'ES',
                                                                      'species_synonymous', 'auteur9',
                                                                      'species_synonymous auteur9', None,
@@ -230,32 +229,32 @@ class TaxonTestCase(TestCase):
                                 'LB_AUTEUR', 'NOM_COMPLET', 'NOM_COMPLET_HTML', 'NOM_VALIDE', 'NOM_VERN',
                                 'NOM_VERN_ENG', 'HABITAT', 'NC', 'NON PRESENT DANS TAXREF', 'CD_REF DIFFERENT',
                                 'CD_SUP DIFFERENT', 'VALIDITY DIFFERENT'),
-                               ('kingdom', 'phylum', None, None, None, None, None, 3, 3, 2, None, None, None, None,
+                               ('kingdom', 'phylum', None, None, None, None, None, self.classe.id, self.classe.id, self.phylum.id, None, None, None, None,
                                 'CL', 'classe', 'auteur3', 'classe auteur3', None, 'classe', None, None, None, None,
                                 'x', None, None, None),
-                               ('kingdom', 'phylum', 'classe', 'order', None, None, None, 5, 5, 4, None, None, None,
+                               ('kingdom', 'phylum', 'classe', 'order', None, None, None, self.family.id, self.family.id, self.order.id, None, None, None,
                                 None, 'FM', 'family', 'auteur5', 'family auteur5', None, 'family', None, None, None,
                                 None, 'x', None, None, None),
-                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 6, 6, 5, None, None,
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, self.genus.id, self.genus.id, self.family.id, None, None,
                                 None, None, 'GN', 'genus', 'auteur6', 'genus auteur6', None, 'genus', None, None, None,
                                 None, 'x', None, None, None),
-                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 7, 7, 6, None, None, None,
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, self.species.id, self.species.id, self.genus.id, None, None, None,
                                 None, 'ES', 'genus species', 'auteur7', 'genus species auteur7', None, 'genus species',
                                 None, None, None, None, 'x', None, None, None),
-                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 8, 8, 7, None, None, None,
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, self.sub_species.id, self.sub_species.id, self.species.id, None, None, None,
                                 None, 'SSES', 'genus species sub_species', 'auteur8',
                                 'genus species sub_species auteur8', None, 'genus species sub_species', None, None,
                                 None, None, 'x', None, None, None),
-                               (None, None, None, None, None, None, None, 1, 1, None, None, None, None, None, 'KD',
+                               (None, None, None, None, None, None, None, self.kingdom.id, self.kingdom.id, None, None, None, None, None, 'KD',
                                 'kingdom', 'auteur1', 'kingdom auteur1', None, 'kingdom', None, None, None, None, 'x',
                                 None, None, None),
-                               ('kingdom', 'phylum', 'classe', None, None, None, None, 4, 4, 3, None, None, None, None,
+                               ('kingdom', 'phylum', 'classe', None, None, None, None, self.order.id, self.order.id, self.classe.id, None, None, None, None,
                                 'OR', 'order', 'auteur4', 'order auteur4', None, 'order', None, None, None, None, 'x',
                                 None, None, None),
-                               ('kingdom', None, None, None, None, None, None, 2, 2, 1, None, None, None, None, 'PH',
+                               ('kingdom', None, None, None, None, None, None, self.phylum.id, self.phylum.id, self.kingdom.id, None, None, None, None, 'PH',
                                 'phylum', 'auteur2', 'phylum auteur2', None, 'phylum', None, None, None, None, 'x',
                                 None, None, None),
-                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 9, 7, None, None, None,
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, self.species_syn.id, self.species.id, None, None, None,
                                 None, None, 'ES', 'species_synonymous', 'auteur9', None, None, 'genus species', None,
                                 None, None, None, 'x', None, None, None)]
         self.assertEqual(list_taxon_expected, list_taxon_output)
@@ -267,14 +266,14 @@ class TaxonTestCase(TestCase):
                                 'LB_AUTEUR', 'NOM_COMPLET', 'NOM_COMPLET_HTML', 'NOM_VALIDE', 'NOM_VERN',
                                 'NOM_VERN_ENG', 'HABITAT', 'NC', 'NON PRESENT DANS TAXREF', 'CD_REF DIFFERENT',
                                 'CD_SUP DIFFERENT', 'VALIDITY DIFFERENT'),
-                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 7, 7, 6, None, None, None,
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, self.species.id, self.species.id, self.genus.id, None, None, None,
                                 None, 'ES', 'genus species', 'auteur7', 'genus species auteur7', None, 'genus species',
                                 None, None, None, None, 'x', None, None, None),
-                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 8, 8, 7, None, None, None,
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, self.sub_species.id, self.sub_species.id, self.species.id, None, None, None,
                                 None, 'SSES', 'genus species sub_species', 'auteur8',
                                 'genus species sub_species auteur8', None, 'genus species sub_species', None, None,
                                 None, None, 'x', None, None, None),
-                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 9, 7, None, None, None,
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, self.species_syn.id, self.species.id, None, None, None,
                                 None, None, 'ES', 'species_synonymous', 'auteur9', None, None, 'genus species', None,
                                 None, None, None, 'x', None, None, None)]
         self.assertEqual(list_taxon_expected, list_taxon_output)
@@ -288,32 +287,32 @@ class TaxonTestCase(TestCase):
                                 'NOM_VERN_ENG', 'HABITAT', 'NC', 'GRANDE_TERRE', 'ILES_LOYAUTEE', 'AUTRE',
                                 'NON PRESENT DANS TAXREF', 'CD_REF DIFFERENT', 'CD_SUP DIFFERENT',
                                 'VALIDITY DIFFERENT'),
-                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 9, 7, None, None, None,
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, self.species_syn.id, self.species.id, None, None, None,
                                 None, None, 'ES', 'species_synonymous', 'auteur9', None, None, None, None, None, None,
                                 None, None, None, None, 'x', None, None, None),
-                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 8, 8, 7, None, None, None,
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, self.sub_species.id, self.sub_species.id, self.species.id, None, None, None,
                                 None, 'SSES', 'genus species sub_species', 'auteur8',
                                 'genus species sub_species auteur8', None, None, None, None, None, None, None, None,
                                 None, 'x', None, None, None),
-                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 7, 7, 6, None, None, None,
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, self.species.id, self.species.id, self.genus.id, None, None, None,
                                 None, 'ES', 'genus species', 'auteur7', 'genus species auteur7', None, None, None, None,
                                 None, None, None, None, None, 'x', None, None, None),
-                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 6, 6, 5, None, None, None,
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, self.genus.id, self.genus.id, self.family.id, None, None, None,
                                 None, 'GN', 'genus', 'auteur6', 'genus auteur6', None, None, None, None, None, None,
                                 None, None, None, 'x', None, None, None),
-                               ('kingdom', 'phylum', 'classe', 'order', None, None, None, 5, 5, 4, None, None, None,
+                               ('kingdom', 'phylum', 'classe', 'order', None, None, None, self.family.id, self.family.id, self.order.id, None, None, None,
                                 None, 'FM', 'family', 'auteur5', 'family auteur5', None, None, None, None, None, None,
                                 None, None, None, 'x', None, None, None),
-                               ('kingdom', 'phylum', 'classe', None, None, None, None, 4, 4, 3, None, None, None, None,
+                               ('kingdom', 'phylum', 'classe', None, None, None, None, self.order.id, self.order.id, self.classe.id, None, None, None, None,
                                 'OR', 'order', 'auteur4', 'order auteur4', None, None, None, None, None, None, None,
                                 None, None, 'x', None, None, None),
-                               ('kingdom', 'phylum', None, None, None, None, None, 3, 3, 2, None, None, None, None,
+                               ('kingdom', 'phylum', None, None, None, None, None, self.classe.id, self.classe.id, self.phylum.id, None, None, None, None,
                                 'CL', 'classe', 'auteur3', 'classe auteur3', None, None, None, None, None, None, None,
                                 None, None, 'x', None, None, None),
-                               ('kingdom', None, None, None, None, None, None, 2, 2, 1, None, None, None, None, 'PH',
+                               ('kingdom', None, None, None, None, None, None, self.phylum.id, self.phylum.id, self.kingdom.id, None, None, None, None, 'PH',
                                 'phylum', 'auteur2', 'phylum auteur2', None, None, None, None, None, None, None, None,
                                 None, 'x', None, None, None),
-                               (None, None, None, None, None, None, None, 1, 1, None, None, None, None, None, 'KD',
+                               (None, None, None, None, None, None, None, self.kingdom.id, self.kingdom.id, None, None, None, None, None, 'KD',
                                 'kingdom', 'auteur1', 'kingdom auteur1', None, None, None, None, None, None, None, None,
                                 None, 'x', None, None, None)]
         self.assertEqual(list_taxon_expected, list_taxon_output)
@@ -326,16 +325,17 @@ class TaxonTestCase(TestCase):
                                 'NOM_VERN_ENG', 'HABITAT', 'NC', 'GRANDE_TERRE', 'ILES_LOYAUTEE', 'AUTRE',
                                 'NON PRESENT DANS TAXREF', 'CD_REF DIFFERENT', 'CD_SUP DIFFERENT',
                                 'VALIDITY DIFFERENT'),
-                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 9, 7, None, None, None,
-                                None, None, 'ES', 'species_synonymous', 'auteur9', None, None, None, None, None, None,
-                                None, None, None, None, 'x', None, None, None),
-                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 8, 8, 7, None, None, None,
-                                None, 'SSES', 'genus species sub_species', 'auteur8',
-                                'genus species sub_species auteur8', None, None, None, None, None, None, None, None,
-                                None, 'x', None, None, None),
-                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, 7, 7, 6, None, None, None,
-                                None, 'ES', 'genus species', 'auteur7', 'genus species auteur7', None, None, None, None,
-                                None, None, None, None, None, 'x', None, None, None)]
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, self.species_syn.id,
+                               self.species.id, None, None, None, None, None, 'ES', 'species_synonymous', 'auteur9',
+                               None, None, None, None, None, None, None, None, None, None, 'x', None, None, None),
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, self.sub_species.id,
+                               self.sub_species.id, self.species.id, None, None, None, None, 'SSES',
+                               'genus species sub_species', 'auteur8', 'genus species sub_species auteur8', None,
+                               None, None, None, None, None, None, None, None, 'x', None, None, None),
+                               ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, self.species.id,
+                               self.species.id, self.genus.id, None, None, None, None, 'ES', 'genus species',
+                               'auteur7', 'genus species auteur7', None, None, None, None, None, None, None,
+                               None, None, 'x', None, None, None)]
         self.assertEqual(list_taxon_expected, list_taxon_output)
 
     def test_get_taxon_personal(self):
@@ -353,7 +353,7 @@ class TaxonTestCase(TestCase):
         taxon_personal_expected = [('id', 'id_sup', 'id_ref', 'name', 'author', 'rank', 'rank_sup', 'status', 'habitat',
                                     'grande_terre', 'loyalty_island', 'other', 'remark', 'source',
                                     'description_reference'),
-                                   (7, 6, 7, 'genus species', 'auteur7', 'Espèce', self.genus, 'Absent',
+                                   (self.species.id, self.genus.id, self.species.id, 'genus species', 'auteur7', 'Espèce', self.genus, 'Absent',
                                    'Marin', None, None, None, None, None, None)]
         self.assertEqual(taxon_personal_expected, taxon_personal_output)
 
@@ -376,11 +376,11 @@ class TaxonTestCase(TestCase):
         }
         list_taxon_expected = [('id', 'id_sup', 'id_ref', 'name', 'author', 'rank', 'rank_sup', 'status', 'habitat',
                                 'grande_terre', 'loyalty_island', 'other', 'remark', 'source', 'description_reference'),
-                               (7, 6, 7, 'genus species', 'auteur7', 'Espèce', self.genus, None, None, None, None, None,
+                               (self.species.id, self.genus.id, self.species.id, 'genus species', 'auteur7', 'Espèce', self.genus, None, None, None, None, None,
                                 None, None, None),
-                               (8, 7, 8, 'genus species sub_species', 'auteur8', 'Sous-Espèce', self.species, None,
+                               (self.sub_species.id, self.species.id, self.sub_species.id, 'genus species sub_species', 'auteur8', 'Sous-Espèce', self.species, None,
                                 None, None, None, None, None, None, None),
-                               (9, None, 7, 'species_synonymous', 'auteur9', 'Espèce', None, None, None, None, None,
+                               (self.species_syn.id, None, self.species.id, 'species_synonymous', 'auteur9', 'Espèce', None, None, None, None, None,
                                 None, None, None, None)]
 
         list_taxon_output = construct_list_taxon(list_not_proper, cleaned_data)
@@ -393,7 +393,7 @@ class TaxonTestCase(TestCase):
             'remark': True, 'source': True, 'description_reference': True
         }
         cleaned_taxon_search_output = construct_cleaned_taxon_search(self.species, cleaned_data)
-        cleaned_taxon_search_expected = (7, 6, 7, 'genus species', 'auteur7', 'Espèce',
+        cleaned_taxon_search_expected = (self.species.id, self.genus.id, self.species.id, 'genus species', 'auteur7', 'Espèce',
                                          self.genus, None, None, None, None, None, None, None, None)
         self.assertEqual(cleaned_taxon_search_expected, cleaned_taxon_search_output)
 
@@ -405,11 +405,11 @@ class TaxonTestCase(TestCase):
         self.species.reference_description = "Une description de reference"
         self.species.save()
         cleaned_taxon_search_output = construct_cleaned_taxon_search(self.species, cleaned_data)
-        cleaned_taxon_search_expected = (7, None, 7, 'genus species', 'auteur7', 'Espèce', None, 'Absent', 'Marin',
+        cleaned_taxon_search_expected = (self.species.id, None, self.species.id, 'genus species', 'auteur7', 'Espèce', None, 'Absent', 'Marin',
                                          None, None, None, 'Une remarque', 'Une source', 'Une description de reference')
         self.assertEqual(cleaned_taxon_search_expected, cleaned_taxon_search_output)
         cleaned_taxon_search_output = construct_cleaned_taxon_search(self.species_syn, cleaned_data)
-        cleaned_taxon_search_expected = (9, None, 7, 'species_synonymous', 'auteur9', 'Espèce', None, None, None, None,
+        cleaned_taxon_search_expected = (self.species_syn.id, None, self.species.id, 'species_synonymous', 'auteur9', 'Espèce', None, None, None, None,
                                          None, None, None, None, None)
         self.assertEqual(cleaned_taxon_search_expected, cleaned_taxon_search_output)
 
@@ -433,16 +433,16 @@ class TaxonTestCase(TestCase):
                                 "date d'identification", 'altitude(m)', 'pays', 'region', 'commune', 'lieu dit',
                                 'type de milieu', 'nombre', 'sexe', 'capture/relacher', 'informations complementaires',
                                 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc'),
-                               (3, '', '', '', '', '', '', '', 'auteur3'),
-                               (5, 'order', 'family', '', '', '', '', '', 'auteur5'),
-                               (6, 'order', 'family', '', 'genus', '', '', '', 'auteur6'),
-                               (7, 'order', 'family', '', 'genus', '', 'genus species', '', 'auteur7'),
-                               (8, 'order', 'family', '', 'genus', '', 'genus species', 'genus species sub_species',
+                               (self.classe.id, '', '', '', '', '', '', '', 'auteur3'),
+                               (self.family.id, 'order', 'family', '', '', '', '', '', 'auteur5'),
+                               (self.genus.id, 'order', 'family', '', 'genus', '', '', '', 'auteur6'),
+                               (self.species.id, 'order', 'family', '', 'genus', '', 'genus species', '', 'auteur7'),
+                               (self.sub_species.id, 'order', 'family', '', 'genus', '', 'genus species', 'genus species sub_species',
                                 'auteur8'),
-                               (1, None, None, None, None, None, None, None, 'auteur1'),
-                               (4, 'order', '', '', '', '', '', '', 'auteur4'),
-                               (2, '', '', '', '', '', '', '', 'auteur2'),
-                               (9, None, None, None, None, None, None, None, 'auteur9')]
+                               (self.kingdom.id, None, None, None, None, None, None, None, 'auteur1'),
+                               (self.order.id, 'order', '', '', '', '', '', '', 'auteur4'),
+                               (self.phylum.id, '', '', '', '', '', '', '', 'auteur2'),
+                               (self.species_syn.id, None, None, None, None, None, None, None, 'auteur9')]
         self.assertEqual(list_taxon_expected, list_taxon_output)
 
         list_param = {'q': 'genus species'}
@@ -452,8 +452,8 @@ class TaxonTestCase(TestCase):
                                 "date d'identification", 'altitude(m)', 'pays', 'region', 'commune', 'lieu dit',
                                 'type de milieu', 'nombre', 'sexe', 'capture/relacher', 'informations complementaires',
                                 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc'),
-                               (7, 'order', 'family', '', 'genus', '', 'genus species', '', 'auteur7'),
-                               (8, 'order', 'family', '', 'genus', '', 'genus species', 'genus species sub_species',
+                               (self.species.id, 'order', 'family', '', 'genus', '', 'genus species', '', 'auteur7'),
+                               (self.sub_species.id, 'order', 'family', '', 'genus', '', 'genus species', 'genus species sub_species',
                                 'auteur8')]
         self.assertEqual(list_taxon_expected, list_taxon_output)
 
@@ -461,20 +461,20 @@ class TaxonTestCase(TestCase):
         html_hierarchy_output, nb_output = constr_hierarchy_tree_adv_search(self.species, None)
         html_hierarchy_expected = """<ul class="tree"><br/><al><al><al><al><al><al><al>
     <li><label class="tree_label" for="c1">
-            <strong>Regne : </strong></al><a href="/fatercal/taxon/1/">kingdom auteur1</a>
+            <strong>Regne : </strong></al><a href="/fatercal/taxon/"""+ str(self.kingdom.id) +"""/">kingdom auteur1</a>
             <ul><li><label class="tree_label" for="c2">
-            <strong>Phylum : </strong></al><a href="/fatercal/taxon/2/">phylum auteur2</a>
+            <strong>Phylum : </strong></al><a href="/fatercal/taxon/"""+ str(self.phylum.id) +"""/">phylum auteur2</a>
             <ul><li><label class="tree_label" for="c3">
-            <strong>Classe : </strong></al><a href="/fatercal/taxon/3/">classe auteur3</a>
+            <strong>Classe : </strong></al><a href="/fatercal/taxon/"""+ str(self.classe.id) +"""/">classe auteur3</a>
             <ul><li><label class="tree_label" for="c4">
-            <strong>Ordre : </strong></al><a href="/fatercal/taxon/4/">order auteur4</a>
+            <strong>Ordre : </strong></al><a href="/fatercal/taxon/"""+ str(self.order.id) +"""/">order auteur4</a>
             <ul><li><label class="tree_label" for="c5">
-            <strong>Famille : </strong></al><a href="/fatercal/taxon/5/">family auteur5</a>
+            <strong>Famille : </strong></al><a href="/fatercal/taxon/"""+ str(self.family.id) +"""/">family auteur5</a>
             <ul><li><label class="tree_label" for="c6">
-            <strong>Genre : </strong></al><a href="/fatercal/taxon/6/">genus auteur6</a>
+            <strong>Genre : </strong></al><a href="/fatercal/taxon/"""+ str(self.genus.id) +"""/">genus auteur6</a>
             <ul><li class="folder"><label><strong>Espèce :</strong> genus species auteur7</li>
         <ul><li><al><label class="tree_label" for="c7"/><strong>Sous-Espèce : </strong></al>
-        <a href="/fatercal/taxon/8/">genus species sub_species auteur8</a></li></ul></ul></ul></li>"""
+        <a href="/fatercal/taxon/"""+ str(self.sub_species.id) +"""/">genus species sub_species auteur8</a></li></ul></ul></ul></li>"""
         self.maxDiff = None
         self.assertEqual(html_hierarchy_expected, html_hierarchy_output)
         self.assertEqual(nb_output, 1)
@@ -482,20 +482,20 @@ class TaxonTestCase(TestCase):
         html_hierarchy_output, nb_output = constr_hierarchy_tree_adv_search(None, 'auteur7')
         html_hierarchy_expected = """<div><ul class="tree"><br/><al><al><al><al><al><al><al>
     <li><label class="tree_label" for="c1">
-            <strong>Regne : </strong></al><a href="/fatercal/taxon/1/">kingdom auteur1</a>
+            <strong>Regne : </strong></al><a href="/fatercal/taxon/"""+ str(self.kingdom.id) +"""/">kingdom auteur1</a>
             <ul><li><label class="tree_label" for="c2">
-            <strong>Phylum : </strong></al><a href="/fatercal/taxon/2/">phylum auteur2</a>
+            <strong>Phylum : </strong></al><a href="/fatercal/taxon/"""+ str(self.phylum.id) +"""/">phylum auteur2</a>
             <ul><li><label class="tree_label" for="c3">
-            <strong>Classe : </strong></al><a href="/fatercal/taxon/3/">classe auteur3</a>
+            <strong>Classe : </strong></al><a href="/fatercal/taxon/"""+ str(self.classe.id) +"""/">classe auteur3</a>
             <ul><li><label class="tree_label" for="c4">
-            <strong>Ordre : </strong></al><a href="/fatercal/taxon/4/">order auteur4</a>
+            <strong>Ordre : </strong></al><a href="/fatercal/taxon/"""+ str(self.order.id) +"""/">order auteur4</a>
             <ul><li><label class="tree_label" for="c5">
-            <strong>Famille : </strong></al><a href="/fatercal/taxon/5/">family auteur5</a>
+            <strong>Famille : </strong></al><a href="/fatercal/taxon/"""+ str(self.family.id) +"""/">family auteur5</a>
             <ul><li><label class="tree_label" for="c6">
-            <strong>Genre : </strong></al><a href="/fatercal/taxon/6/">genus auteur6</a>
+            <strong>Genre : </strong></al><a href="/fatercal/taxon/"""+ str(self.genus.id) +"""/">genus auteur6</a>
             <ul><li class="folder"><label><strong>Espèce :</strong> genus species auteur7</li>
         <ul><li><al><label class="tree_label" for="c7"/><strong>Sous-Espèce : </strong></al>
-        <a href="/fatercal/taxon/8/">genus species sub_species auteur8</a></li></ul></ul></ul></li></div>"""
+        <a href="/fatercal/taxon/"""+ str(self.sub_species.id) +"""/">genus species sub_species auteur8</a></li></ul></ul></ul></li></div>"""
         self.assertEqual(html_hierarchy_expected, html_hierarchy_output)
         self.assertEqual(nb_output, 2)
 
@@ -504,17 +504,17 @@ class TaxonTestCase(TestCase):
         html_hierarchy_start_output, html_hierarchy_end_output = constr_hierarchy_tree_branch_parents(list_hierarchy)
         html_hierarchy_start_expected = """<ul class="tree"><br/><al><al><al><al><al><al><al>
             <li><label class="tree_label" for="c1">
-            <strong>Regne : </strong></al><a href="/fatercal/taxon/1/">kingdom auteur1</a>
+            <strong>Regne : </strong></al><a href="/fatercal/taxon/"""+ str(self.kingdom.id) +"""/">kingdom auteur1</a>
             <ul><li><label class="tree_label" for="c2">
-            <strong>Phylum : </strong></al><a href="/fatercal/taxon/2/">phylum auteur2</a>
+            <strong>Phylum : </strong></al><a href="/fatercal/taxon/"""+ str(self.phylum.id) +"""/">phylum auteur2</a>
             <ul><li><label class="tree_label" for="c3">
-            <strong>Classe : </strong></al><a href="/fatercal/taxon/3/">classe auteur3</a>
+            <strong>Classe : </strong></al><a href="/fatercal/taxon/"""+ str(self.classe.id) +"""/">classe auteur3</a>
             <ul><li><label class="tree_label" for="c4">
-            <strong>Ordre : </strong></al><a href="/fatercal/taxon/4/">order auteur4</a>
+            <strong>Ordre : </strong></al><a href="/fatercal/taxon/"""+ str(self.order.id) +"""/">order auteur4</a>
             <ul><li><label class="tree_label" for="c5">
-            <strong>Famille : </strong></al><a href="/fatercal/taxon/5/">family auteur5</a>
+            <strong>Famille : </strong></al><a href="/fatercal/taxon/"""+ str(self.family.id) +"""/">family auteur5</a>
             <ul><li><label class="tree_label" for="c6">
-            <strong>Genre : </strong></al><a href="/fatercal/taxon/6/">genus auteur6</a>
+            <strong>Genre : </strong></al><a href="/fatercal/taxon/"""+ str(self.genus.id) +"""/">genus auteur6</a>
             <ul>"""
         self.assertHTMLEqual(html_hierarchy_start_expected, html_hierarchy_start_output)
         html_hierarchy_end_expected = "</ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul>"
@@ -524,7 +524,7 @@ class TaxonTestCase(TestCase):
         list_taxon, nb = get_child_of_child(self.species)
         hierarchy_child_output = constr_hierarchy_tree_branch_adv_search_child(list_taxon[1], nb, '')
         hierarchy_child_expected = """<ul><li><al><label class="tree_label" for="c1"/><strong>Sous-Espèce : </strong>
-        </al><a href="/fatercal/taxon/8/">genus species sub_species auteur8</a></li></ul>"""
+        </al><a href="/fatercal/taxon/"""+ str(self.sub_species.id) +"""/">genus species sub_species auteur8</a></li></ul>"""
         self.assertHTMLEqual(hierarchy_child_expected, hierarchy_child_output)
 
     def test_constr_hierarchy_tree_branch_child(self):
@@ -532,7 +532,7 @@ class TaxonTestCase(TestCase):
         list_child = Taxon.objects.filter(id_sup=self.species.id).order_by('rang')
         str_child_output = constr_hierarchy_tree_branch_child(list_child, nb)
         str_child_expected = """<ul><li><label class="tree_label" for="c7"/><strong>Sous-Espèce : </strong><ul>
-        <li><a href="/fatercal/taxon/8/">genus species sub_species auteur8</a></li>"""
+        <li><a href="/fatercal/taxon/"""+ str(self.sub_species.id) +"""/">genus species sub_species auteur8</a></li>"""
         self.assertHTMLEqual(str_child_expected, str_child_output)
 
     def test_get_taxon_adv_search(self):
@@ -542,8 +542,8 @@ class TaxonTestCase(TestCase):
              'auteur(s)/date', 'date', 'collecteurs', 'identificateur', "date d'identification", 'altitude(m)',
              'pays', 'region', 'commune', 'lieu dit', 'type de milieu', 'nombre', 'sexe', 'capture/relacher',
              'informations complementaires', 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc'),
-            (7, 'order', 'family', '', 'genus', '', 'genus species', '', 'auteur7'),
-            (8, None, 'order', 'family', '', 'genus', '', 'genus species', 'genus species sub_species', 'auteur8')]
+            (self.species.id, 'order', 'family', '', 'genus', '', 'genus species', '', 'auteur7'),
+            (self.sub_species.id, None, 'order', 'family', '', 'genus', '', 'genus species', 'genus species sub_species', 'auteur8')]
         self.assertEqual(list_taxon_expected, list_taxon_output)
 
         auteur = 'not found'
@@ -562,8 +562,8 @@ class TaxonTestCase(TestCase):
              'auteur(s)/date', 'date', 'collecteurs', 'identificateur', "date d'identification", 'altitude(m)', 'pays',
              'region', 'commune', 'lieu dit', 'type de milieu', 'nombre', 'sexe', 'capture/relacher',
              'informations complementaires', 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc'),
-            (7, None, 'order', 'family', '', 'genus', '', 'genus species', '', 'auteur7'),
-            (8, None, 'order', 'family', '', 'genus', '', 'genus species', 'genus species sub_species', 'auteur8')]
+            (self.species.id, None, 'order', 'family', '', 'genus', '', 'genus species', '', 'auteur7'),
+            (self.sub_species.id, None, 'order', 'family', '', 'genus', '', 'genus species', 'genus species sub_species', 'auteur8')]
         self.assertEqual(list_taxon_expected, list_taxon_output)
 
     def test_format_adv_search_child_for_export_sample(self):
@@ -580,10 +580,11 @@ class TaxonTestCase(TestCase):
              'auteur(s)/date', 'date', 'collecteurs', 'identificateur', "date d'identification", 'altitude(m)', 'pays',
              'region', 'commune', 'lieu dit', 'type de milieu', 'nombre', 'sexe', 'capture/relacher',
              'informations complementaires', 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc'),
-            (8, None, 'order', 'family', '', 'genus', '', 'genus species', 'genus species sub_species', 'auteur8')]
+            (self.sub_species.id, None, 'order', 'family', '', 'genus', '', 'genus species', 'genus species sub_species', 'auteur8')]
         self.assertEqual(list_taxon_expected, list_taxon_ouput)
     
     def test_get_taxref_update(self):
+        self.maxDiff = 800
         status = TaxrefStatus.objects.create(status="P", lb_status="Présent")
         habitat = TaxrefHabitat.objects.create(habitat=2, lb_habitat="Terrestre")
         self.species.cd_nom=1
@@ -592,27 +593,23 @@ class TaxonTestCase(TestCase):
         self.genus.cd_nom= 2
         self.genus.save()
         self.species.save()
-        tz = pytz.timezone('Pacific/Noumea')
         taxon_taxref = TaxrefUpdate.objects.create(
             taxon_id=self.species, cd_nom=1,
             cd_ref=1, cd_sup=2, rang='ES',
             lb_nom='different_name', lb_auteur='different author',
             nom_complet='different_name different author',
-            date=datetime.datetime.now(tz=tz).replace(tzinfo=pytz.UTC),
+            date=datetime.datetime.now(),
             taxrefversion='11'
         )
-        list_taxon, taxref_version = get_taxref_update()
-        list_taxon_expected = [
-            {
-                'taxon_name': self.species,
-                'cd_nom': '1',
-                'diff': "Le nom du taxon est différent. Nom Chez Fatercal: genus species, " \
-                "Chez taxref: different_name. Le nom de l'auteur de ce taxon est différent. Auteur " \
-                "Chez Fatercal: auteur7, Chez taxref: different author. "
-            }
-        ]
+        empty, taxref_version, count = get_taxref_update()
         taxref_version_expected = "11"
-        self.assertEqual(list_taxon_expected, list_taxon)
+        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species)
+        nom_complet_expected = "different_name different author: Le nom du taxon est différent. "\
+            "Nom Chez Fatercal: genus species, Chez taxref: different_name. Le nom de l'auteur de "\
+            "ce taxon est différent. Auteur Chez Fatercal: auteur7, Chez taxref: different author. "
+        self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
+        self.assertEqual(empty, False)
+        self.assertEqual(count, 1)
         self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
         
         self.genus.cd_nom = None
@@ -622,28 +619,37 @@ class TaxonTestCase(TestCase):
         taxon_taxref.lb_nom = 'genus species'
         taxon_taxref.lb_auteur = 'auteur7'
         taxon_taxref.save()
-        list_taxon, taxref_version = get_taxref_update()
-        list_taxon_expected[0]['diff'] = "Le supérieur de ce taxon est différent et celui de Fatercal" \
-                    "n'existe pas chez Taxref. "
-        self.assertEqual(list_taxon_expected, list_taxon)
+        empty, taxref_version, count = get_taxref_update()
+        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species)
+        nom_complet_expected = "genus species auteur7: Le supérieur de ce taxon "\
+            "est différent et celui de Fatercal n'existe pas chez Taxref. "
+        self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
+        self.assertEqual(empty, False)
+        self.assertEqual(count, 1)
         self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
-
+        
         self.genus.cd_nom = 2
         self.genus.save()
         self.species.id_sup=None
         self.species.save()
-        list_taxon, taxref_version = get_taxref_update()
-        list_taxon_expected[0]['diff'] = "Ce taxon n'a pas de supérieur dans fatercal et Taxref lui en a assigné un" \
-                    " Supérieur chez Taxref: genus auteur6"
-        self.assertEqual(list_taxon_expected, list_taxon)
+        empty, taxref_version, count = get_taxref_update()
+        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species)
+        nom_complet_expected = "genus species auteur7: Ce taxon n'a pas de supérieur "\
+            "dans fatercal et Taxref lui en a assigné un Supérieur chez Taxref: genus auteur6"
+        self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
+        self.assertEqual(empty, False)
+        self.assertEqual(count, 1)
         self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
         
         self.genus.cd_nom = None
         self.genus.save()
-        list_taxon, taxref_version = get_taxref_update()
-        list_taxon_expected[0]['diff'] = "Ce taxon n'a pas de supérieur dans fatercal et Taxref lui en a assigné un" \
-                    " mais il n'exist pas chez fatercal. Cd_nom supérieur chez Taxref: 2"
-        self.assertEqual(list_taxon_expected, list_taxon)
+        empty, taxref_version, count = get_taxref_update()
+        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species)
+        nom_complet_expected = "genus species auteur7: Ce taxon n'a pas de supérieur dans fatercal "\
+            "et Taxref lui en a assigné un mais il n'exist pas chez fatercal. Cd_nom supérieur chez Taxref: 2"
+        self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
+        self.assertEqual(empty, False)
+        self.assertEqual(count, 1)
         self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
 
         self.species.id_sup = self.genus
@@ -653,18 +659,24 @@ class TaxonTestCase(TestCase):
         self.species.save()
         self.species_syn.save()
         taxon_taxref.save()
-        list_taxon, taxref_version = get_taxref_update()
-        list_taxon_expected[0]['diff'] = "Le taxon est valide chez fatercal mais synonyme chez Taxref. " \
-            "Taxon référent chez Taxref: species_synonymous auteur9 (Non Valide)"
-        self.assertEqual(list_taxon_expected, list_taxon)
+        empty, taxref_version, count = get_taxref_update()
+        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species)
+        nom_complet_expected = "genus species auteur7: Le taxon est valide "\
+            "chez fatercal mais synonyme chez Taxref. Taxon référent chez Taxref: species_synonymous auteur9 (Non Valide)"
+        self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
+        self.assertEqual(empty, False)
+        self.assertEqual(count, 1)
         self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
         
         self.species_syn.cd_nom = None
         self.species_syn.save()
-        list_taxon, taxref_version = get_taxref_update()
-        list_taxon_expected[0]['diff'] = "Le taxon est valide chez fatercal mais synonyme chez Taxref. " \
-            "Cd_nom taxon référent chez Taxref: 3."
-        self.assertEqual(list_taxon_expected, list_taxon)
+        empty, taxref_version, count = get_taxref_update()
+        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species)
+        nom_complet_expected = "genus species auteur7: Le taxon est valide chez fatercal "\
+            "mais synonyme chez Taxrefet n'éxiste pas chez Fatercal. Cd_nom taxon référent chez Taxref: 3."
+        self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
+        self.assertEqual(empty, False)
+        self.assertEqual(count, 1)
         self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
         
         self.species.cd_nom = None
@@ -678,11 +690,13 @@ class TaxonTestCase(TestCase):
         taxon_taxref.save()
         self.genus.cd_nom = 2
         self.genus.save()
-        list_taxon, taxref_version = get_taxref_update()
-        list_taxon_expected[0]['taxon_name'] = self.species_syn
-        list_taxon_expected[0]['diff'] = "Le référent de ce taxon est différent et celui de Fatercal " \
-            "n'existe pas chez Taxref. " 
-        self.assertEqual(list_taxon_expected, list_taxon)
+        empty, taxref_version, count = get_taxref_update()
+        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species_syn)
+        nom_complet_expected = "species_synonymous auteur9: Le référent de ce taxon est différent "\
+            "et celui de Fatercal n'existe pas chez Taxref. "
+        self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
+        self.assertEqual(empty, False)
+        self.assertEqual(count, 1)
         self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
         
         self.species.cd_nom = 3
@@ -692,34 +706,47 @@ class TaxonTestCase(TestCase):
         taxon_taxref.save()
         self.genus.cd_nom = None
         self.genus.save()
-        list_taxon, taxref_version = get_taxref_update()
-        list_taxon_expected[0]['diff'] = "Le taxon est synonyme chez fatercal mais valide chez Taxref " \
-            "mais le taxon supérieur n'existe pas chez Fatercal Cd_nom taxon supérieur chez Taxref: 2. "
-        self.assertEqual(list_taxon_expected, list_taxon)
+        empty, taxref_version, count = get_taxref_update()
+        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species_syn)
+        nom_complet_expected = "species_synonymous auteur9: Le taxon est synonyme chez fatercal "\
+            "mais valide chez Taxref mais le taxon supérieur n'existe pas chez Fatercal Cd_nom taxon "\
+                "supérieur chez Taxref: 2. "
+        self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
+        self.assertEqual(empty, False)
+        self.assertEqual(count, 1)
         self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
         
         self.genus.cd_nom = 2
         self.genus.save()
-        list_taxon, taxref_version = get_taxref_update()
-        list_taxon_expected[0]['diff'] = "Le taxon est synonyme chez fatercal mais valide chez Taxref. " \
-            "Supérieur chez Taxref: genus auteur6. "
-        self.assertEqual(list_taxon_expected, list_taxon)
+        empty, taxref_version, count = get_taxref_update()
+        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species_syn)
+        nom_complet_expected = "species_synonymous auteur9: Le taxon est synonyme "\
+            "chez fatercal mais valide chez Taxref. Supérieur chez Taxref: genus auteur6. "
+        self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
+        self.assertEqual(empty, False)
+        self.assertEqual(count, 1)
         self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
 
         taxon_taxref.cd_ref = 4
         taxon_taxref.save()
-        list_taxon, taxref_version = get_taxref_update()
-        list_taxon_expected[0]['diff'] = "Le référent de ce taxon est différent " \
-            "et n'existe pas dans Fatercal. CD_NOM = 4. "
-        self.assertEqual(list_taxon_expected, list_taxon)
+        empty, taxref_version, count = get_taxref_update()
+        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species_syn)
+        nom_complet_expected = "species_synonymous auteur9: Le référent de ce taxon "\
+            "est différent et n'existe pas dans Fatercal. CD_NOM = 4. "
+        self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
+        self.assertEqual(empty, False)
+        self.assertEqual(count, 1)
         self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
 
         self.sub_species.cd_nom = 4
         self.sub_species.save()
-        list_taxon, taxref_version = get_taxref_update()
-        list_taxon_expected[0]['diff'] = "Le référent de ce taxon est différent. " \
+        empty, taxref_version, count = get_taxref_update()
+        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species_syn)
+        nom_complet_expected = "species_synonymous auteur9: Le référent de ce taxon est différent. "\
             "Référent chez fatercal: genus species auteur7, chez Taxref genus species sub_species auteur8. "
-        self.assertEqual(list_taxon_expected, list_taxon)
+        self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
+        self.assertEqual(empty, False)
+        self.assertEqual(count, 1)
         self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
 
         taxon_taxref.cd_ref = 3
@@ -727,11 +754,13 @@ class TaxonTestCase(TestCase):
         taxon_taxref.habitat = 154
         taxon_taxref.nc = "NEIF"
         taxon_taxref.save()
-        list_taxon, taxref_version = get_taxref_update()
-        list_taxon_expected[0]['diff'] = "Le rang est différent et n'existe pas chez Fatercal. " \
-            "Nouveau rang: NEIF. Un habitat a été spécifié pour ce taxon mais il n'existe pas chez fatercal. " \
-            "Nouvelle habitat: 154. Un status a été spécifié pour ce taxon mais il n'existe pas chez fatercal. Nouveau Status: NEIF. "
-        self.assertEqual(list_taxon_expected, list_taxon)
+        empty, taxref_version, count = get_taxref_update()
+        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species_syn)
+        nom_complet_expected = "species_synonymous auteur9: Le rang est différent et n'existe pas "\
+            "chez Fatercal. Nouveau rang: NEIF. Un habitat a été spécifié pour ce taxon mais il n'existe pas chez fatercal. Nouvelle habitat: 154. Un status a été spécifié pour ce taxon mais il n'existe pas chez fatercal. Nouveau Status: NEIF. "
+        self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
+        self.assertEqual(empty, False)
+        self.assertEqual(count, 1)
         self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
 
         taxon_taxref.rang = "ES"
@@ -739,44 +768,114 @@ class TaxonTestCase(TestCase):
         self.species_syn.nc = TaxrefStatus.objects.get(status="A")
         self.species_syn.habitat = TaxrefHabitat.objects.get(habitat=1)
         self.species_syn.save()
-        list_taxon, taxref_version = get_taxref_update()
-        list_taxon_expected[0]['diff'] = "L'habitat est différent et n'existe pas chez Fatercal. " \
-            "Nouvelle Habitat: 154. Le status est différent et n'existe pas chez Fatercal. Nouveau Status: NEIF"
-        self.assertEqual(list_taxon_expected, list_taxon)
+        empty, taxref_version, count = get_taxref_update()
+        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species_syn)
+        nom_complet_expected = "species_synonymous auteur9: L'habitat est différent "\
+            "et n'existe pas chez Fatercal. Nouvelle Habitat: 154. Le status est différent "\
+            "et n'existe pas chez Fatercal. Nouveau Status: NEIF"
+        self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
+        self.assertEqual(empty, False)
+        self.assertEqual(count, 1)
         self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
         
         taxon_taxref.nc = "P"
         taxon_taxref.habitat = 2
         taxon_taxref.save()
-        list_taxon, taxref_version = get_taxref_update()
-        list_taxon_expected[0]['diff'] = "L'habitat est différent. " \
+        empty, taxref_version, count = get_taxref_update()
+        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species_syn)
+        nom_complet_expected = "species_synonymous auteur9: L'habitat est différent. "\
             "Nouvelle Habitat: Terrestre. Le status est différent. Nouveau Status: Présent"
-        self.assertEqual(list_taxon_expected, list_taxon)
+        self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
+        self.assertEqual(empty, False)
+        self.assertEqual(count, 1)
         self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
 
         self.species_syn.nc = None
         self.species_syn.habitat = None
         self.species_syn.save()
-        list_taxon, taxref_version = get_taxref_update()
-        list_taxon_expected[0]['diff'] = "Un habitat a été spécifié pour ce taxon. " \
+        empty, taxref_version, count = get_taxref_update()
+        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species_syn)
+        nom_complet_expected = "species_synonymous auteur9: Un habitat a été spécifié pour ce taxon. "\
             "Nouvelle Habitat: Terrestre. Un status a été spécifié pour ce taxon. Nouveau Status: Présent. "
-        self.assertEqual(list_taxon_expected, list_taxon)
+        self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
+        self.assertEqual(empty, False)
+        self.assertEqual(count, 1)
         self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
 
         taxon_taxref.nc = None
         taxon_taxref.habitat = None
         self.species_syn.save()
         taxon_taxref.save()
-        list_taxon, taxref_version = get_taxref_update()
-        list_taxon_expected = []
-        self.assertEqual(list_taxon_expected, list_taxon)
+        empty, taxref_version, count = get_taxref_update()
+        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species_syn)
+        nom_complet_expected = "species_synonymous auteur9: Aucune différence mais des "\
+            "identifiant venant de Taxref était manquant."
+        self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
+        self.assertEqual(empty, False)
+        self.assertEqual(count, 1)
         self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+
+    def test_get_taxref_insert(self):
+        status = TaxrefStatus.objects.create(status="P", lb_status="Présent")
+        habitat = TaxrefHabitat.objects.create(habitat=2, lb_habitat="Terrestre")
+        taxon_taxref = TaxrefUpdate.objects.create(
+            cd_nom=1, cd_ref=1, cd_sup=2, rang='UN',
+            lb_nom='new taxon', lb_auteur='author',
+            nom_complet='new taxon author',
+            date=datetime.datetime.now(),
+            taxrefversion='11', nc='unkn', habitat=6
+        )
+        exist, exist_rang, nb_taxon, taxref_version = get_taxref_insert('ES')
+        taxref_version_expected = "11"
+        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+
+        taxon_taxref.lb_auteur = None
+        taxon_taxref.cd_sup = None
+        taxon_taxref.cd_ref = 2
+        taxon_taxref.nc = None
+        taxon_taxref.habitat = None
+        taxon_taxref.rang = 'ES'
+        taxon_taxref.save()
+        exist, exist_rang, nb_taxon, taxref_version = get_taxref_insert('ES')
+        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+
+    def test_insert_taxon_from_taxref(self):
+        status = TaxrefStatus.objects.create(status="P", lb_status="Présent")
+        habitat = TaxrefHabitat.objects.create(habitat=2, lb_habitat="Terrestre")
+        taxon_taxref = TaxrefUpdate.objects.create(
+            cd_nom=1, cd_ref=1, cd_sup=2, rang='UN',
+            lb_nom='new taxon', lb_auteur='author',
+            nom_complet='new taxon author',
+            date=datetime.datetime.now(),
+            taxrefversion='11', nc='unkn', habitat=6
+        )
+        data = {
+            'choices': [taxon_taxref],
+            'time': datetime.datetime.now(),
+            'count': 7
+        }
+        taxref_version = {'taxrefversion__max': 11}
+        user = User.objects.create_user('temporary', 'temporary@gmail.com', 'temporary')
+        list_not_insert = insert_taxon_from_taxref(data, taxref_version, user)
+        list_not_insert_expected = [{'name': 'new taxon:', 'info': 'Rang taxon: UN'}]
+        self.assertEqual(list_not_insert_expected, list_not_insert)
+        self.assertEqual(False, Taxon.objects.filter(lb_nom='new taxon').exists())
+        self.assertEqual(False, TaxrefUpdate.objects.filter(cd_nom=1).exists())
+
+        taxon_taxref.rang = 'ES'
+        taxon_taxref.save()
+        self.genus.cd_nom = 2
+        self.genus.save()
+        list_not_insert = insert_taxon_from_taxref(data, taxref_version, user)
+        list_not_insert_expected = []
+        self.assertEqual(list_not_insert_expected, list_not_insert)
+        self.assertEqual(True, Taxon.objects.filter(cd_nom=1).exists())
+        self.assertEqual(False, TaxrefUpdate.objects.filter(cd_nom=1).exists())
 
     def test_update_taxon_from_taxref(self):
         status = TaxrefStatus.objects.create(status="P", lb_status="Présent")
         habitat = TaxrefHabitat.objects.create(habitat=2, lb_habitat="Terrestre")
-        tz = pytz.timezone('Pacific/Noumea')
-        time = datetime.datetime.now(tz=tz).replace(tzinfo=pytz.UTC)
+        time = datetime.datetime.now()
         self.species.cd_nom=1
         self.species.cd_ref=1
         self.species.cd_sup=2
@@ -792,7 +891,7 @@ class TaxonTestCase(TestCase):
             nom_complet='different_name different author',
             nc="P",
             habitat=2,
-            date=datetime.datetime.now(tz=tz).replace(tzinfo=pytz.UTC),
+            date=datetime.datetime.now(),
             taxrefversion='11'
         )
         taxon_taxref_syn = TaxrefUpdate.objects.create(
@@ -800,7 +899,7 @@ class TaxonTestCase(TestCase):
             cd_ref=4, cd_sup=2, rang='ES',
             lb_nom='syn_name', lb_auteur='syn_author',
             nom_complet='syn_name syn_author',
-            date=datetime.datetime.now(tz=tz).replace(tzinfo=pytz.UTC),
+            date=datetime.datetime.now(),
             taxrefversion='11'
         )
         id_taxon = taxon_taxref.id
@@ -836,7 +935,7 @@ class TaxonTestCase(TestCase):
         self.species_syn.save()
         data = {
             'choices': TaxrefUpdate.objects.all(),
-            'time': datetime.datetime.now(tz=tz).replace(tzinfo=pytz.UTC)
+            'time': datetime.datetime.now()
         }
         update_taxon_from_taxref(data, taxref_version, "dummy_user")
         self.species = Taxon.objects.get(id=self.species.id)
@@ -846,6 +945,48 @@ class TaxonTestCase(TestCase):
         self.assertEqual(self.species.id_ref, self.species_syn)
         self.assertEqual(self.species_syn.id_ref, self.species_syn)
         self.assertEqual(self.species_syn.id_sup, self.genus)
+
+    def test_next_taxref_insert_page(self):
+        taxon_taxref = TaxrefUpdate.objects.create(
+            cd_nom=1, cd_ref=1, cd_sup=2, rang='UN',
+            lb_nom='new taxon', lb_auteur='author',
+            nom_complet='new taxon author',
+            date=datetime.datetime.now(),
+            taxrefversion='11', nc='unkn', habitat=6
+        )
+        template, context = next_taxref_insert_page(None, True)
+        context_expected = {'error': True, 'goal': 'insert'}
+        self.assertEqual(context_expected, context)
+        
+        form = ChooseTaxonToInsert(
+            initial = {
+                'count': 1,
+                'time': datetime.datetime.now(),
+            }
+        )
+        form.cleaned_data = {'count': 0, 'time': datetime.datetime.now()}
+        template, context = next_taxref_insert_page(form, False)
+        context_expected = {'nb_taxon': 0, 'exist': True,'exist_rang': False,
+            'rang': TaxrefRang.objects.get(rang=list_hierarchy[1]).lb_rang}
+        self.assertEqual(context_expected['exist'], context['exist'])
+        self.assertEqual(context_expected['exist_rang'], context['exist_rang'])
+        self.assertEqual(context_expected['rang'], context['rang'])
+        self.assertEqual(context_expected['nb_taxon'], context['nb_taxon'])
+
+        form.cleaned_data['count'] = 10
+        template, context = next_taxref_insert_page(form, False)
+        context_expected['rang'] = 'other'
+        context_expected['nb_taxon'] = 1
+        self.assertEqual(context_expected['exist'], context['exist'])
+        self.assertEqual(context_expected['exist_rang'], context['exist_rang'])
+        self.assertEqual(context_expected['rang'], context['rang'])
+        self.assertEqual(context_expected['nb_taxon'], context['nb_taxon'])
+
+        form.cleaned_data['count'] = -1
+        template, context = next_taxref_insert_page(form, False)
+        context_expected = {'error': False, 'goal': 'insert'}
+        self.assertEqual(context_expected, context)
+        
 
 # Test function that are related to the model Prelevement
 class SampleTestClass(TestCase):

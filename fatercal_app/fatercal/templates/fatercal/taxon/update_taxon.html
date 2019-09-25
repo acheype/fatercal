@@ -1,0 +1,52 @@
+{% extends 'admin/base_site.html' %}
+
+{% load static %}
+{% block title %}
+    Recherche Avancée | Fatercal
+{% endblock %}
+{% block branding %}
+<style>
+    input[type=checkbox] { display: block; }
+</style>
+    <div class="head">
+        <h1 id="site-name">
+            <a href="/">Fatercal</a>
+        </h1>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="breadcrumbs initialized">
+        <a href="/">Accueil</a>
+        <span class="icon-arrow-right breadcrumbs-separator"></span> <a href="/fatercal/">Fatercal</a>
+        <span class="icon-arrow-right breadcrumbs-separator"></span> <a href="/fatercal/taxon/">Taxon</a>
+        {% if goal == 'update' %}
+            <span class="icon-arrow-right breadcrumbs-separator"></span> Mise à jour depuis Taxref
+        {% else %}
+            {% if goal == 'insert' %}
+                <span class="icon-arrow-right breadcrumbs-separator"></span> Nouveau taxon depuis Taxref
+            {% endif %}
+        {% endif %}
+    </div><br>
+    <fieldset class="module aligned">
+        <div>
+            {% if goal == 'update' %}
+                <h1>Choix Taxon mise à jour:</h1>
+            {% else %}
+                {% if goal == 'insert' %}
+                    <h1>Choix Taxon à inserer:</h1>
+                {% endif %}
+            {% endif %}
+        </div>
+        <div>
+            {% if goal == 'update' %}
+                <h1> Les taxons ont été mis à jour</h1>
+            {% else %}
+                {% if goal == 'insert' %}
+                    <h2> Les taxons ont été insérer.</h2>
+                {% endif %}
+            {% endif %}
+            <a href='/fatercal/taxon/'>Retour a la page de choix de taxon</a>
+        </div>
+    </fieldset>
+{% endblock %}

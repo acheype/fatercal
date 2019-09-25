@@ -376,14 +376,14 @@ class TaxrefExport(models.Model):
 
 
 class TaxrefUpdate(models.Model):
-    taxon_id = models.ForeignKey('Taxon', db_column='taxon_id', verbose_name='Taxon', on_delete=models.DO_NOTHING)
+    taxon_id = models.ForeignKey('Taxon', db_column='taxon_id', verbose_name='Taxon', on_delete=models.DO_NOTHING, null=True)
     cd_nom = models.IntegerField(unique=True, blank=True, null=True)
     cd_ref = models.IntegerField(blank=True, null=True)
     cd_sup = models.IntegerField(blank=True, null=True)
     rang = models.CharField(max_length=4)
     lb_nom = models.CharField(max_length=250, verbose_name='Nom')
     lb_auteur = models.CharField(max_length=250, blank=True, null=True, verbose_name='Auteur')
-    nom_complet = models.CharField(max_length=250, blank=True, null=True)
+    nom_complet = models.CharField(max_length=650, blank=True, null=True)
     habitat = models.SmallIntegerField(null=True)
     nc = models.CharField(max_length=4, blank=True, null=True)
     date = models.DateTimeField(auto_now=False, auto_now_add=False)
@@ -394,8 +394,4 @@ class TaxrefUpdate(models.Model):
             db_table = 'taxref_update'
     
     def __str__(self):
-        if self.lb_auteur is not None:
-            str_lb = str(self.lb_nom) + ' ' + str(self.lb_auteur)
-        else:
-            str_lb = str(self.lb_nom)
-        return str_lb
+        return self.nom_complet

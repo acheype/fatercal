@@ -1,0 +1,70 @@
+{% extends 'admin/base_site.html' %}
+
+{% load static %}
+{% block title %}
+        Insertion depuis Taxref | Fatercal
+{% endblock %}
+{% block branding %}
+<style>
+    input[type=checkbox] { display: block; }
+</style>
+    <div class="head">
+        <h1 id="site-name">
+            <a href="/">Fatercal</a>
+        </h1>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="breadcrumbs initialized">
+        <a href="/">Accueil</a>
+        <span class="icon-arrow-right breadcrumbs-separator"></span> <a href="/fatercal/">Fatercal</a>
+        <span class="icon-arrow-right breadcrumbs-separator"></span> <a href="/fatercal/taxon/">Taxon</a>
+        <span class="icon-arrow-right breadcrumbs-separator"></span> Insertion depuis Taxref
+    </div><br>
+    {% if exist %}
+        {% if exist_rang %}
+            <fieldset class="module aligned">
+                <div>
+                    <h1>Choix Taxon du rang {{rang}} pour insertion:</h1>
+                    <p> Nombre de taxon à insérer: {{ nb_taxon }} </p>
+                    <form action="" method="post">
+                        {% csrf_token %}
+                        <table border="2">
+                            {{ form.as_table }}
+                        </table>
+                        <br>
+                        <input type="submit" value="Mettre a jour"/>
+                    </form><br>
+                </div>
+            </fieldset>
+        {% else %}
+            <fieldset class="module aligned">
+                <div>
+                    {% if rang == 'other' %}
+                        <h1>Dernière page de choix de Taxon pour insertion:</h1>
+                    {% else %}
+                        <h1> Choix Taxon du rang {{rang}} pour insertion:</h1>
+                    {% endif %}
+                    {% if nb_taxon == 0 %}
+                        <p> Aucun taxon à insérer </p>
+                    {% else %}
+                        <p> Nombre de taxon à insérer: {{ nb_taxon }} </p>
+                    {% endif %}
+                    <form action="" method="post">
+                        {% csrf_token %}
+                        <table border="2">
+                            {{ form.as_table }}
+                        </table>
+                        <br>
+                        <input type="submit" value="Page Suivante"/>
+                    </form><br>
+                </div>
+            </fieldset>
+        {% endif %}
+    {% else %}
+        <fieldset class="module aligned">
+            <h1>Aucun taxon à insérer depuis Taxref</h1>
+        </fieldset>
+    {% endif %}
+{% endblock %}

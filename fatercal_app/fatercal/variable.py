@@ -11,3 +11,7 @@ param_hierarchy = [
     [18, 'SCO'], [19, 'SSCO'], [20, 'SPFM'], [21, 'FM'], [22, 'SBFM'], [23, 'TR'], [24, 'SBTR'], [25, 'GN'],
     [26, 'SSGN'], [27, 'ES'], [28, 'SSES'], [29, 'VAR'], [30, 'SVAR']
 ]
+
+list_hierarchy = [
+    'SPFM', 'FM', 'SBFM', 'TR', 'SSTR', 'GN', 'SSGN', 'ES', 'SSES'
+]

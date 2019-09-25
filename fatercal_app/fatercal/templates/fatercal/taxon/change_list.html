@@ -17,6 +17,9 @@
          <a href="/fatercal/update_from_taxref/{% if request.GET %}?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}{% endif %}"
            class="btn btn-high btn-success">
             Mise à jour depuis Taxref</a>
+         <a href="/fatercal/insert_from_taxref/{% if request.GET %}?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}{% endif %}"
+           class="btn btn-high btn-success">
+            Nouveau taxon depuis Taxref</a>
     {% endif %}
         <a href="/fatercal/advanced_search/" class="btn btn-high btn-success">Recherche Avancée</a>
 </li>

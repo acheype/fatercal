@@ -5,18 +5,19 @@ from django.template import loader
 from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
 from .forms import AllTaxon, TaxonChangeSup, SearchAdvanced, ChooseData, UploadFileCsv, \
-    ChooseTaxonToUpdate
+    ChooseTaxonToUpdate, ChooseTaxonToInsert
 from .function import constr_hierarchy_tree_adv_search, get_taxon_from_search, is_admin, update_taxon_from_taxref, \
     get_taxon_personal, get_sample, get_taxons_for_sample, get_taxon_adv_search, change_ref_taxon, change_sup_taxon,\
-    verify_and_save_sample, list_sample_for_map, get_taxon_from_search_taxref, get_taxref_update
-from .models import Taxon
+    verify_and_save_sample, list_sample_for_map, get_taxon_from_search_taxref, get_taxref_update, get_taxref_insert, \
+    insert_taxon_from_taxref, get_last_taxref_version, next_taxref_insert_page, delete_not_choose_taxref_insert
+from .models import Taxon, TaxrefRang
+from .variable import list_hierarchy
 
 import csv
 import json
 import requests
 import codecs
 import datetime
-import pytz
 
 
 class ValidSpecialFilter(admin.SimpleListFilter):
@@ -27,7 +28,7 @@ class ValidSpecialFilter(admin.SimpleListFilter):
     """
     # Human-readable title which will be displayed in the
     # right admin sidebar just above the filter options.
-    title = 'validité'
+    title = 'filtre'
 
     # Parameter for the filter that will be used in the URL query.
     parameter_name = 'valide'
@@ -42,7 +43,7 @@ class ValidSpecialFilter(admin.SimpleListFilter):
         human-readable name for the option that will appear
         in the right sidebar.
         """
-        return ('valide', 'Valide'), ('synonyme', 'Synonyme')
+        return ('valide', 'Valide'), ('synonyme', 'Synonyme'), ('no_superior', 'Aucun supérieur associé')
 
     def queryset(self, request, queryset):
         """
@@ -54,6 +55,8 @@ class ValidSpecialFilter(admin.SimpleListFilter):
             return queryset.filter(id=F('id_ref'))
         if self.value() == 'synonyme':
             return queryset.exclude(id=F('id_ref'))
+        if self.value() == 'no_superior':
+            return queryset.filter(Q(id_sup=None) & Q(id=F('id_ref')))
 
 
 class AltitudeSpecialFilter(admin.SimpleListFilter):
@@ -473,33 +476,91 @@ def export_adv_search(request):
 def update_from_taxref(request):
     """
     This page allow the user to choose the update from taxref to apply to Fatercal
-    It takes the taxon with a cd_nom and search with taxref api if it has
+    It takes the taxon with a cd_nom and search with taxref api if it has a similarity
     :param request: request: an request object (see Django doc)
     :return: an HttpResponse object (see Django doc)
     """
     if is_admin(request.user):
         if request.method == 'POST':
-            list_dict_taxon, taxref_version = get_taxref_update()
-            form = ChooseTaxonToUpdate(request.POST)
-            print(form.is_valid())
+            form = ChooseTaxonToUpdate(request.POST, initial={'rang': None})
+            template = loader.get_template('fatercal/taxon/update_taxon.html')
             if form.is_valid():
+                taxref_version = get_last_taxref_version()
                 data = form.cleaned_data
                 update_taxon_from_taxref(data, taxref_version, request.user)
-                print(data)
-                return 'fsdf'
+                error = False
+            else:
+                error = True
+            context = {
+                'error': error,
+                'goal': 'update'
+            }
         else:
-            tz = pytz.timezone('Pacific/Noumea')
-            template = loader.get_template('fatercal/taxon/choose_taxon.html')
-            list_dict_taxon, taxref_version = get_taxref_update()
-            form = ChooseTaxonToUpdate(
-                initial={
-                    'taxrefversion': int(taxref_version['taxrefversion__max']),
-                    'time': datetime.datetime.now(tz=tz).replace(tzinfo=pytz.UTC)
-                    })
+            template = loader.get_template('fatercal/taxon/choose_taxon_update.html')
+            empty, taxref_version, nb_taxon = get_taxref_update()
+            if taxref_version['taxrefversion__max'] is not None:
+                form = ChooseTaxonToUpdate(
+                    initial={
+                        'taxrefversion': int(taxref_version['taxrefversion__max']),
+                        'time': datetime.datetime.now()
+                        })
+            else:
+                form = None
             context = {
                 'form': form,
-                'list_dict': list_dict_taxon
+                'empty': empty,
+                'nb_taxon': nb_taxon,
             }
-            return HttpResponse(template.render(context, request))
+        return HttpResponse(template.render(context, request))
+    else:
+        raise Http404("This page doesn't exist")
+
+@login_required()
+def insert_from_taxref(request):
+    """
+    This page allow the user to choose the taxon to insert from taxref
+    If it doesn't exist in Fatercal and he exist in nc
+    :param request: request: an request object (see Django doc)
+    :return: an HttpResponse object (see Django doc)
+    """
+    if is_admin(request.user):
+        if request.method == 'POST':
+            form = ChooseTaxonToInsert(request.POST)
+            template = loader.get_template('fatercal/taxon/choose_taxon_insert.html')
+            if form.is_valid():
+                error = False
+                taxref_version = get_last_taxref_version()
+                data = form.cleaned_data
+                list_not_insert = insert_taxon_from_taxref(data, taxref_version, request.user)
+                if data['count'] <= -1:
+                    delete_not_choose_taxref_insert()
+            else:
+                list_not_insert = None
+                error = True
+            template, context = next_taxref_insert_page(form, error)
+        else:
+            rang = list_hierarchy[0]
+            template = loader.get_template('fatercal/taxon/choose_taxon_insert.html')
+            exist, exist_rang, nb_taxon, taxref_version = get_taxref_insert(rang)
+            if taxref_version['taxrefversion__max'] is not None:
+                form = ChooseTaxonToInsert(
+                    initial={
+                        'rang': rang,
+                        'taxrefversion': int(taxref_version['taxrefversion__max']),
+                        'time': datetime.datetime.now(),
+                        'count': 0
+                    }
+                )
+            else:
+                form = None
+            rang = TaxrefRang.objects.get(rang=rang).lb_rang
+            context = {
+                'form': form,
+                'exist': exist,
+                'exist_rang': exist_rang,
+                'rang': rang,
+                'nb_taxon': nb_taxon
+            }
+        return HttpResponse(template.render(context, request))
     else:
         raise Http404("This page doesn't exist")

@@ -4,10 +4,11 @@ from django.core.exceptions import ValidationError
 from django.db import connection
 from django.db.models import F, Q, Max
 from django.template import loader
+from .forms import ChooseTaxonToInsert
 
 from .models import Taxon, Prelevement, Localisation, TypeEnregistrement, Recolteur, TypeLoc, HabitatDetail, \
     TaxrefExport, TaxrefUpdate, TaxrefRang, TaxrefHabitat, TaxrefStatus
-from .variable import regex_date
+from .variable import regex_date, list_hierarchy
 import os
 
 
@@ -1023,144 +1024,153 @@ def list_sample_for_map(taxon):
 def get_taxref_update():
     """Get the update from the table taxref_update
     Returns:
-        [List, Integer] -- Return  a list of dict and the last taxref version
+        [Boolean, Integer, Integer] -- Return a boolean, the last taxref version
+        and the number of taxon to update
     """
-    list_dict = []
     # Here we get the latest version of taxref
     taxref_version = TaxrefUpdate.objects.aggregate(Max('taxrefversion'))
-    list_taxon_to_update = TaxrefUpdate.objects.filter(
-        Q(taxrefversion=taxref_version['taxrefversion__max']) &
-        ~Q(taxon_id=None))
-    
-    # For every taxon we check all possible update
-    for taxref_taxon in list_taxon_to_update.iterator():
-        diff = ""
-        fatercal_taxon = Taxon.objects.get(id=taxref_taxon.taxon_id_id)
-        is_taxon_sup = Taxon.objects.filter(cd_nom=taxref_taxon.cd_sup).exists()
-        is_taxon_ref = Taxon.objects.filter(cd_nom=taxref_taxon.cd_ref).exists()
-        rang = TaxrefRang.objects.filter(rang=taxref_taxon.rang).exists()
-        habitat = TaxrefHabitat.objects.filter(habitat=taxref_taxon.habitat).exists()
-        nc = TaxrefStatus.objects.filter(status=taxref_taxon.nc).exists()
+    if not TaxrefUpdate.objects.filter(Q(taxrefversion=taxref_version['taxrefversion__max'])
+        & ~Q(taxon_id=None)).exists():
+        empty = True
+        count = 0
+    else:
+        empty = False
+        list_taxon_to_update = TaxrefUpdate.objects.filter(
+            Q(taxrefversion=taxref_version['taxrefversion__max']) &
+            ~Q(taxon_id=None))
+        count = len(list_taxon_to_update)
+        # For every taxon we check all possible update
+        for taxref_taxon in list_taxon_to_update.iterator():
+            diff = ""
+            fatercal_taxon = Taxon.objects.get(id=taxref_taxon.taxon_id_id)
+            is_taxon_sup = Taxon.objects.filter(cd_nom=taxref_taxon.cd_sup).exists()
+            is_taxon_ref = Taxon.objects.filter(cd_nom=taxref_taxon.cd_ref).exists()
+            rang = TaxrefRang.objects.filter(rang=taxref_taxon.rang).exists()
+            habitat = TaxrefHabitat.objects.filter(habitat=taxref_taxon.habitat).exists()
+            nc = TaxrefStatus.objects.filter(status=taxref_taxon.nc).exists()
 
-        # We verify the validity of the taxon
-        if fatercal_taxon.valide():
-            if fatercal_taxon.id_sup is None:
-                if is_taxon_sup:
-                    taxon_sup = Taxon.objects.get(cd_nom=taxref_taxon.cd_sup)
-                    diff = diff + "Ce taxon n'a pas de supérieur dans fatercal et Taxref lui en a assigné un " \
-                    "Supérieur chez Taxref: {}".format(taxon_sup)
-                else:
-                    diff = diff + "Ce taxon n'a pas de supérieur dans fatercal et Taxref lui en a assigné un" \
-                    " mais il n'exist pas chez fatercal. Cd_nom supérieur chez Taxref: {}".format(taxref_taxon.cd_sup)
-            elif taxref_taxon.cd_nom != taxref_taxon.cd_ref:
-                if is_taxon_ref:
-                    taxon_ref = Taxon.objects.get(cd_nom=taxref_taxon.cd_ref)
-                    diff = diff + "Le taxon est valide chez fatercal mais synonyme chez Taxref. " \
-                        "Taxon référent chez Taxref: {}".format(taxon_ref)
-                else:
-                    diff = diff + "Le taxon est valide chez fatercal mais synonyme chez Taxref. " \
-                        "Cd_nom taxon référent chez Taxref: {}.".format(taxref_taxon.cd_ref)
-            elif fatercal_taxon.id_sup.cd_nom is not None:
-                if fatercal_taxon.id_sup.cd_nom != taxref_taxon.cd_sup:
+            # We verify the validity of the taxon
+            if fatercal_taxon.valide():
+                if fatercal_taxon.id_sup is None:
                     if is_taxon_sup:
                         taxon_sup = Taxon.objects.get(cd_nom=taxref_taxon.cd_sup)
-                        diff = diff + "Le supérieur de ce taxon est différent. \
-                            Supérieur chez fatercal: {}, chez Taxref {}. ".format(
-                                fatercal_taxon.id_sup, taxon_sup)
+                        diff = diff + "Ce taxon n'a pas de supérieur dans fatercal et Taxref lui en a assigné un " \
+                        "Supérieur chez Taxref: {}".format(taxon_sup)
                     else:
-                        diff = diff + "Le supérieur de ce taxon est différent "\
-                        "et n'existe pas dans Fatercal. CD_NOM = {}. ".format(taxref_taxon.cd_sup)
-            else:
-                diff = diff + "Le supérieur de ce taxon est différent et celui de Fatercal" \
-                    "n'existe pas chez Taxref. "
-        else:
-            if taxref_taxon.cd_nom == taxref_taxon.cd_ref:
-                if is_taxon_sup:
-                    taxon_sup = Taxon.objects.get(cd_nom=taxref_taxon.cd_sup)
-                    diff = diff + "Le taxon est synonyme chez fatercal mais valide chez Taxref. " \
-                        "Supérieur chez Taxref: {}. ".format(taxon_sup)
-                else:
-                    diff = diff + "Le taxon est synonyme chez fatercal mais valide chez Taxref " \
-                        "mais le taxon supérieur n'existe pas chez Fatercal " \
-                        "Cd_nom taxon supérieur chez Taxref: {}. ".format(taxref_taxon.cd_sup)
-            elif fatercal_taxon.id_ref.cd_nom is not None:
-                if fatercal_taxon.id_ref.cd_nom != taxref_taxon.cd_ref:
+                        diff = diff + "Ce taxon n'a pas de supérieur dans fatercal et Taxref lui en a assigné un" \
+                        " mais il n'exist pas chez fatercal. Cd_nom supérieur chez Taxref: {}".format(taxref_taxon.cd_sup)
+                elif taxref_taxon.cd_nom != taxref_taxon.cd_ref:
                     if is_taxon_ref:
                         taxon_ref = Taxon.objects.get(cd_nom=taxref_taxon.cd_ref)
-                        diff = diff + "Le référent de ce taxon est différent. " \
-                            "Référent chez fatercal: {}, chez Taxref {}. ".format(
-                                fatercal_taxon.id_ref, taxon_ref)
+                        diff = diff + "Le taxon est valide chez fatercal mais synonyme chez Taxref. " \
+                            "Taxon référent chez Taxref: {}".format(taxon_ref)
                     else:
-                        diff = diff + "Le référent de ce taxon est différent "\
-                        "et n'existe pas dans Fatercal. CD_NOM = {}. ".format(taxref_taxon.cd_ref)
+                        diff = diff + "Le taxon est valide chez fatercal mais synonyme chez Taxref" \
+                            "et n'éxiste pas chez Fatercal. Cd_nom taxon référent chez Taxref: {}.".format(taxref_taxon.cd_ref)
+                elif fatercal_taxon.id_sup.cd_nom is not None:
+                    if fatercal_taxon.id_sup.cd_nom != taxref_taxon.cd_sup:
+                        if is_taxon_sup:
+                            taxon_sup = Taxon.objects.get(cd_nom=taxref_taxon.cd_sup)
+                            diff = diff + "Le supérieur de ce taxon est différent. "\
+                                "Supérieur chez fatercal: {}, chez Taxref {}. ".format(
+                                    fatercal_taxon.id_sup, taxon_sup)
+                        else:
+                            diff = diff + "Le supérieur de ce taxon est différent "\
+                            "et n'existe pas dans Fatercal. CD_NOM = {}. ".format(taxref_taxon.cd_sup)
+                else:
+                    diff = diff + "Le supérieur de ce taxon est différent et celui de Fatercal " \
+                        "n'existe pas chez Taxref. "
             else:
-                diff = diff + "Le référent de ce taxon est différent et celui de Fatercal " \
-                    "n'existe pas chez Taxref. "
-    
-        # We verify the rank
-        if taxref_taxon.rang != fatercal_taxon.rang.rang:
-            if rang:
-                rang = TaxrefRang.objects.get(rang=taxref_taxon.rang)
-                diff = diff + "Le rang est différent. Nouveau rang: {}. ".format(rang)
-            else:
-                diff = diff + "Le rang est différent et n'existe pas chez Fatercal. " \
-                    "Nouveau rang: {}. ".format(taxref_taxon.rang)
+                if taxref_taxon.cd_nom == taxref_taxon.cd_ref:
+                    if is_taxon_sup:
+                        taxon_sup = Taxon.objects.get(cd_nom=taxref_taxon.cd_sup)
+                        diff = diff + "Le taxon est synonyme chez fatercal mais valide chez Taxref. " \
+                            "Supérieur chez Taxref: {}. ".format(taxon_sup)
+                    else:
+                        diff = diff + "Le taxon est synonyme chez fatercal mais valide chez Taxref " \
+                            "mais le taxon supérieur n'existe pas chez Fatercal " \
+                            "Cd_nom taxon supérieur chez Taxref: {}. ".format(taxref_taxon.cd_sup)
+                elif fatercal_taxon.id_ref.cd_nom is not None:
+                    if fatercal_taxon.id_ref.cd_nom != taxref_taxon.cd_ref:
+                        if is_taxon_ref:
+                            taxon_ref = Taxon.objects.get(cd_nom=taxref_taxon.cd_ref)
+                            diff = diff + "Le référent de ce taxon est différent. " \
+                                "Référent chez fatercal: {}, chez Taxref {}. ".format(
+                                    fatercal_taxon.id_ref, taxon_ref)
+                        else:
+                            diff = diff + "Le référent de ce taxon est différent "\
+                            "et n'existe pas dans Fatercal. CD_NOM = {}. ".format(taxref_taxon.cd_ref)
+                else:
+                    diff = diff + "Le référent de ce taxon est différent et celui de Fatercal " \
+                        "n'existe pas chez Taxref. "
         
-        # We verify the lb_nom
-        if taxref_taxon.lb_nom != fatercal_taxon.lb_nom:
-            diff = diff + "Le nom du taxon est différent. Nom Chez Fatercal: {}, " \
-                "Chez taxref: {}. ".format(fatercal_taxon.lb_nom, taxref_taxon.lb_nom)
-        
-        # We verify the lb_auteur
-        if taxref_taxon.lb_auteur != fatercal_taxon.lb_auteur:
-            diff = diff + "Le nom de l'auteur de ce taxon est différent. Auteur " \
-                "Chez Fatercal: {}, Chez taxref: {}. ".format(
-                    fatercal_taxon.lb_auteur, taxref_taxon.lb_auteur)
-        
-        # We verify the habitat
-        if taxref_taxon.habitat is not None:
-            if fatercal_taxon.habitat is not None:
-                if taxref_taxon.habitat != fatercal_taxon.habitat.habitat:
+            # We verify the rank
+            if taxref_taxon.rang != fatercal_taxon.rang.rang:
+                if rang:
+                    rang = TaxrefRang.objects.get(rang=taxref_taxon.rang)
+                    diff = diff + "Le rang est différent. Nouveau rang: {}. ".format(rang)
+                else:
+                    diff = diff + "Le rang est différent et n'existe pas chez Fatercal. " \
+                        "Nouveau rang: {}. ".format(taxref_taxon.rang)
+            
+            # We verify the lb_nom
+            if taxref_taxon.lb_nom != fatercal_taxon.lb_nom:
+                diff = diff + "Le nom du taxon est différent. Nom Chez Fatercal: {}, " \
+                    "Chez taxref: {}. ".format(fatercal_taxon.lb_nom, taxref_taxon.lb_nom)
+            
+            # We verify the lb_auteur
+            if taxref_taxon.lb_auteur != fatercal_taxon.lb_auteur:
+                diff = diff + "Le nom de l'auteur de ce taxon est différent. Auteur " \
+                    "Chez Fatercal: {}, Chez taxref: {}. ".format(
+                        fatercal_taxon.lb_auteur, taxref_taxon.lb_auteur)
+            
+            # We verify the habitat
+            if taxref_taxon.habitat is not None:
+                if fatercal_taxon.habitat is not None:
+                    if taxref_taxon.habitat != fatercal_taxon.habitat.habitat:
+                        if habitat:
+                            habitat = TaxrefHabitat.objects.get(habitat=taxref_taxon.habitat)
+                            diff = diff + "L'habitat est différent. Nouvelle Habitat: {}. ".format(habitat.lb_habitat)
+                        else:
+                            diff = diff + "L'habitat est différent et n'existe pas chez Fatercal. " \
+                                "Nouvelle Habitat: {}. ".format(taxref_taxon.habitat)
+                else:
                     if habitat:
                         habitat = TaxrefHabitat.objects.get(habitat=taxref_taxon.habitat)
-                        diff = diff + "L'habitat est différent. Nouvelle Habitat: {}. ".format(habitat.lb_habitat)
+                        diff = diff + "Un habitat a été spécifié pour ce taxon. Nouvelle Habitat: {}. ".format(habitat.lb_habitat)
                     else:
-                        diff = diff + "L'habitat est différent et n'existe pas chez Fatercal. " \
-                            "Nouvelle Habitat: {}. ".format(taxref_taxon.habitat)
-            else:
-                if habitat:
-                    habitat = TaxrefHabitat.objects.get(habitat=taxref_taxon.habitat)
-                    diff = diff + "Un habitat a été spécifié pour ce taxon. Nouvelle Habitat: {}. ".format(habitat.lb_habitat)
+                        diff = diff + "Un habitat a été spécifié pour ce taxon mais il n'existe pas chez fatercal. " \
+                            "Nouvelle habitat: {}. ".format(taxref_taxon.habitat)
+            
+            # We verify the status
+            if taxref_taxon.nc is not None:
+                if fatercal_taxon.nc is not None:
+                    if taxref_taxon.nc != fatercal_taxon.nc.status:
+                        if nc:
+                            nc = TaxrefStatus.objects.get(status=taxref_taxon.nc)
+                            diff = diff + "Le status est différent. Nouveau Status: {}".format(nc.lb_status)
+                        else:
+                            diff = diff + "Le status est différent et n'existe pas chez Fatercal. " \
+                                "Nouveau Status: {}".format(taxref_taxon.nc)
                 else:
-                    diff = diff + "Un habitat a été spécifié pour ce taxon mais il n'existe pas chez fatercal. " \
-                        "Nouvelle habitat: {}. ".format(taxref_taxon.habitat)
-        
-        # We verify the status
-        if taxref_taxon.nc is not None:
-            if fatercal_taxon.nc is not None:
-                if taxref_taxon.nc != fatercal_taxon.nc.status:
                     if nc:
                         nc = TaxrefStatus.objects.get(status=taxref_taxon.nc)
-                        diff = diff + "Le status est différent. Nouveau Status: {}".format(nc.lb_status)
+                        diff = diff + "Un status a été spécifié pour ce taxon. Nouveau Status: {}. ".format(nc.lb_status)
                     else:
-                        diff = diff + "Le status est différent et n'existe pas chez Fatercal. " \
-                            "Nouveau Status: {}".format(taxref_taxon.nc)
+                        diff = diff + "Un status a été spécifié pour ce taxon mais il n'existe pas chez fatercal. " \
+                            "Nouveau Status: {}. ".format(taxref_taxon.nc)
+            # All info in a dict if there's a diff
+            if taxref_taxon.lb_auteur is None:
+                nom_complet = taxref_taxon.lb_nom
             else:
-                if nc:
-                    nc = TaxrefStatus.objects.get(status=taxref_taxon.nc)
-                    diff = diff + "Un status a été spécifié pour ce taxon. Nouveau Status: {}. ".format(nc.lb_status)
-                else:
-                    diff = diff + "Un status a été spécifié pour ce taxon mais il n'existe pas chez fatercal. " \
-                        "Nouveau Status: {}. ".format(taxref_taxon.nc)
-        # All info in a dict if there's a diff
-        if diff != "":
-            dict_taxref_taxon_diff = {
-                'taxon_name': fatercal_taxon,
-                'cd_nom': str(fatercal_taxon.cd_nom),
-                'diff': diff
-            }
-            list_dict.append(dict_taxref_taxon_diff)
-    return list_dict, taxref_version
+                nom_complet = taxref_taxon.lb_nom + " " + taxref_taxon.lb_auteur
+            if diff != "":
+                taxref_taxon.nom_complet = nom_complet + ": " + diff
+            else:
+                taxref_taxon.nom_complet = nom_complet + ": Aucune différence " \
+                    "mais des identifiant venant de Taxref était manquant."
+            taxref_taxon.save()
+    return empty, taxref_version, count
 
 def update_taxon_from_taxref(data, taxref_version, user):
     """Update taxon based on ther user's choice
@@ -1244,6 +1254,190 @@ def update_taxon_from_taxref(data, taxref_version, user):
         fatercal_taxon.save()
     list_taxon.delete()
 
+def get_taxref_insert(rang):
+    """ Get the new taxon from the table taxref_update
+    
+    Arguments:
+        rang {string} -- A string which contains the rank to validate
+    
+    Returns:
+        [List, List, Integer] -- Return two list of dict and the lastest version of taxref 
+    """
+    nb_taxon = 0
+    taxref_version = TaxrefUpdate.objects.aggregate(Max('taxrefversion'))
+    exist = TaxrefUpdate.objects.filter(
+        Q(taxrefversion=taxref_version['taxrefversion__max']) &
+        Q(taxon_id=None)).exists()
+    if exist:
+        exist_rang = TaxrefUpdate.objects.filter(
+            Q(taxrefversion=taxref_version['taxrefversion__max']) &
+            Q(taxon_id=None) & Q(rang=rang)).exists()
+        if exist_rang or rang == 'other':
+            if rang == 'other':
+                list_taxon_to_insert = TaxrefUpdate.objects.filter(
+                    Q(taxrefversion=taxref_version['taxrefversion__max']) &
+                    Q(taxon_id=None) & ~Q(rang__in=list_hierarchy))
+            else:
+                list_taxon_to_insert = TaxrefUpdate.objects.filter(
+                    Q(taxrefversion=taxref_version['taxrefversion__max']) &
+                    Q(taxon_id=None) & Q(rang=rang))
+            nb_taxon = list_taxon_to_insert.count()
+            for taxon in list_taxon_to_insert.iterator():
+                is_taxon_sup = Taxon.objects.filter(cd_nom=taxon.cd_sup).exists()
+                is_taxon_ref = Taxon.objects.filter(cd_nom=taxon.cd_ref).exists()
+                rang = TaxrefRang.objects.filter(rang=taxon.rang).exists()
+                habitat = TaxrefHabitat.objects.filter(habitat=taxon.habitat).exists()
+                nc = TaxrefStatus.objects.filter(status=taxon.nc).exists()
+                taxon_existent = ""
+                if not is_taxon_sup and taxon.cd_sup is not None and taxon.cd_nom == taxon.cd_ref:
+                    taxon_existent = taxon_existent + " Le supérieur n'existe pas chez Fatercal. "\
+                        "Cd_nom Taxon supérieur: {}.".format(taxon.cd_sup)
+                if not is_taxon_ref and taxon.cd_ref is not None and taxon.cd_nom != taxon.cd_ref:
+                    taxon_existent = taxon_existent + " Le référent n'existe pas chez Fatercal. "\
+                        "Cd_nom Taxon référent: {}.".format(taxon.cd_ref)
+                if not rang and taxon.rang is not None:
+                    taxon_existent = taxon_existent + " Le rang n'existe pas chez Fatercal "\
+                        "Référence rang: {}.".format(taxon.rang)
+                if not habitat and taxon.habitat is not None:
+                    taxon_existent = taxon_existent + " L'habitat n'existe pas chez Fatercal. "\
+                        "Référence habitat: {}.".format(taxon.habitat)
+                if not nc and taxon.nc is not None:
+                    taxon_existent = taxon_existent + " Le statut n'existe pas chez Fatercal "\
+                    "Référence statut: {}.".format(taxon.nc)
+                # All info in a dict if the have an attribute that doesn't exist in fatercal
+                if taxon.lb_auteur is None:
+                    nom_complet = taxon.lb_nom
+                else:
+                    nom_complet = taxon.lb_nom + " " + taxon.lb_auteur
+                if taxon_existent != "":
+                    taxon.nom_complet = nom_complet + ": " + taxon_existent
+                else:
+                    taxon.nom_complet = nom_complet
+                taxon.save()
+    else:
+        exist_rang = False
+    return exist, exist_rang, nb_taxon, taxref_version
+
+def insert_taxon_from_taxref(data, taxref_version, user):
+    """Insert taxon based on ther user's choice
+    
+    Arguments:
+        data {dict} -- Dict Containing time and taxon to insert
+        taxref_version {integer} -- the actual version of version from which we get the data
+        user {user} -- Type User (See Django Doc)
+    
+    Returns:
+        [List or None] -- Return a list of taxon not insert or None
+    """
+    list_not_insert = []
+    if data['choices']:
+        for taxon in data['choices']:
+            if TaxrefRang.objects.filter(rang=taxon.rang).exists() and taxon.rang is not None:
+                rang = TaxrefRang.objects.get(rang=taxon.rang)
+                if Taxon.objects.filter(cd_nom=taxon.cd_sup).exists() and taxon.cd_sup is not None:
+                    id_sup = Taxon.objects.get(cd_nom=taxon.cd_sup)
+                else:
+                    id_sup = None
+                if TaxrefHabitat.objects.filter(habitat=taxon.habitat).exists() and taxon.habitat is not None:
+                    habitat = TaxrefHabitat.objects.get(habitat=taxon.habitat)
+                else:
+                    habitat = None
+                if TaxrefStatus.objects.filter(status=taxon.nc).exists() and taxon.nc is not None:
+                    nc = TaxrefStatus.objects.get(status=taxon.nc)
+                else:
+                    nc = None
+                if taxon.lb_auteur is None:
+                    lb_auteur = None
+                    nom_complet = taxon.lb_nom
+                else:
+                    lb_auteur = taxon.lb_auteur
+                    nom_complet = taxon.lb_nom + lb_auteur
+                if Taxon.objects.filter(cd_nom=taxon.cd_ref).exists() and taxon.cd_ref is not None:
+                    id_ref = Taxon.objects.get(cd_nom=taxon.cd_ref)
+                else:
+                    id_ref = None
+                fatercal_taxon = Taxon(lb_nom=taxon.lb_nom, lb_auteur=lb_auteur,
+                    nom_complet=nom_complet, id_ref=id_ref, id_sup=id_sup,
+                    cd_nom=taxon.cd_nom, cd_ref=taxon.cd_ref, cd_sup=taxon.cd_sup,
+                    rang=rang, habitat=habitat, nc=nc)
+                fatercal_taxon.taxrefversion = taxref_version['taxrefversion__max']
+                fatercal_taxon.source = "Taxref"
+                fatercal_taxon.utilisateur = user.__str__()
+                fatercal_taxon.last_update = data['time']
+                fatercal_taxon.save()
+                fatercal_taxon.id_ref = fatercal_taxon
+                fatercal_taxon.save()
+            else:
+                list_not_insert.append(
+                    {'name': taxon.lb_nom + ":", 'info': "Rang taxon: {}".format(taxon.rang)})
+            taxon.delete()
+    list_taxon = TaxrefUpdate.objects.filter(rang=list_hierarchy[data['count']])
+    list_taxon.delete()
+    return list_not_insert
+
+def delete_not_choose_taxref_insert():
+    """[summary]
+    """
+    taxref_version = get_last_taxref_version()
+    # We delete all TaxrefUpdate object new taxon not selected by user
+    list_taxon = TaxrefUpdate.objects.filter(
+            Q(taxrefversion=taxref_version['taxrefversion__max'])
+            & Q(taxon_id=None)
+        )
+    list_taxon.delete()
+
+def get_last_taxref_version():
+    """[summary]
+    
+    Returns:
+        [type] -- [description]
+    """
+    taxref_version = TaxrefUpdate.objects.aggregate(Max('taxrefversion'))
+    return taxref_version
+
+def next_taxref_insert_page(form, error):
+    """[summary]
+    
+    Arguments:
+        form {[type]} -- [description]
+        error {[type]} -- [description]
+    
+    Returns:
+        [type] -- [description]
+    """
+    if error:
+        template = loader.get_template('fatercal/taxon/update_taxon.html')
+        context = {
+                'error': error,
+                'goal': 'insert'
+        }
+    else:
+        data = form.cleaned_data
+        if data['count'] > -1:
+            if data['count'] + 1 < len(list_hierarchy):
+                rang = list_hierarchy[data['count'] + 1]
+                exist, exist_rang, nb_taxon, taxref_version = get_taxref_insert(rang)
+                rang = TaxrefRang.objects.get(rang=rang).lb_rang
+            else:
+                rang = 'other'
+                exist, exist_rang, nb_taxon, taxref_version = get_taxref_insert(rang)
+                data['count'] = -2
+            form = ChooseTaxonToInsert(
+                initial={
+                    'taxrefversion': int(taxref_version['taxrefversion__max']),
+                    'time': data['time'],
+                    'count':  data['count'] + 1,
+                    'rang': list_hierarchy[data['count'] + 1]
+                }
+            )
+            context = {'form': form, 'exist': exist,'exist_rang': exist_rang,
+                'rang': rang, 'nb_taxon': nb_taxon}
+            template = loader.get_template('fatercal/taxon/choose_taxon_insert.html')
+        else:
+            template = loader.get_template('fatercal/taxon/update_taxon.html')
+            context = {'error': error, 'goal': 'insert'}
+    return template, context
+
 def is_admin(user):
     """
     Verify if the user is in the group Admin
@@ -1257,6 +1451,8 @@ def is_admin(user):
 
 
 def create_db_view_test():
+    """For testing purpose
+    """
     with connection.cursor() as cursor:
         cursor.execute(open(os.getcwd() + "/sql_script/create_type_taxref_data.sql", "r").read())
         cursor.execute(open(os.getcwd() + "/sql_script/function_get_taxon_to_taxref.sql", "r").read())
