@@ -265,13 +265,15 @@ def filter_list_taxon(conn, list_taxon, taxref_version):
         taxon_fatercal = dict_curr.fetchone()
         # Taxon with no id will be inserted as new taxon
         if taxon_fatercal is None:
-            list_taxon_update.append((
-                None, taxon_taxref['id'], taxon_taxref['parentId'],
-                taxon_taxref['referenceId'], taxon_taxref['rankId'],
-                taxon_taxref['scientificName'], taxon_taxref['authority'],
-                taxon_taxref['fullName'], taxon_taxref['habitat'],
-                taxon_taxref['nc'], datetime.now(), taxref_version)
-            )
+            insert = filter_insert_taxon(taxon_taxref)
+            if insert:
+                list_taxon_update.append((
+                    None, taxon_taxref['id'], taxon_taxref['parentId'],
+                    taxon_taxref['referenceId'], taxon_taxref['rankId'],
+                    taxon_taxref['scientificName'], taxon_taxref['authority'],
+                    taxon_taxref['fullName'], taxon_taxref['habitat'],
+                    taxon_taxref['nc'], datetime.now(), taxref_version)
+                )
         # Taxon with an existant id will be updated if there's a diff
         else:
             taxon_diff = create_tuple_taxref_update(
@@ -280,6 +282,50 @@ def filter_list_taxon(conn, list_taxon, taxref_version):
                 list_taxon_update.append(taxon_diff)
     dict_curr.close()
     return list_taxon_update
+
+def filter_insert_taxon(taxon_taxref):
+    """Detect the taxon which are not meant to be in Fatercal
+    
+    Arguments:
+        taxon_taxref {Dict} -- A dict containing info on a taxon
+    
+    Returns:
+        [Boolean] -- return if the taxon can be insert in Fatercal or not
+    """
+    insert = True
+    if taxon_taxref['phylumName'] == 'Echinodermata':
+        insert = False
+    if taxon_taxref['phylumName'] == 'Cnidaria':
+        insert = False
+    if taxon_taxref['phylumName'] == 'Annelida':
+        if taxon_taxref['className'] != 'Clitellata':
+            insert = False
+    if taxon_taxref['phylumName'] == 'Mollusca':
+        if taxon_taxref['className'] == 'Gastropoda':
+            if taxon_taxref['orderName'] != 'Stylommatophora' and taxon_taxref['familyName'] != 'Assimineidae' \
+                and taxon_taxref['familyName'] != 'Hydrobiidae' and taxon_taxref['familyName'] != 'Tateidae':
+                insert = False
+        else:
+            insert = False
+    if taxon_taxref['className'] == 'Malacostraca':
+        if taxon_taxref['orderName'] == 'Amphipoda':
+            if taxon_taxref['familyName'] != 'Talitridae':
+                insert = False
+        elif taxon_taxref['orderName'] == 'Isopoda':
+            if taxon_taxref['familyName'] != 'Armadillidae' and taxon_taxref['familyName'] != 'Philosciidae' \
+                and taxon_taxref['familyName'] != 'Oniscidae' and taxon_taxref['familyName'] != 'Ligiidae' \
+                and taxon_taxref['familyName'] != 'Trachelipodidae' and taxon_taxref['familyName'] != 'Porcellionidae':
+                insert = False
+        elif taxon_taxref['orderName'] == 'Decapoda':
+            if taxon_taxref['familyName'] != 'Goneplacidae' and taxon_taxref['familyName'] != 'Hymenosomatidae' \
+                and taxon_taxref['familyName'] != 'Grapsidae'and taxon_taxref['familyName'] != 'Alpheidae' \
+                and taxon_taxref['familyName'] != 'Atyidae' and taxon_taxref['familyName'] != 'Palaemonidae':
+                insert = False
+        else:
+            insert = False
+    if taxon_taxref['className'] == 'Mammalia':
+        insert = False
+    return insert
 
 def seek_deleted_taxon_in_taxref(conn, list_taxon_taxref):
     """ Delete cd_nom reference in Fatercal taxon when Taxref delete these taxon

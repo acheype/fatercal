@@ -128,7 +128,7 @@ class TestFunction(unittest.TestCase):
         try:
             is_diff, taxref_version = is_version_different(conn)
         except psycopg2.DatabaseError as e:
-            print('Catch error on purpose')
+            pass
         # We set an old version so it the API return the next version after this one
         curr.execute(INSERT_TAXON, ['taxon', 'GN', 126, 1])
         taxon_id = curr.fetchone()[0]
@@ -182,11 +182,13 @@ class TestFunction(unittest.TestCase):
     def test_filter_list_taxon(self):
         conn = psycopg2.connect(**self.postgresql.dsn())
         list_taxon = [
-            {'id': 1, 'parentId': 2, 'referenceId': 3,
+            {'id': 1, 'phylumName': '', 'className': '',
+            'parentId': 2, 'referenceId': 3,
             'rankId': 'GN', 'scientificName': 'taxon',
             'authority': 'auteur', 'fullName': '',
             'habitat': '5', 'nc': None},
-            {'id': 4, 'parentId': 5, 'referenceId': 6,
+            {'id': 4, 'phylumName': '', 'className': '',
+            'parentId': 5, 'referenceId': 6,
             'rankId': 'GN', 'scientificName': 'taxon',
             'authority': 'auteur', 'fullName': '',
             'habitat': '5', 'nc': None}
@@ -203,6 +205,135 @@ class TestFunction(unittest.TestCase):
             [None, 4, 5, 6, 'GN', 'taxon', 'auteur', '', '5', None, None, None]
         ]
         self.assertEqual(list_taxon_update_expected, list_taxon_update)
+
+    def test_filter_insert_taxon(self):
+        taxon_taxref = {
+            'phylumName': 'good', 'className': 'good',
+            'orderName': '', 'familyName': ''
+        }
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(True, insert)
+        
+        taxon_taxref['phylumName'] = 'Echinodermata'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(False, insert)
+        
+        taxon_taxref['phylumName'] = 'Cnidaria'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(False, insert)
+        
+        taxon_taxref['phylumName'] = 'Annelida'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(False, insert)
+        
+        taxon_taxref['phylumName'] = 'Annelida'
+        taxon_taxref['className'] = 'Clitellata'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(True, insert)
+        
+        taxon_taxref['phylumName'] = 'Mollusca'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(False, insert)
+
+        taxon_taxref['className'] = 'Gastropoda'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(False, insert)
+
+        taxon_taxref['orderName'] = 'Stylommatophora'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(True, insert)
+
+        taxon_taxref['orderName'] = ''
+        taxon_taxref['familyName'] = 'Assimineidae'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(True, insert)
+
+        taxon_taxref['familyName'] = 'Hydrobiidae'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(True, insert)
+
+        taxon_taxref['familyName'] = 'Tateidae'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(True, insert)
+
+        taxon_taxref['phylumName'] = ''
+        taxon_taxref['className'] = 'Malacostraca'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(False, insert)
+
+        taxon_taxref['orderName'] = 'Amphipoda'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(False, insert)
+
+        taxon_taxref['familyName'] = 'Talitridae'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(True, insert)
+
+        taxon_taxref['familyName'] = ''
+        taxon_taxref['orderName'] = 'Isopoda'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(False, insert)
+
+        taxon_taxref['familyName'] = 'Armadillidae'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(True, insert)
+
+        taxon_taxref['familyName'] = 'Philosciidae'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(True, insert)
+
+        taxon_taxref['familyName'] = 'Oniscidae'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(True, insert)
+
+        taxon_taxref['familyName'] = 'Ligiidae'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(True, insert)
+
+        taxon_taxref['familyName'] = 'Trachelipodidae'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(True, insert)
+
+        taxon_taxref['familyName'] = 'Porcellionidae'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(True, insert)
+
+        taxon_taxref['familyName'] = ''
+        taxon_taxref['orderName'] = 'Decapoda'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(False, insert)
+
+        taxon_taxref['familyName'] = 'Goneplacidae'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(True, insert)
+
+        taxon_taxref['familyName'] = 'Hymenosomatidae'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(True, insert)
+
+        taxon_taxref['familyName'] = 'Grapsidae'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(True, insert)
+
+        taxon_taxref['familyName'] = 'Alpheidae'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(True, insert)
+
+        taxon_taxref['familyName'] = 'Atyidae'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(True, insert)
+
+        taxon_taxref['familyName'] = 'Palaemonidae'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(True, insert)
+
+        taxon_taxref['phylumName'] = ''
+        taxon_taxref['orderName'] = ''
+        taxon_taxref['familyName'] = ''
+        taxon_taxref['className'] = 'Mammalia'
+        insert = filter_insert_taxon(taxon_taxref)
+        self.assertEqual(False, insert)
+
 
     def test_seek_deleted_taxon_in_taxref(self):
         conn = psycopg2.connect(**self.postgresql.dsn())
