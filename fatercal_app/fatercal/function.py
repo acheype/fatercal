@@ -1418,18 +1418,23 @@ def next_taxref_insert_page(form, error):
                 rang = list_hierarchy[data['count'] + 1]
                 exist, exist_rang, nb_taxon, taxref_version = get_taxref_insert(rang)
                 rang = TaxrefRang.objects.get(rang=rang).lb_rang
-            else:
-                rang = 'other'
-                exist, exist_rang, nb_taxon, taxref_version = get_taxref_insert(rang)
-                data['count'] = -2
-            form = ChooseTaxonToInsert(
-                initial={
+                initial = {
                     'taxrefversion': int(taxref_version['taxrefversion__max']),
                     'time': data['time'],
                     'count':  data['count'] + 1,
                     'rang': list_hierarchy[data['count'] + 1]
                 }
-            )
+            else:
+                rang = 'other'
+                exist, exist_rang, nb_taxon, taxref_version = get_taxref_insert(rang)
+                data['count'] = -2
+                initial = {
+                    'taxrefversion': int(taxref_version['taxrefversion__max']),
+                    'time': data['time'],
+                    'count':  data['count'],
+                    'rang': rang
+                }
+            form = ChooseTaxonToInsert(initial = initial)
             context = {'form': form, 'exist': exist,'exist_rang': exist_rang,
                 'rang': rang, 'nb_taxon': nb_taxon}
             template = loader.get_template('fatercal/taxon/choose_taxon_insert.html')
