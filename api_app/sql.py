@@ -2,10 +2,9 @@
 Sql query to have the latest date when we send mail to taxref
 """
 GET_LAST_SEND_DATE = """
-SELECT *
+SELECT MAX(date) as date 
 FROM last_update
-WHERE date = (SELECT MAX(date) FROM last_update)
-AND type LIKE 'IN';
+WHERE type = 'IN'
 """
 
 """
