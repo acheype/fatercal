@@ -74,7 +74,7 @@ def create_csv_format_taxref(conn, list_id):
         'name' : "taxref_update_fatercal.csv"
         }
     with open(filee['location'], 'w') as csv_file:
-        writer = csv.writer(csv_file, delimiter=";", lineterminator='\n')
+        writer = csv.writer(csv_file, delimiter=";", lineterminator='\n', encoding="utf-8")
         writer.writerow(
             ('REGNE', 'PHYLUM', 'CLASSE', 'ORDRE', 'FAMILLE', 'GROUP1_INPN',
              'GROUP2_INPN', 'ID', 'ID_REF', 'ID_SUP', 'CD_NOM', 'CD_TAXSUP',
