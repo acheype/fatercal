@@ -87,14 +87,17 @@ class ChooseTaxonToInsert(forms.Form):
                 if kwargs['initial']['rang'] == None:
                     self.fields['choices'] = field
                 else:
-                    self.fields['choices'] = forms.ModelMultipleChoiceField(
-                        queryset=TaxrefUpdate.objects.filter(
-                            Q(taxrefversion=taxref_version['taxrefversion__max']) 
-                            & Q(taxon_id=None) & Q(rang=kwargs['initial']['rang'])
-                        ),
-                        required=False,
-                        widget=forms.CheckboxSelectMultiple
-                    )
+                    if kwargs['initial']['rang'] == 'other':
+                        self.fields['choices'] = field
+                    else:
+                        self.fields['choices'] = forms.ModelMultipleChoiceField(
+                            queryset=TaxrefUpdate.objects.filter(
+                                Q(taxrefversion=taxref_version['taxrefversion__max']) 
+                                & Q(taxon_id=None) & Q(rang=kwargs['initial']['rang'])
+                            ),
+                            required=False,
+                            widget=forms.CheckboxSelectMultiple
+                        )
             else:
                 self.fields['choices'] = field
         else: 
