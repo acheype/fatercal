@@ -32,7 +32,8 @@ SELECT t.id
 FROM taxon as t, historique_taxon as ht
 WHERE t.cd_nom is not NULL
 AND t.id = ht.id
-AND ht.last_update > %s;
+AND ht.last_update > %s
+AND source = 'Fatercal';
 """
 
 

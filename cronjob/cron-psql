@@ -2,7 +2,3 @@ PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/u
 # crontab running everyday at 22:00
 * 22 * * * root PGPASSWORD=$POSTGRES_PASSWORD psql -h fatercal.ird.nc -U $POSTGRES_DB -c "REFRESH MATERIALIZED VIEW taxref_export;"
 00 12 10 12 * root curl http://fatercal.ird.nc:81/api/update_from_taxref
-00 22 1 1 * root curl http://fatercal.ird.nc:81/api/update_to_taxref
-00 22 1 4 * root curl http://fatercal.ird.nc:81/api/update_to_taxref
-00 22 1 7 * root curl http://fatercal.ird.nc:81/api/update_to_taxref
-00 22 1 10 * root curl http://fatercal.ird.nc:81/api/update_to_taxref
