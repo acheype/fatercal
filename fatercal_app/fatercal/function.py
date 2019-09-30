@@ -1043,8 +1043,8 @@ def get_taxref_update():
         for taxref_taxon in list_taxon_to_update.iterator():
             diff = ""
             fatercal_taxon = Taxon.objects.get(id=taxref_taxon.taxon_id_id)
-            is_taxon_sup = Taxon.objects.filter(cd_nom=taxref_taxon.cd_sup).exists()
-            is_taxon_ref = Taxon.objects.filter(cd_nom=taxref_taxon.cd_ref).exists()
+            is_taxon_sup = Taxon.objects.filter(Q(cd_nom=taxref_taxon.cd_sup) & ~Q(cd_nom=None)).exists()
+            is_taxon_ref = Taxon.objects.filter(Q(cd_nom=taxref_taxon.cd_ref) & ~Q(cd_nom=None)).exists()
             rang = TaxrefRang.objects.filter(rang=taxref_taxon.rang).exists()
             habitat = TaxrefHabitat.objects.filter(habitat=taxref_taxon.habitat).exists()
             nc = TaxrefStatus.objects.filter(status=taxref_taxon.nc).exists()
@@ -1215,7 +1215,7 @@ def update_taxon_from_taxref(data, taxref_version, user):
             if taxon.cd_ref is not None:
                 if fatercal_taxon.cd_ref != taxon.cd_ref:
                     fatercal_taxon.cd_ref = taxon.cd_ref
-                    if Taxon.objects.filter(cd_nom=taxon.cd_ref).exists():
+                    if Taxon.objects.filter(Q(cd_nom=taxref_taxon.cd_ref) & ~Q(cd_nom=None)).exists():
                         taxon_ref = Taxon.objects.get(cd_nom=taxon.cd_ref)
                         fatercal_taxon.id_ref = taxon_ref
                         # If a valid taxon become a synonymous
@@ -1230,7 +1230,7 @@ def update_taxon_from_taxref(data, taxref_version, user):
             if taxon.cd_sup is not None:
                 if fatercal_taxon.cd_sup != taxon.cd_sup:
                     fatercal_taxon.cd_sup = taxon.cd_sup
-                    if Taxon.objects.filter(cd_nom=taxon.cd_sup).exists():
+                    if Taxon.objects.filter(Q(cd_nom=taxref_taxon.cd_sup) & ~Q(cd_nom=None)).exists():
                         taxon_sup = Taxon.objects.get(cd_nom=taxon.cd_sup)
                         fatercal_taxon.id_sup = taxon_sup
             fatercal_taxon.taxrefversion = taxref_version['taxrefversion__max']

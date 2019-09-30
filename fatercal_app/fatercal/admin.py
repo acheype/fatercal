@@ -221,6 +221,8 @@ class TaxonModify(admin.ModelAdmin):
         if obj.id_ref is None:
             obj.id_ref = obj
             obj.save()
+        if request.user is not None:
+            obj.utilisateur = request.user.__str__()
         obj.source = 'Fatercal'
         obj.last_update = datetime.datetime.now()
         obj.save()
