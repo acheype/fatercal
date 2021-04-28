@@ -42,7 +42,7 @@ local.properties
 ######################
 # Intellij
 ######################
-.idea/**
+.idea
 *.iml
 *.iws
 *.ipr
@@ -90,3 +90,10 @@ Desktop.ini
 *.*~
 *~
 .merge_file*
+
+######################
+# Environment files
+######################
+fatercal-api.env
+fatercal-db.env
+fatercal-web.env
