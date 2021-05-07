@@ -1,6 +1,12 @@
-from django.urls import path, re_path
-
+from django.urls import path, re_path, include
+from rest_framework import routers
 from . import views
+
+api_router = routers.DefaultRouter()
+api_router.register(r'taxons', views.TaxonViewSet)
+api_router.register(r'rangs', views.TaxrefRangViewSet)
+api_router.register(r'habitats', views.TaxrefHabitatViewSet)
+api_router.register(r'status', views.TaxrefStatusViewSet)
 
 urlpatterns = [
     re_path(r'^change_ref/(?P<id_taxon>[0-9]+)/$', views.change_taxon_ref, name='change a taxon referent'),
@@ -17,5 +23,7 @@ urlpatterns = [
     path('map_sample/', views.map_sample, name='Map Sample'),
     path('update_map/', views.update_map, name='Update Map'),
     path('update_from_taxref/', views.update_from_taxref, name='Update from Taxref'),
-    path('insert_from_taxref/', views.insert_from_taxref, name='Insert from Taxref')
+    path('insert_from_taxref/', views.insert_from_taxref, name='Insert from Taxref'),
+    path('api/', include(api_router.urls)),
+    path('api/search/', views.TaxonSearchViewSet.as_view()),
 ]

@@ -55,13 +55,13 @@ class UploadFileCsv(forms.Form):
 
 class ChooseTaxonToUpdate(forms.Form):
     time = forms.DateTimeField(widget=forms.HiddenInput())
-    taxrefversion = forms.IntegerField(widget=forms.HiddenInput())
+    taxref_version = forms.IntegerField(widget=forms.HiddenInput())
     def __init__(self, *args, **kwargs):
         super(ChooseTaxonToUpdate, self).__init__(*args, **kwargs)
-        taxref_version = TaxrefUpdate.objects.aggregate(Max('taxrefversion'))
+        taxref_version = TaxrefUpdate.objects.aggregate(Max('taxref_version'))
         self.fields['choices'] = forms.ModelMultipleChoiceField(
             queryset=TaxrefUpdate.objects.filter(
-                Q(taxrefversion=taxref_version['taxrefversion__max']) 
+                Q(taxref_version=taxref_version['taxref_version__max'])
                 & ~Q(taxon_id=None)
             ),
             required=False,
@@ -70,13 +70,13 @@ class ChooseTaxonToUpdate(forms.Form):
 class ChooseTaxonToInsert(forms.Form):
     time = forms.DateTimeField(widget=forms.HiddenInput())
     count = forms.IntegerField(widget=forms.HiddenInput())
-    taxrefversion = forms.IntegerField(widget=forms.HiddenInput())
+    taxref_version = forms.IntegerField(widget=forms.HiddenInput())
     def __init__(self, *args, **kwargs):
         super(ChooseTaxonToInsert, self).__init__(*args, **kwargs)
-        taxref_version = TaxrefUpdate.objects.aggregate(Max('taxrefversion'))
+        taxref_version = TaxrefUpdate.objects.aggregate(Max('taxref_version'))
         field = forms.ModelMultipleChoiceField(
                     queryset=TaxrefUpdate.objects.filter(
-                        Q(taxrefversion=taxref_version['taxrefversion__max']) 
+                        Q(taxref_version=taxref_version['taxref_version__max'])
                         & Q(taxon_id=None) & ~Q(rang__in=list_hierarchy)
                     ),
                     required=False,
@@ -92,7 +92,7 @@ class ChooseTaxonToInsert(forms.Form):
                     else:
                         self.fields['choices'] = forms.ModelMultipleChoiceField(
                             queryset=TaxrefUpdate.objects.filter(
-                                Q(taxrefversion=taxref_version['taxrefversion__max']) 
+                                Q(taxref_version=taxref_version['taxref_version__max'])
                                 & Q(taxon_id=None) & Q(rang=kwargs['initial']['rang'])
                             ),
                             required=False,

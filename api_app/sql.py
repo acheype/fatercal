@@ -79,7 +79,7 @@ WHERE cd_nom is Null;
 Sql query to have the latest version of taxref we register in the db
 """
 GET_VERSION_TAXREF_UPDATE = """
-SELECT MAX(taxrefversion)
+SELECT MAX(taxref_version)
 FROM taxref_update;
 """
 
@@ -88,7 +88,7 @@ Sql query to have the latest version of taxref in the table taxon
 we register in the db
 """
 GET_VERSION_TAXREF_TAXON = """
-SELECT MAX(taxrefversion)
+SELECT MAX(taxref_version)
 FROM taxon;
 """
 
@@ -98,7 +98,7 @@ Sql query to insert the taxon from taxref with their new data
 INSERT_INTO_TAXREF_UPDATE = """
 INSERT INTO taxref_update (taxon_id, cd_nom, cd_sup,
 cd_ref, rang, lb_nom, lb_auteur, nom_complet, habitat,
-nc, date, taxrefversion)
+nc, date, taxref_version)
 VALUES %s;
 """
 
@@ -134,11 +134,16 @@ CREATE TABLE last_update(
 
 CREATE_TABLE_HISTORIQUE_TAXON = """
 CREATE TABLE historique_taxon(
-    id integer, cd_nom integer, cd_ref integer, cd_sup integer,
+    id integer, 
+    cd_nom integer, 
+    cd_ref integer, 
+    cd_sup integer,
     lb_nom character varying(250) NOT NULL, lb_auteur character varying(250),
     nom_complet character varying(250), grande_terre boolean,
-    iles_loyautee boolean, autre boolean, territoire_fr boolean,
-    remarque text, sources text, id_espece integer, reference_description text,
+    iles_loyaute boolean, autre boolean, territoire_fr boolean,
+    remarque text, sources text, 
+    id_ancienne_bd integer,
+    reference_description text,
     habitat smallint, id_ref integer, id_sup integer, nc character varying(4),
     rang character varying(4), last_update timestamp without time zone,
     type_modification character varying(250), champ_modifie character varying(250),
@@ -149,15 +154,26 @@ CREATE TABLE historique_taxon(
 CREATE_TABLE_TAXON = """
 CREATE TABLE taxon(
     id serial NOT NULL PRIMARY KEY,
-    cd_nom integer, cd_ref integer, cd_sup integer,
-    lb_nom character varying(250) NOT NULL, lb_auteur character varying(250),
-    nom_complet character varying(250), grande_terre boolean,
-    iles_loyautee boolean, autre boolean, territoire_fr boolean,
-    remarque text, sources text, id_espece integer, reference_description text,
-    habitat smallint, id_ref integer, id_sup integer, nc character varying(4),
+    cd_nom integer, 
+    cd_ref integer, cd_sup integer,
+    lb_nom character varying(250) NOT NULL,
+    lb_auteur character varying(250),
+    nom_complet character varying(250),
+    grande_terre boolean,
+    iles_loyaute boolean,
+    autre boolean,
+    territoire_fr boolean,
+    remarque text,
+    sources text,
+    id_ancienne_bd integer,
+    reference_description text,
+    habitat smallint,
+    id_ref integer,
+    id_sup integer,
+    nc character varying(4),
     rang character varying(4) NOT NULL, utilisateur character varying(250),
     last_update timestamp without time zone, source character varying(250),
-    taxrefversion integer
+    taxref_version integer
 )
 """
 
@@ -175,7 +191,7 @@ CREATE TABLE public.taxref_update(
     habitat smallint,
     nc character varying(4),
     date timestamp without time zone,
-    taxrefversion integer,
+    taxref_version integer,
     CONSTRAINT taxref_update_pkey PRIMARY KEY (id),
     CONSTRAINT update_taxref_taxon_id__taxon_id FOREIGN KEY (taxon_id)
       REFERENCES public.taxon (id) MATCH SIMPLE
@@ -196,7 +212,7 @@ CREATE TYPE public.taxref_data AS (
     nom_valide character varying(100), nom_vern character varying(100),
     nom_vern_eng character varying(100), habitat character varying(100),
     nc character varying(4), grande_terre character varying(50),
-    iles_loyautee character varying(50), autre character varying(50),
+    iles_loyaute character varying(50), autre character varying(50),
     non_present character varying(4), cd_ref_diff character varying(4),
     cd_sup_diff character varying(4), validity_diff character varying(4)
 );
@@ -279,10 +295,10 @@ ELSE IF taxon_t.grande_terre is FALSE THEN
 END IF;
 END IF;
 
-IF taxon_t.iles_loyautee is TRUE THEN
-    result.iles_loyautee = 'Présent';
-ELSE IF taxon_t.iles_loyautee is FALSE THEN
-    result.iles_loyautee= 'Non Présent';
+IF taxon_t.iles_loyaute is TRUE THEN
+    result.iles_loyaute = 'Présent';
+ELSE IF taxon_t.iles_loyaute is FALSE THEN
+    result.iles_loyaute= 'Non Présent';
 END IF;
 END IF;
 
@@ -320,7 +336,7 @@ VALUES (%s, %s, %s)
 """
 
 INSERT_TAXON = """
-INSERT INTO taxon(lb_nom, rang, cd_nom, taxrefversion)
+INSERT INTO taxon(lb_nom, rang, cd_nom, taxref_version)
 VALUES (%s, %s, %s, %s)
 RETURNING id
 """

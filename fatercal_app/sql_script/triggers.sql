@@ -21,8 +21,8 @@ $BODY$
     BEGIN
         INSERT INTO historique_taxon VALUES
         (OLD.id, OLD.cd_nom, OLD.cd_ref, OLD.cd_sup, OLD.lb_nom, OLD.lb_auteur,
-            OLD.nom_complet, OLD.grande_terre, OLD.iles_loyautee, OLD.autre, OLD.territoire_fr,
-            OLD.remarque, OLD.sources, OLD.id_espece, OLD.reference_description, OLD.habitat,
+            OLD.nom_complet, OLD.grande_terre, OLD.iles_loyaute, OLD.autre, OLD.territoire_fr,
+            OLD.remarque, OLD.sources, OLD.id_ancienne_bd, OLD.reference_description, OLD.habitat,
             OLD.id_ref, OLD.id_sup, OLD.nc, OLD.rang, NOW() at time zone 'Pacific/Noumea',
             'Delete', '', OLD.utilisateur, OLD.source);
 
@@ -55,8 +55,8 @@ $BODY$
     BEGIN
         INSERT INTO historique_taxon VALUES
         (NEW.id, NEW.cd_nom, NEW.cd_ref, NEW.cd_sup, NEW.lb_nom, NEW.lb_auteur,
-            NEW.nom_complet, NEW.grande_terre, NEW.iles_loyautee, NEW.autre, NEW.territoire_fr,
-            NEW.remarque, NEW.sources, NEW.id_espece, NEW.reference_description, NEW.habitat,
+            NEW.nom_complet, NEW.grande_terre, NEW.iles_loyaute, NEW.autre, NEW.territoire_fr,
+            NEW.remarque, NEW.sources, NEW.id_ancienne_bd, NEW.reference_description, NEW.habitat,
             NEW.id_ref, NEW.id_sup, NEW.nc, NEW.rang, NOW() at time zone 'Pacific/Noumea',
             'Insert', '', NEW.utilisateur, NEW.source);
 
@@ -173,8 +173,8 @@ DECLARE changed_column_taxon varchar(250);
         IF NEW.grande_terre != OLD.grande_terre  THEN
             SELECT CONCAT(changed_column_taxon,'grande_terre, ') INTO changed_column_taxon;
         END IF;
-        IF NEW.iles_loyautee != OLD.iles_loyautee  THEN
-            SELECT CONCAT(changed_column_taxon,'iles_loyautee, ') INTO changed_column_taxon;
+        IF NEW.iles_loyaute != OLD.iles_loyaute  THEN
+            SELECT CONCAT(changed_column_taxon,'iles_loyaute, ') INTO changed_column_taxon;
         END IF;
         IF NEW.autre != OLD.autre  THEN
             SELECT CONCAT(changed_column_taxon,'autre, ') INTO changed_column_taxon;
@@ -188,8 +188,8 @@ DECLARE changed_column_taxon varchar(250);
         IF NEW.sources != OLD.sources  THEN
             SELECT CONCAT(changed_column_taxon,'sources, ') INTO changed_column_taxon;
         END IF;
-        IF NEW.id_espece != OLD.id_espece  THEN
-            SELECT CONCAT(changed_column_taxon,'id_espece, ') INTO changed_column_taxon;
+        IF NEW.id_ancienne_bd != OLD.id_ancienne_bd  THEN
+            SELECT CONCAT(changed_column_taxon,'id_ancienne_bd, ') INTO changed_column_taxon;
         END IF;
         IF NEW.reference_description != OLD.reference_description  THEN
             SELECT CONCAT(changed_column_taxon,'reference_description, ') INTO changed_column_taxon;
@@ -212,13 +212,13 @@ DECLARE changed_column_taxon varchar(250);
         IF NEW.source != OLD.source  THEN
             SELECT CONCAT(changed_column_taxon,'source, ') INTO changed_column_taxon;
         END IF;
-        IF NEW.taxrefversion != OLD.taxrefversion  THEN
-            SELECT CONCAT(changed_column_taxon,'taxrefVersion, ') INTO changed_column_taxon;
+        IF NEW.taxref_version != OLD.taxref_version  THEN
+            SELECT CONCAT(changed_column_taxon,'taxref_version, ') INTO changed_column_taxon;
         END IF;
         INSERT INTO historique_taxon VALUES 
         (OLD.id, OLD.cd_nom, OLD.cd_ref, OLD.cd_sup, OLD.lb_nom, OLD.lb_auteur,
-            OLD.nom_complet, OLD.grande_terre, OLD.iles_loyautee, OLD.autre, OLD.territoire_fr,
-            OLD.remarque, OLD.sources, OLD.id_espece, OLD.reference_description, OLD.habitat,
+            OLD.nom_complet, OLD.grande_terre, OLD.iles_loyaute, OLD.autre, OLD.territoire_fr,
+            OLD.remarque, OLD.sources, OLD.id_ancienne_bd, OLD.reference_description, OLD.habitat,
             OLD.id_ref, OLD.id_sup, OLD.nc, OLD.rang, NOW() at time zone 'Pacific/Noumea',
             'Update',changed_column_taxon, NEW.utilisateur, NEW.source);
 

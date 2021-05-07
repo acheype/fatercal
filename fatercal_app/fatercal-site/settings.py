@@ -16,7 +16,6 @@ from distutils.util import strtobool
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
@@ -28,9 +27,7 @@ DEBUG = strtobool(os.environ.get('DJANGO_DEBUG', 'true'))
 
 ALLOWED_HOSTS = ['*']
 
-
 # Application definition
-
 INSTALLED_APPS = [
     'jet',
     'jet.dashboard',
@@ -42,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'ajax_select',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -77,16 +75,14 @@ LOGIN_URL = '/login/'
 
 WSGI_APPLICATION = 'fatercal-site.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'OPTIONS': {
-                'options': '-c search_path=public,django'
-            },
+            'options': '-c search_path=public,django'
+        },
         'NAME': os.environ.get('POSTGRES_DB', 'fatercal'),
         'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
         'USER': os.environ.get('POSTGRES_USER', 'fatercal'),
@@ -96,8 +92,8 @@ DATABASES = {
     'django': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'OPTIONS': {
-                'options': '-c search_path=django'
-            },
+            'options': '-c search_path=django'
+        },
         'NAME': os.environ.get('POSTGRES_DB', 'fatercal'),
         'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
         'USER': os.environ.get('POSTGRES_USER', 'fatercal'),
@@ -105,10 +101,8 @@ DATABASES = {
     }
 }
 
-
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -123,7 +117,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
@@ -141,9 +134,9 @@ USE_TZ = False
 # Jet Config
 JET_THEMES = [
     {
-        'theme': 'default', # theme folder name
-        'color': '#47bac1', # color of the theme's button in user menu
-        'title': 'Default' # theme title
+        'theme': 'default',  # theme folder name
+        'color': '#47bac1',  # color of the theme's button in user menu
+        'title': 'Default'  # theme title
     },
     {
         'theme': 'green',
@@ -174,6 +167,12 @@ JET_THEMES = [
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
-
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
+
+# Pagination setting for the REST API
+# https://www.django-rest-framework.org/api-guide/pagination/
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 30
+}

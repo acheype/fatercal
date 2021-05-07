@@ -24,7 +24,7 @@ CREATE TYPE public.taxref_data AS
     habitat character varying(100),
     nc character varying(4),
     grande_terre character varying(50),
-    iles_loyautee character varying(50),
+    iles_loyaute character varying(50),
     autre character varying(50),
     non_present character varying(4),
     cd_ref_diff character varying(4),

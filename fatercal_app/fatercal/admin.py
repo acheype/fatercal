@@ -87,7 +87,7 @@ class TaxonModify(admin.ModelAdmin):
         'cd_nom',
         'cd_ref',
         'cd_sup',
-        'old_db_id'
+        'id_ancienne_bd'
     )
 
     # A list of field displaying
@@ -118,14 +118,14 @@ class TaxonModify(admin.ModelAdmin):
                        'referent', 'id_sup', 'rang', 'hierarchy')
         }),
         ('Statut et Habitat', {
-            'fields': ('nc', 'habitat', 'grande_terre', 'iles_loyautee', 'autre',)
+            'fields': ('nc', 'habitat', 'grande_terre', 'iles_loyaute', 'autre',)
         }),
-        ('Information complémentaires', {
+        ('Informations complémentaires', {
             'classes': ('collapse',),
             'fields': ('remarque', 'sources', 'reference_description',)
         }),
         ('Identifiants', {
-            'fields': ('id', 'id_ref_id', 'id_sup_id', 'cd_nom', 'cd_ref', 'cd_sup', 'old_db_id')
+            'fields': ('id', 'id_ref_id', 'id_sup_id', 'cd_nom', 'cd_ref', 'cd_sup', 'id_ancienne_bd')
         }),
         ('Modification', {
             'fields': ['change_taxon']
@@ -142,14 +142,14 @@ class TaxonModify(admin.ModelAdmin):
                        'syn', 'id_sup', 'rang', 'hierarchy')
         }),
         ('Statut et Habitat', {
-            'fields': ('nc', 'habitat', 'grande_terre', 'iles_loyautee', 'autre',)
+            'fields': ('nc', 'habitat', 'grande_terre', 'iles_loyaute', 'autre',)
         }),
-        ('Information complémentaires', {
+        ('Informations complémentaires', {
             'classes': ('collapse',),
             'fields': ('remarque', 'sources', 'reference_description',)
         }),
         ('Identifiants', {
-            'fields': ('id', 'id_ref_id', 'id_sup_id', 'cd_nom', 'cd_ref', 'cd_sup', 'old_db_id')
+            'fields': ('id', 'id_ref_id', 'id_sup_id', 'cd_nom', 'cd_ref', 'cd_sup', 'id_ancienne_bd')
         }),
         ('Modification', {
             'fields': ['change_taxon']
@@ -165,9 +165,9 @@ class TaxonModify(admin.ModelAdmin):
             'fields': ('lb_nom', 'lb_auteur', 'id_ref', 'id_sup', 'rang', 'info')
         }),
         ('Statut et Habitat', {
-            'fields': ('nc', 'habitat', 'grande_terre', 'iles_loyautee', 'autre',)
+            'fields': ('nc', 'habitat', 'grande_terre', 'iles_loyaute', 'autre',)
         }),
-        ('Information complémentaires', {
+        ('Informations complémentaires', {
             'classes': ('collapse',),
             'fields': ('remarque', 'sources', 'reference_description',)
         })
@@ -363,22 +363,6 @@ class TaxonModify(admin.ModelAdmin):
         else:
             str_hierarchy_end = str_child + '</ul></ul></li>'
             return mark_safe('<ul><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end)
-
-    @staticmethod
-    def id(obj):
-        return obj.id
-
-    @staticmethod
-    def id_ref_id(obj):
-        return obj.id_ref_id
-
-    @staticmethod
-    def id_sup_id(obj):
-        return obj.id_sup_id
-
-    @staticmethod
-    def old_db_id(obj):
-        return obj.id_espece
 
     # list of file to use for style or javascript function
     class Media:

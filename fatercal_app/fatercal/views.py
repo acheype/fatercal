@@ -7,15 +7,16 @@ from django.contrib.auth.decorators import login_required
 from .forms import AllTaxon, TaxonChangeSup, SearchAdvanced, ChooseData, UploadFileCsv, \
     ChooseTaxonToUpdate, ChooseTaxonToInsert
 from .function import constr_hierarchy_tree_adv_search, get_taxon_from_search, is_admin, update_taxon_from_taxref, \
-    get_taxon_personal, get_sample, get_taxons_for_sample, get_taxon_adv_search, change_ref_taxon, change_sup_taxon,\
+    get_taxon_personal, get_sample, get_taxons_for_sample, get_taxon_adv_search, change_ref_taxon, change_sup_taxon, \
     verify_and_save_sample, list_sample_for_map, get_taxon_from_search_taxref, get_taxref_update, get_taxref_insert, \
     insert_taxon_from_taxref, get_last_taxref_version, next_taxref_insert_page, delete_not_choose_taxref_insert
-from .models import Taxon, TaxrefRang
+from .models import Taxon, TaxrefRang, TaxrefHabitat, TaxrefStatus
+from .serializers import TaxonSerializer, TaxrefRangSerializer, TaxrefHabitatSerializer, TaxrefStatusSerializer
 from .variable import list_hierarchy
+from rest_framework import viewsets, generics
+from rest_framework import permissions
 
 import csv
-import json
-import requests
 import codecs
 import datetime
 
@@ -310,16 +311,16 @@ def extract_search_taxon_taxref(request):
     # rows that can be handled by a single sheet in most spreadsheet
     # applications.
     if is_admin(request.user):
-            list_param = request.GET
-            rows = (idx for idx in get_taxon_from_search_taxref(list_param))
-            response = HttpResponse(content_type='text/csv')
-            response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref_search' + \
-                                              str(datetime.datetime.now()) + '.csv"'
-            response.write(codecs.BOM_UTF8)
-            writer = csv.writer(response, delimiter=';')
-            for row in rows:
-                writer.writerow(row)
-            return response
+        list_param = request.GET
+        rows = (idx for idx in get_taxon_from_search_taxref(list_param))
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref_search' + \
+                                          str(datetime.datetime.now()) + '.csv"'
+        response.write(codecs.BOM_UTF8)
+        writer = csv.writer(response, delimiter=';')
+        for row in rows:
+            writer.writerow(row)
+        return response
     raise Http404("This page doesn't exist.")
 
 
@@ -472,6 +473,7 @@ def export_adv_search(request):
     else:
         raise Http404("This page doesn't exist.")
 
+
 @login_required()
 def update_from_taxref(request):
     """
@@ -498,12 +500,12 @@ def update_from_taxref(request):
         else:
             template = loader.get_template('fatercal/taxon/choose_taxon_update.html')
             empty, taxref_version, nb_taxon = get_taxref_update()
-            if taxref_version['taxrefversion__max'] is not None:
+            if taxref_version['taxref_version__max'] is not None:
                 form = ChooseTaxonToUpdate(
                     initial={
-                        'taxrefversion': int(taxref_version['taxrefversion__max']),
+                        'taxref_version': int(taxref_version['taxref_version__max']),
                         'time': datetime.datetime.now()
-                        })
+                    })
             else:
                 form = None
             context = {
@@ -514,6 +516,7 @@ def update_from_taxref(request):
         return HttpResponse(template.render(context, request))
     else:
         raise Http404("This page doesn't exist")
+
 
 @login_required()
 def insert_from_taxref(request):
@@ -542,11 +545,11 @@ def insert_from_taxref(request):
             rang = list_hierarchy[0]
             template = loader.get_template('fatercal/taxon/choose_taxon_insert.html')
             exist, exist_rang, nb_taxon, taxref_version = get_taxref_insert(rang)
-            if taxref_version['taxrefversion__max'] is not None:
+            if taxref_version['taxref_version__max'] is not None:
                 form = ChooseTaxonToInsert(
                     initial={
                         'rang': rang,
-                        'taxrefversion': int(taxref_version['taxrefversion__max']),
+                        'taxref_version': int(taxref_version['taxref_version__max']),
                         'time': datetime.datetime.now(),
                         'count': 0
                     }
@@ -564,3 +567,61 @@ def insert_from_taxref(request):
         return HttpResponse(template.render(context, request))
     else:
         raise Http404("This page doesn't exist")
+
+
+class TaxonViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+        This viewset automatically provides `list` and `retrieve` actions for the REST API
+    """
+    queryset = Taxon.objects.all()
+    serializer_class = TaxonSerializer
+
+
+class TaxrefRangViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+        This viewset automatically provides `list` and `retrieve` actions for the REST API
+    """
+    queryset = TaxrefRang.objects.all()
+    serializer_class = TaxrefRangSerializer
+
+
+class TaxrefHabitatViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+        This viewset automatically provides `list` and `retrieve` actions for the REST API
+    """
+    queryset = TaxrefHabitat.objects.all()
+    serializer_class = TaxrefHabitatSerializer
+
+
+class TaxrefStatusViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+        This viewset automatically provides `list` and `retrieve` actions for the REST API
+    """
+    queryset = TaxrefStatus.objects.all()
+    serializer_class = TaxrefStatusSerializer
+
+class TaxonSearchViewSet(generics.ListAPIView):
+    """
+        Search a taxon
+    """
+    serializer_class = TaxonSerializer
+    GET_PARAMS_FOR_EQUALS_FILTER = ['cd_nom']
+    GET_PARAMS_FOR_ICONTAINS_FILTER = ['lb_nom']
+
+    def __set_filter_params(self, params):
+        for key in self.GET_PARAMS_FOR_EQUALS_FILTER:
+            if self.request.query_params.get(key):
+                params[key] = self.request.query_params.get(key);
+        for key in self.GET_PARAMS_FOR_ICONTAINS_FILTER:
+            if self.request.query_params.get(key):
+                params[key + '__icontains'] = self.request.query_params.get(key);
+
+    def get_queryset(self):
+        """
+        Ma recherche
+        """
+        filter_params = {}
+        self.__set_filter_params(filter_params);
+
+        return Taxon.objects.filter(**filter_params)
+

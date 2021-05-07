@@ -284,7 +284,7 @@ class TaxonTestCase(TestCase):
         list_taxon_expected = [('REGNE', 'PHYLUM', 'CLASSE', 'ORDRE', 'FAMILLE', 'GROUP1_INPN', 'GROUP2_INPN', 'ID',
                                 'ID_REF', 'ID_SUP', 'CD_NOM', 'CD_TAXSUP', 'CD_SUP', 'CD_REF', 'RANG', 'LB_NOM',
                                 'LB_AUTEUR', 'NOM_COMPLET', 'NOM_COMPLET_HTML', 'NOM_VALIDE', 'NOM_VERN',
-                                'NOM_VERN_ENG', 'HABITAT', 'NC', 'GRANDE_TERRE', 'ILES_LOYAUTEE', 'AUTRE',
+                                'NOM_VERN_ENG', 'HABITAT', 'NC', 'GRANDE_TERRE', 'ILES_LOYAUTE', 'AUTRE',
                                 'NON PRESENT DANS TAXREF', 'CD_REF DIFFERENT', 'CD_SUP DIFFERENT',
                                 'VALIDITY DIFFERENT'),
                                ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, self.species_syn.id, self.species.id, None, None, None,
@@ -322,7 +322,7 @@ class TaxonTestCase(TestCase):
         list_taxon_expected = [('REGNE', 'PHYLUM', 'CLASSE', 'ORDRE', 'FAMILLE', 'GROUP1_INPN', 'GROUP2_INPN', 'ID',
                                 'ID_REF', 'ID_SUP', 'CD_NOM', 'CD_TAXSUP', 'CD_SUP', 'CD_REF', 'RANG', 'LB_NOM',
                                 'LB_AUTEUR', 'NOM_COMPLET', 'NOM_COMPLET_HTML', 'NOM_VALIDE', 'NOM_VERN',
-                                'NOM_VERN_ENG', 'HABITAT', 'NC', 'GRANDE_TERRE', 'ILES_LOYAUTEE', 'AUTRE',
+                                'NOM_VERN_ENG', 'HABITAT', 'NC', 'GRANDE_TERRE', 'ILES_LOYAUTE', 'AUTRE',
                                 'NON PRESENT DANS TAXREF', 'CD_REF DIFFERENT', 'CD_SUP DIFFERENT',
                                 'VALIDITY DIFFERENT'),
                                ('kingdom', 'phylum', 'classe', 'order', 'family', None, None, self.species_syn.id,
@@ -599,7 +599,7 @@ class TaxonTestCase(TestCase):
             lb_nom='different_name', lb_auteur='different author',
             nom_complet='different_name different author',
             date=datetime.datetime.now(),
-            taxrefversion='11'
+            taxref_version='11'
         )
         empty, taxref_version, count = get_taxref_update()
         taxref_version_expected = "11"
@@ -610,7 +610,7 @@ class TaxonTestCase(TestCase):
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
         self.assertEqual(empty, False)
         self.assertEqual(count, 1)
-        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        self.assertEqual(taxref_version_expected, taxref_version['taxref_version__max'])
         
         self.genus.cd_nom = None
         self.genus.save()
@@ -626,7 +626,7 @@ class TaxonTestCase(TestCase):
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
         self.assertEqual(empty, False)
         self.assertEqual(count, 1)
-        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        self.assertEqual(taxref_version_expected, taxref_version['taxref_version__max'])
         
         self.genus.cd_nom = 2
         self.genus.save()
@@ -639,7 +639,7 @@ class TaxonTestCase(TestCase):
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
         self.assertEqual(empty, False)
         self.assertEqual(count, 1)
-        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        self.assertEqual(taxref_version_expected, taxref_version['taxref_version__max'])
         
         self.genus.cd_nom = None
         self.genus.save()
@@ -650,7 +650,7 @@ class TaxonTestCase(TestCase):
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
         self.assertEqual(empty, False)
         self.assertEqual(count, 1)
-        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        self.assertEqual(taxref_version_expected, taxref_version['taxref_version__max'])
 
         self.species.id_sup = self.genus
         taxon_taxref.cd_sup = None
@@ -666,7 +666,7 @@ class TaxonTestCase(TestCase):
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
         self.assertEqual(empty, False)
         self.assertEqual(count, 1)
-        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        self.assertEqual(taxref_version_expected, taxref_version['taxref_version__max'])
         
         self.species_syn.cd_nom = None
         self.species_syn.save()
@@ -677,7 +677,7 @@ class TaxonTestCase(TestCase):
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
         self.assertEqual(empty, False)
         self.assertEqual(count, 1)
-        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        self.assertEqual(taxref_version_expected, taxref_version['taxref_version__max'])
         
         self.species.cd_nom = None
         self.species.save()
@@ -697,7 +697,7 @@ class TaxonTestCase(TestCase):
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
         self.assertEqual(empty, False)
         self.assertEqual(count, 1)
-        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        self.assertEqual(taxref_version_expected, taxref_version['taxref_version__max'])
         
         self.species.cd_nom = 3
         self.species.save()
@@ -714,7 +714,7 @@ class TaxonTestCase(TestCase):
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
         self.assertEqual(empty, False)
         self.assertEqual(count, 1)
-        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        self.assertEqual(taxref_version_expected, taxref_version['taxref_version__max'])
         
         self.genus.cd_nom = 2
         self.genus.save()
@@ -725,7 +725,7 @@ class TaxonTestCase(TestCase):
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
         self.assertEqual(empty, False)
         self.assertEqual(count, 1)
-        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        self.assertEqual(taxref_version_expected, taxref_version['taxref_version__max'])
 
         taxon_taxref.cd_ref = 4
         taxon_taxref.save()
@@ -736,7 +736,7 @@ class TaxonTestCase(TestCase):
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
         self.assertEqual(empty, False)
         self.assertEqual(count, 1)
-        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        self.assertEqual(taxref_version_expected, taxref_version['taxref_version__max'])
 
         self.sub_species.cd_nom = 4
         self.sub_species.save()
@@ -747,7 +747,7 @@ class TaxonTestCase(TestCase):
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
         self.assertEqual(empty, False)
         self.assertEqual(count, 1)
-        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        self.assertEqual(taxref_version_expected, taxref_version['taxref_version__max'])
 
         taxon_taxref.cd_ref = 3
         taxon_taxref.rang = "NEIF"
@@ -761,7 +761,7 @@ class TaxonTestCase(TestCase):
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
         self.assertEqual(empty, False)
         self.assertEqual(count, 1)
-        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        self.assertEqual(taxref_version_expected, taxref_version['taxref_version__max'])
 
         taxon_taxref.rang = "ES"
         taxon_taxref.save()
@@ -776,7 +776,7 @@ class TaxonTestCase(TestCase):
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
         self.assertEqual(empty, False)
         self.assertEqual(count, 1)
-        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        self.assertEqual(taxref_version_expected, taxref_version['taxref_version__max'])
         
         taxon_taxref.nc = "P"
         taxon_taxref.habitat = 2
@@ -788,7 +788,7 @@ class TaxonTestCase(TestCase):
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
         self.assertEqual(empty, False)
         self.assertEqual(count, 1)
-        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        self.assertEqual(taxref_version_expected, taxref_version['taxref_version__max'])
 
         self.species_syn.nc = None
         self.species_syn.habitat = None
@@ -800,7 +800,7 @@ class TaxonTestCase(TestCase):
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
         self.assertEqual(empty, False)
         self.assertEqual(count, 1)
-        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        self.assertEqual(taxref_version_expected, taxref_version['taxref_version__max'])
 
         taxon_taxref.nc = None
         taxon_taxref.habitat = None
@@ -813,7 +813,7 @@ class TaxonTestCase(TestCase):
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
         self.assertEqual(empty, False)
         self.assertEqual(count, 1)
-        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        self.assertEqual(taxref_version_expected, taxref_version['taxref_version__max'])
 
     def test_get_taxref_insert(self):
         status = TaxrefStatus.objects.create(status="P", lb_status="Présent")
@@ -823,11 +823,11 @@ class TaxonTestCase(TestCase):
             lb_nom='new taxon', lb_auteur='author',
             nom_complet='new taxon author',
             date=datetime.datetime.now(),
-            taxrefversion='11', nc='unkn', habitat=6
+            taxref_version='11', nc='unkn', habitat=6
         )
         exist, exist_rang, nb_taxon, taxref_version = get_taxref_insert('ES')
         taxref_version_expected = "11"
-        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        self.assertEqual(taxref_version_expected, taxref_version['taxref_version__max'])
 
         taxon_taxref.lb_auteur = None
         taxon_taxref.cd_sup = None
@@ -837,7 +837,7 @@ class TaxonTestCase(TestCase):
         taxon_taxref.rang = 'ES'
         taxon_taxref.save()
         exist, exist_rang, nb_taxon, taxref_version = get_taxref_insert('ES')
-        self.assertEqual(taxref_version_expected, taxref_version['taxrefversion__max'])
+        self.assertEqual(taxref_version_expected, taxref_version['taxref_version__max'])
 
     def test_insert_taxon_from_taxref(self):
         status = TaxrefStatus.objects.create(status="P", lb_status="Présent")
@@ -847,14 +847,14 @@ class TaxonTestCase(TestCase):
             lb_nom='new taxon', lb_auteur='author',
             nom_complet='new taxon author',
             date=datetime.datetime.now(),
-            taxrefversion='11', nc='unkn', habitat=6
+            taxref_version='11', nc='unkn', habitat=6
         )
         data = {
             'choices': [taxon_taxref],
             'time': datetime.datetime.now(),
             'count': 7
         }
-        taxref_version = {'taxrefversion__max': 11}
+        taxref_version = {'taxref_version__max': 11}
         user = User.objects.create_user('temporary', 'temporary@gmail.com', 'temporary')
         list_not_insert = insert_taxon_from_taxref(data, taxref_version, user)
         list_not_insert_expected = [{'name': 'new taxon:', 'info': 'Rang taxon: UN'}]
@@ -892,7 +892,7 @@ class TaxonTestCase(TestCase):
             nc="P",
             habitat=2,
             date=datetime.datetime.now(),
-            taxrefversion='11'
+            taxref_version='11'
         )
         taxon_taxref_syn = TaxrefUpdate.objects.create(
             taxon_id=self.species_syn, cd_nom=4,
@@ -900,7 +900,7 @@ class TaxonTestCase(TestCase):
             lb_nom='syn_name', lb_auteur='syn_author',
             nom_complet='syn_name syn_author',
             date=datetime.datetime.now(),
-            taxrefversion='11'
+            taxref_version='11'
         )
         id_taxon = taxon_taxref.id
         id_taxon_syn = taxon_taxref_syn.id
@@ -908,24 +908,24 @@ class TaxonTestCase(TestCase):
             'choices': TaxrefUpdate.objects.filter(id=id_taxon),
             'time': time
         }
-        taxref_version = {'taxrefversion__max': 11}
+        taxref_version = {'taxref_version__max': 11}
         update_taxon_from_taxref(data, taxref_version, "dummy_user")
         TaxrefUpdate.objects.filter(id=id_taxon)
         self.species = Taxon.objects.get(id=self.species.id)
         self.species_syn = Taxon.objects.get(id=self.species_syn.id)
         self.assertEqual(self.species.lb_nom, 'different name')
         self.assertEqual(self.species.lb_auteur, 'different author')
-        self.assertEqual(self.species.taxrefversion, 11)
+        self.assertEqual(self.species.taxref_version, 11)
         self.assertEqual(habitat, self.species.habitat)
         self.assertEqual(status, self.species.nc)
         self.assertEqual(TaxrefUpdate.objects.filter(id=id_taxon).exists(), False)
         self.assertEqual(TaxrefUpdate.objects.filter(id=id_taxon_syn).exists(), False)
         self.assertEqual(self.species_syn.source, 'Fatercal')
         self.assertEqual(self.species_syn.utilisateur, 'dummy_user')
-        self.assertEqual(self.species_syn.taxrefversion, 11)
+        self.assertEqual(self.species_syn.taxref_version, 11)
         self.assertEqual(self.species.source, 'Taxref')
         self.assertEqual(self.species.utilisateur, 'dummy_user')
-        self.assertEqual(self.species.taxrefversion, 11)
+        self.assertEqual(self.species.taxref_version, 11)
 
         taxon_taxref.cd_ref = 4
         taxon_taxref.cd_sup = None
@@ -952,7 +952,7 @@ class TaxonTestCase(TestCase):
             lb_nom='new taxon', lb_auteur='author',
             nom_complet='new taxon author',
             date=datetime.datetime.now(),
-            taxrefversion='11', nc='unkn', habitat=6
+            taxref_version='11', nc='unkn', habitat=6
         )
         template, context = next_taxref_insert_page(None, True)
         context_expected = {'error': True, 'goal': 'insert'}

@@ -205,17 +205,17 @@ class Taxon(models.Model):
     nc = models.ForeignKey('TaxrefStatus', db_column='nc', blank=True, null=True,
                            verbose_name='Statut', on_delete=models.DO_NOTHING)
     grande_terre = models.NullBooleanField()
-    iles_loyautee = models.NullBooleanField(verbose_name='Îles Loyauté')
+    iles_loyaute = models.NullBooleanField(verbose_name='Îles Loyauté')
     autre = models.NullBooleanField()
     territoire_fr = models.NullBooleanField()
     remarque = models.TextField(blank=True, null=True)
     sources = models.TextField(blank=True, null=True)
-    id_espece = models.IntegerField(blank=True, null=True)
+    id_ancienne_bd = models.IntegerField(blank=True, null=True)
     reference_description = models.TextField(blank=True, null=True)
     utilisateur = models.CharField(null=True, max_length=2500)
     last_update = models.DateField(null=True, auto_now=False, auto_now_add=False)
     source = models.CharField(null=True, max_length=2500)
-    taxrefversion = models.SmallIntegerField(null=True)
+    taxref_version = models.SmallIntegerField(null=True)
 
     def clean(self):
         """
@@ -286,18 +286,6 @@ class Taxon(models.Model):
         ordering = ['lb_nom']
 
 
-class TaxrefHabitat(models.Model):
-    habitat = models.SmallIntegerField(primary_key=True)
-    lb_habitat = models.CharField(max_length=100)
-
-    class Meta:
-        managed = True
-        db_table = 'taxref_habitat'
-
-    def __str__(self):
-        return self.lb_habitat
-
-
 class TaxrefRang(models.Model):
     rang = models.CharField(primary_key=True, max_length=4)
     lb_rang = models.CharField(max_length=100, verbose_name='Rang')
@@ -308,6 +296,18 @@ class TaxrefRang(models.Model):
     class Meta:
         managed = True
         db_table = 'taxref_rang'
+
+
+class TaxrefHabitat(models.Model):
+    habitat = models.SmallIntegerField(primary_key=True)
+    lb_habitat = models.CharField(max_length=100)
+
+    class Meta:
+        managed = True
+        db_table = 'taxref_habitat'
+
+    def __str__(self):
+        return self.lb_habitat
 
 
 class TaxrefStatus(models.Model):
@@ -324,7 +324,7 @@ class TaxrefStatus(models.Model):
 
 class Vernaculaire(models.Model):
     id_taxvern = models.AutoField(primary_key=True)
-    id_taxref = models.ForeignKey(Taxon, db_column='id_taxref', verbose_name='Taxon', on_delete=models.DO_NOTHING)
+    id_taxref = models.ForeignKey(Taxon, db_column='id_taxref', verbose_name='Taxon', related_name="noms_vern", on_delete=models.DO_NOTHING)
     nom_vern = models.CharField(max_length=100, verbose_name='Nom Vernaculaire')
     pays = models.CharField(max_length=100, verbose_name='Pays d\'utilisation')
     iso639_3 = models.ForeignKey(Iso6393, db_column='iso639-3', on_delete=models.DO_NOTHING)
@@ -338,11 +338,11 @@ class Vernaculaire(models.Model):
 
 
 class TaxrefExport(models.Model):
-    regne = models.CharField(max_length=250, verbose_name='Régne')
-    phylum = models.CharField(max_length=250, verbose_name='Régne')
-    classe = models.CharField(max_length=250, verbose_name='Régne')
-    ordre = models.CharField(max_length=250, verbose_name='Régne')
-    famille = models.CharField(max_length=250, verbose_name='Régne')
+    regne = models.CharField(max_length=250, verbose_name='Règne')
+    phylum = models.CharField(max_length=250, verbose_name='Règne')
+    classe = models.CharField(max_length=250, verbose_name='Règne')
+    ordre = models.CharField(max_length=250, verbose_name='Règne')
+    famille = models.CharField(max_length=250, verbose_name='Règne')
     group1_inpn = models.CharField(max_length=250, verbose_name='Group1 INPN')
     group2_inpn = models.CharField(max_length=250, verbose_name='Group2 INPN')
     id = models.BigIntegerField()
@@ -362,7 +362,7 @@ class TaxrefExport(models.Model):
     nom_vern_eng = models.CharField(max_length=100, blank=True, null=True)
     habitat = models.CharField(max_length=100, blank=True, null=True)
     grande_terre = models.CharField(max_length=50, verbose_name='Grande terre')
-    iles_loyautee = models.CharField(max_length=50, verbose_name='îles Loyautée')
+    iles_loyaute = models.CharField(max_length=50, verbose_name='îles Loyautée')
     autre = models.CharField(max_length=50, verbose_name='Autre')
     nc = models.CharField(max_length=4, blank=True, null=True)
     non_present = models.CharField(max_length=4, blank=True, null=True)
@@ -387,7 +387,7 @@ class TaxrefUpdate(models.Model):
     habitat = models.SmallIntegerField(null=True)
     nc = models.CharField(max_length=4, blank=True, null=True)
     date = models.DateTimeField(auto_now=False, auto_now_add=False)
-    taxrefversion = models.CharField(max_length=250, verbose_name='Nom')
+    taxref_version = models.CharField(max_length=250, verbose_name='Nom')
 
     class Meta:
             managed = True

@@ -58,10 +58,10 @@ ELSE IF taxon_t.grande_terre is FALSE THEN
 END IF;
 END IF;
 
-IF taxon_t.iles_loyautee is TRUE THEN
-    result.iles_loyautee = 'Présent';
-ELSE IF taxon_t.iles_loyautee is FALSE THEN
-    result.iles_loyautee= 'Non Présent';
+IF taxon_t.iles_loyaute is TRUE THEN
+    result.iles_loyaute = 'Présent';
+ELSE IF taxon_t.iles_loyaute is FALSE THEN
+    result.iles_loyaute = 'Non Présent';
 END IF;
 END IF;
 
