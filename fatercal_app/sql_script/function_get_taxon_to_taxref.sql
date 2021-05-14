@@ -84,8 +84,8 @@ result.lb_auteur = taxon_t.lb_auteur;
 result.nom_complet = taxon_t.nom_complet;
 result.habitat = taxon_t.habitat;
 result.nc = taxon_t.nc;
-SELECT nom_vern INTO result.nom_vern FROM vernaculaire WHERE id_taxref=taxon_id AND pays='fra';
-SELECT nom_vern INTO result.nom_vern_eng FROM vernaculaire WHERE id_taxref=taxon_id AND pays='eng';
+SELECT nom_vern INTO result.nom_vern FROM vernaculaire WHERE id_taxon=taxon_id AND pays='fra';
+SELECT nom_vern INTO result.nom_vern_eng FROM vernaculaire WHERE id_taxon=taxon_id AND pays='eng';
 RETURN result;
 END;
 $BODY$

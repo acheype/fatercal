@@ -993,7 +993,7 @@ class SampleTestClass(TestCase):
     def setUp(self):
         self.species = Taxon.objects.create(id=1, lb_nom="species", lb_auteur="auteur1",
                                             rang=TaxrefRang.objects.create(rang='ES', lb_rang='Espece'))
-        self.sample = Prelevement.objects.create(id_prelevement=10, id_taxref=self.species)
+        self.sample = Prelevement.objects.create(id_prelevement=10, id_taxon=self.species)
         Recolteur.objects.create(id_prelevement=self.sample, lb_auteur="auteur")
         self.species.id_ref = self.species
         self.species.save()
@@ -1093,7 +1093,7 @@ class SampleTestClass(TestCase):
     def test_save_all_sample(self):
         species = Taxon.objects.create(id=2, lb_nom="species_test", lb_auteur="auteur1",
                                        rang=TaxrefRang.objects.get(rang='ES'))
-        sample = Prelevement(id_taxref=species)
+        sample = Prelevement(id_taxon=species)
         pays = Localisation(nom='country', loc_type=TypeLoc.objects.create(type='pays'))
         region = Localisation(nom='regions', loc_type=TypeLoc.objects.create(type='region'))
         secteur = Localisation(nom='secteur', loc_type=TypeLoc.objects.create(type='secteur'))
@@ -1111,7 +1111,7 @@ class SampleTestClass(TestCase):
         }
         list_sample = [line]
         save_all_sample(list_sample)
-        self.assertTrue(Prelevement.objects.filter(id_taxref=species).exists())
+        self.assertTrue(Prelevement.objects.filter(id_taxon=species).exists())
         self.assertEqual(Localisation.objects.get(nom='country'), pays)
         self.assertEqual(Localisation.objects.get(nom='regions'), region)
         self.assertEqual(Localisation.objects.get(nom='secteur'), secteur)
@@ -1211,7 +1211,7 @@ class SampleTestClass(TestCase):
             'list_harvester': [],
             'habitat': habitat
         }
-        sample = Prelevement(id_taxref=self.species, nb_taxon_present=0, type_specimen=line['sexe'],
+        sample = Prelevement(id_taxon=self.species, nb_taxon_present=0, type_specimen=line['sexe'],
                              type_enregistrement=typeEn, date='2018', information_complementaire='', toponymie_x=1,
                              toponymie_y=2, gps=True, altitude_min=10, altitude_max=None)
         try:
@@ -1219,7 +1219,7 @@ class SampleTestClass(TestCase):
             self.assertEqual(result_expected['loc'], result_output['loc'])
             self.assertEqual(result_expected['habitat'], result_output['habitat'])
             self.assertEqual(result_expected['list_harvester'], result_output['list_harvester'])
-            self.assertEqual(sample.id_taxref, result_output['sample'].id_taxref)
+            self.assertEqual(sample.id_taxon, result_output['sample'].id_taxon)
             self.assertEqual(sample.nb_taxon_present, result_output['sample'].nb_taxon_present)
             self.assertEqual(sample.type_specimen, result_output['sample'].type_specimen)
             self.assertEqual(sample.type_enregistrement, result_output['sample'].type_enregistrement)
@@ -1306,7 +1306,7 @@ class SampleTestClass(TestCase):
                                            lb_auteur="auteur1", rang=self.species.rang)
         country = Localisation.objects.create(nom='country', loc_type=TypeLoc.objects.create(type='pays'),
                                               longitude=4, latitude=1)
-        Prelevement.objects.create(id_prelevement=2, id_taxref=species_syn, toponymie_x=1, toponymie_y=4,
+        Prelevement.objects.create(id_prelevement=2, id_taxon=species_syn, toponymie_x=1, toponymie_y=4,
                                    type_enregistrement=TypeEnregistrement.objects.create(lb_type='pays'),
                                    id_loc=country)
         list_sample_output = list_sample_for_map(self.species)

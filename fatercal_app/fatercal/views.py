@@ -4,14 +4,19 @@ from django.db.models import F, Q
 from django.template import loader
 from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.reverse import reverse
+
 from .forms import AllTaxon, TaxonChangeSup, SearchAdvanced, ChooseData, UploadFileCsv, \
     ChooseTaxonToUpdate, ChooseTaxonToInsert
 from .function import constr_hierarchy_tree_adv_search, get_taxon_from_search, is_admin, update_taxon_from_taxref, \
     get_taxon_personal, get_sample, get_taxons_for_sample, get_taxon_adv_search, change_ref_taxon, change_sup_taxon, \
     verify_and_save_sample, list_sample_for_map, get_taxon_from_search_taxref, get_taxref_update, get_taxref_insert, \
     insert_taxon_from_taxref, get_last_taxref_version, next_taxref_insert_page, delete_not_choose_taxref_insert
-from .models import Taxon, TaxrefRang, TaxrefHabitat, TaxrefStatus
-from .serializers import TaxonSerializer, TaxrefRangSerializer, TaxrefHabitatSerializer, TaxrefStatusSerializer
+from .models import Taxon, TaxrefRang, TaxrefHabitat, TaxrefStatus, Vernaculaire
+from .serializers import TaxonSerializer, TaxrefRangSerializer, TaxrefHabitatSerializer, TaxrefStatusSerializer, \
+    VernaculaireSerializer
 from .variable import list_hierarchy
 from rest_framework import viewsets, generics
 from rest_framework import permissions
@@ -569,6 +574,16 @@ def insert_from_taxref(request):
         raise Http404("This page doesn't exist")
 
 
+@api_view(['GET'])
+def api_root(request, format=None):
+    return Response({
+        'taxons': reverse('taxon-list', request=request, format=format),
+        'rangs': reverse('taxrefrang-list', request=request, format=format),
+        'habitats': reverse('taxrefhabitat-list', request=request, format=format),
+        'status': reverse('taxrefstatus-list', request=request, format=format),
+    })
+
+
 class TaxonViewSet(viewsets.ReadOnlyModelViewSet):
     """
         This viewset automatically provides `list` and `retrieve` actions for the REST API
@@ -600,13 +615,24 @@ class TaxrefStatusViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = TaxrefStatus.objects.all()
     serializer_class = TaxrefStatusSerializer
 
+
+class VernaculaireViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+        This viewset automatically provides `list` and `retrieve` actions for the REST API
+    """
+    queryset = Vernaculaire.objects.all()
+    serializer_class = VernaculaireSerializer
+
+
 class TaxonSearchViewSet(generics.ListAPIView):
     """
         Search a taxon
     """
     serializer_class = TaxonSerializer
-    GET_PARAMS_FOR_EQUALS_FILTER = ['cd_nom']
-    GET_PARAMS_FOR_ICONTAINS_FILTER = ['lb_nom']
+    GET_PARAMS_FOR_EQUALS_FILTER = ['id', 'id_ref', 'id_sup', 'cd_nom', 'cd_ref', 'cd_sup', 'grande_terre',
+                                    'iles_loyaute', 'autre', 'utilisateur']
+    GET_PARAMS_FOR_ICONTAINS_FILTER = ['lb_nom', 'lb_auteur', 'nom_complet', 'remarque', 'sources',
+                                       'reference_description', 'last_update']
 
     def __set_filter_params(self, params):
         for key in self.GET_PARAMS_FOR_EQUALS_FILTER:

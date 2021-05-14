@@ -5,9 +5,9 @@ $BODY$
         INSERT INTO historique_prelevement VALUES 
         (OLD.id_prelevement, OLD.date, OLD.nb_taxon_present, OLD.collection_museum, OLD.type_specimen, OLD.code_specimen,
             OLD.altitude_min, OLD.mode_de_collecte, OLD.toponyme, OLD.toponymie_x, OLD.toponymie_y,
-            OLD.information_complementaire, OLD.id_loc, OLD.id_taxref, OLD.type_enregistrement, OLD.gps,
+            OLD.information_complementaire, OLD.id_loc, OLD.id_taxon, OLD.type_enregistrement, OLD.gps,
             OLD.altitude_max, OLD.id_habitat, OLD.id_plante_hote,
-            NOW() at time zone 'Pacific/Noumea', 'Delete', '', OLD.utilisateur, OLD.source);
+            NOW() at time zone 'Pacific/Noumea', 'Delete', '', OLD.utilisateur, OLD.source, OLD.taxref_version);
 
         RETURN OLD;
     END;
@@ -24,7 +24,7 @@ $BODY$
             OLD.nom_complet, OLD.grande_terre, OLD.iles_loyaute, OLD.autre, OLD.territoire_fr,
             OLD.remarque, OLD.sources, OLD.id_ancienne_bd, OLD.reference_description, OLD.habitat,
             OLD.id_ref, OLD.id_sup, OLD.nc, OLD.rang, NOW() at time zone 'Pacific/Noumea',
-            'Delete', '', OLD.utilisateur, OLD.source);
+            'Delete', '', OLD.utilisateur, OLD.source, OLD.taxref_version);
 
         RETURN OLD;
     END;
@@ -39,7 +39,7 @@ $BODY$
         INSERT INTO historique_prelevement VALUES 
         (NEW.id_prelevement, NEW.date, NEW.nb_taxon_present, NEW.collection_museum, NEW.type_specimen, NEW.code_specimen,
             NEW.altitude_min, NEW.mode_de_collecte, NEW.toponyme, NEW.toponymie_x, NEW.toponymie_y,
-            NEW.information_complementaire, NEW.id_loc, NEW.id_taxref, NEW.type_enregistrement, NEW.gps,
+            NEW.information_complementaire, NEW.id_loc, NEW.id_taxon, NEW.type_enregistrement, NEW.gps,
             NEW.altitude_max, NEW.id_habitat, NEW.id_plante_hote, NOW() at time zone 'Pacific/Noumea',
             'Insert', '', NEW.utilisateur, NEW.source);
 
@@ -58,7 +58,7 @@ $BODY$
             NEW.nom_complet, NEW.grande_terre, NEW.iles_loyaute, NEW.autre, NEW.territoire_fr,
             NEW.remarque, NEW.sources, NEW.id_ancienne_bd, NEW.reference_description, NEW.habitat,
             NEW.id_ref, NEW.id_sup, NEW.nc, NEW.rang, NOW() at time zone 'Pacific/Noumea',
-            'Insert', '', NEW.utilisateur, NEW.source);
+            'Insert', '', NEW.utilisateur, NEW.source, NEW.taxref_version);
 
         RETURN NEW;
     END;
@@ -112,8 +112,8 @@ DECLARE changed_column_prelevement varchar(250);
         IF NEW.id_loc != OLD.id_loc  THEN
             SELECT CONCAT(changed_column_prelevement,'id_loc, ') INTO changed_column_prelevement;
         END IF;
-        IF NEW.id_taxref != OLD.id_taxref  THEN
-            SELECT CONCAT(changed_column_prelevement,'id_taxref, ') INTO changed_column_prelevement;
+        IF NEW.id_taxon != OLD.id_taxon  THEN
+            SELECT CONCAT(changed_column_prelevement,'id_taxon, ') INTO changed_column_prelevement;
         END IF;
         IF NEW.type_enregistrement != OLD.type_enregistrement  THEN
             SELECT CONCAT(changed_column_prelevement,'type_enregistrement, ') INTO changed_column_prelevement;
@@ -130,10 +130,13 @@ DECLARE changed_column_prelevement varchar(250);
         IF NEW.id_plante_hote != OLD.id_plante_hote  THEN
             SELECT CONCAT(changed_column_prelevement,'id_plante_hote , ') INTO changed_column_prelevement;
         END IF;
+        IF NEW.source != OLD.source  THEN
+            SELECT CONCAT(changed_column_prelevement,'source, ') INTO changed_column_prelevement;
+        END IF;
         INSERT INTO historique_prelevement VALUES 
         (OLD.id_prelevement, OLD.date, OLD.nb_taxon_present, OLD.collection_museum, OLD.type_specimen, OLD.code_specimen,
             OLD.altitude_min, OLD.mode_de_collecte, OLD.toponyme, OLD.toponymie_x, OLD.toponymie_y,
-            OLD.information_complementaire, OLD.id_loc, OLD.id_taxref, OLD.type_enregistrement, OLD.gps,
+            OLD.information_complementaire, OLD.id_loc, OLD.id_taxon, OLD.type_enregistrement, OLD.gps,
             OLD.altitude_max, OLD.id_habitat, OLD.id_plante_hote, NOW() at time zone 'Pacific/Noumea', 
             'Update', changed_column_prelevement, NEW.utilisateur, OLD.source);
 
@@ -220,7 +223,7 @@ DECLARE changed_column_taxon varchar(250);
             OLD.nom_complet, OLD.grande_terre, OLD.iles_loyaute, OLD.autre, OLD.territoire_fr,
             OLD.remarque, OLD.sources, OLD.id_ancienne_bd, OLD.reference_description, OLD.habitat,
             OLD.id_ref, OLD.id_sup, OLD.nc, OLD.rang, NOW() at time zone 'Pacific/Noumea',
-            'Update',changed_column_taxon, NEW.utilisateur, NEW.source);
+            'Update',changed_column_taxon, NEW.utilisateur, NEW.source, OLD.taxref_version);
 
         RETURN NEW;
     END;

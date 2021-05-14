@@ -13,7 +13,7 @@
   toponymie_y double precision,
   information_complementaire text,
   id_loc integer,
-  id_taxref integer NOT NULL,
+  id_taxon integer NOT NULL,
   type_enregistrement integer,
   gps boolean,
   altitude_max integer,

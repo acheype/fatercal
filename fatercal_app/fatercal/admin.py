@@ -247,19 +247,19 @@ class TaxonModify(admin.ModelAdmin):
         :param obj:
         :return:
         """
-        list_vernaculaire = Vernaculaire.objects.filter(id_taxref=obj.id)
+        list_vernaculaire = Vernaculaire.objects.filter(id_taxon=obj.id)
         string = "</br>"
         if obj.id == obj.id_ref_id:
             list_syn = Taxon.objects.filter(id_ref=obj.id).filter(~Q(id=obj.id))
             for syn in list_syn:
-                list_vernaculaire_syn = Prelevement.objects.filter(id_taxref=syn.id)
+                list_vernaculaire_syn = Prelevement.objects.filter(id_taxon=syn.id)
                 list_vernaculaire = list(chain(list_vernaculaire, list_vernaculaire_syn))
         if len(list_vernaculaire) == 0:
             string += "Aucun nom vernaculaire"
         else:
             for vern in list_vernaculaire:
                 string += vern.nom_vern + "</br>"
-        string += "</br><a href='/fatercal/vernaculaire/add?id_taxref={}'>Ajouter un Vernaculaire</a>".format(obj.id)
+        string += "</br><a href='/fatercal/vernaculaire/add?id_taxon={}'>Ajouter un Vernaculaire</a>".format(obj.id)
         return mark_safe(string)
 
     def prelevements(self, obj):
@@ -278,11 +278,11 @@ class TaxonModify(admin.ModelAdmin):
                                     <td><strong>Toponymie x</strong></td> <td><strong>Toponymie y</strong></td>
                                     <td><strong>Lien Modif</strong></td>
                                 </tr>"""
-        list_prelevement = Prelevement.objects.filter(id_taxref=obj.id)
+        list_prelevement = Prelevement.objects.filter(id_taxon=obj.id)
         if obj.id == obj.id_ref_id:
             list_syn = Taxon.objects.filter(id_ref=obj.id).filter(~Q(id=obj.id))
             for syn in list_syn:
-                list_prelevement_syn = Prelevement.objects.filter(id_taxref=syn.id)
+                list_prelevement_syn = Prelevement.objects.filter(id_taxon=syn.id)
                 list_prelevement = list(chain(list_prelevement, list_prelevement_syn))
         for prelev in list_prelevement:
             board_prelevement += '''<tr>
@@ -296,7 +296,7 @@ class TaxonModify(admin.ModelAdmin):
                         prelev.collection_museum, prelev.type_specimen, prelev.code_specimen, prelev.altitude_min,
                         prelev.altitude_max, prelev.mode_de_collecte, prelev.toponyme, prelev.toponymie_x,
                         prelev.toponymie_y, get_recolteur(prelev), prelev.id_prelevement)
-        board_prelevement += "</table></br><a href='/fatercal/prelevement/add?id_taxref={}'>Ajouter un Prelevement</a>"\
+        board_prelevement += "</table></br><a href='/fatercal/prelevement/add?id_taxon={}'>Ajouter un Prelevement</a>"\
             .format(obj.id)
         return mark_safe(board_prelevement)
 
@@ -396,7 +396,7 @@ class PrelevementModify(admin.ModelAdmin):
         'button_modal_date',
     )
     list_display = (
-        'id_taxref',
+        'id_taxon',
         'toponyme',
         'altitude_min',
         'altitude_max',
@@ -412,13 +412,13 @@ class PrelevementModify(admin.ModelAdmin):
 
     # The search field will be on these field to find a taxon
     search_fields = (
-        'id_taxref__lb_nom',
+        'id_taxon__lb_nom',
         'toponyme',
     )
 
     fieldsets = [
         ('Spécimen', {
-            'fields': ('id_taxref', 'collection_museum', 'code_specimen', 'nb_taxon_present', 'type_specimen',)
+            'fields': ('id_taxon', 'collection_museum', 'code_specimen', 'nb_taxon_present', 'type_specimen',)
         }),
         ('Informations', {
             'fields': ('type_enregistrement', 'plante_hote', 'mode_de_collecte', 'date',
@@ -524,17 +524,17 @@ class PlanteHoteModify(admin.ModelAdmin):
 class VernaculaireModify(admin.ModelAdmin):
     """ This class will display the model Taxon for adding or modifying a vernaculaire object"""
     list_display = [
-        'id_taxref',
+        'id_taxon',
         'nom_vern',
     ]
 
     search_fields = (
-        'id_taxref__lb_nom',
+        'id_taxon__lb_nom',
     )
 
     fieldsets = [
         ('Informations', {
-            'fields': ('id_taxref', 'nom_vern', 'pays', 'iso639_3')
+            'fields': ('id_taxon', 'nom_vern', 'pays', 'iso639_3')
         })
     ]
 
@@ -562,7 +562,7 @@ class Iso6393Modify(admin.ModelAdmin):
     ]
 
     search_fields = (
-        'id_taxref__lb_nom',
+        'id_taxon__lb_nom',
     )
 
     fieldsets = [

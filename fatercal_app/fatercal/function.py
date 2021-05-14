@@ -319,7 +319,7 @@ def get_sample(param):
     for sample in list_not_proper.iterator():
         harvesters = get_recolteur(sample)
         dict_loc = get_loc_from_sample(sample)
-        taxon = Taxon.objects.get(id=sample.id_taxref_id)
+        taxon = Taxon.objects.get(id=sample.id_taxon_id)
         if taxon.id != taxon.id_ref_id:
             dict_hierarchy = get_hierarchy_to_dict(taxon.id_ref)
         else:
@@ -327,7 +327,7 @@ def get_sample(param):
         altitude = format_altitude_sample(sample)
         tupple = (sample.id_prelevement, dict_hierarchy.get('Ordre'), dict_hierarchy.get('Famille'),
                   dict_hierarchy.get('Sous-Famille'), dict_hierarchy.get('Genre'), dict_hierarchy.get('Sous-Genre'),
-                  dict_hierarchy.get('Espèce'), dict_hierarchy.get('Sous-Espèce'), sample.id_taxref.lb_auteur,
+                  dict_hierarchy.get('Espèce'), dict_hierarchy.get('Sous-Espèce'), sample.id_taxon.lb_auteur,
                   sample.date, harvesters, None, None, altitude, dict_loc.get('Pays'), dict_loc.get('Region'),
                   dict_loc.get('Secteur'), dict_loc.get('nom'), sample.habitat, sample.nb_taxon_present,
                   sample.type_specimen, sample.mode_de_collecte, sample.information_complementaire, None,
@@ -430,7 +430,7 @@ def get_specific_search_sample(list_param):
         if 'q' in list_param:
             if list_param['q'] != '':
                 list_not_proper = list_not_proper.filter(
-                    Q(id_taxref__lb_nom__icontains=list_param['q'].replace("+", " ")) |
+                    Q(id_taxon__lb_nom__icontains=list_param['q'].replace("+", " ")) |
                     Q(toponyme__icontains=list_param['q'].replace("+", " ")))
     return list_not_proper
 
@@ -745,7 +745,7 @@ def construct_sample(line, count):
     if result['loc'] is None:
         raise NotGoodSample("Une erreur à la ligne {}. ".format(count) + "La localisation n'est pas indiqué dans "
                                                                          "l'un des 4 champs.")
-    sample = Prelevement(id_taxref=Taxon.objects.filter(id=line['id_taxon']).first(),
+    sample = Prelevement(id_taxon=Taxon.objects.filter(id=line['id_taxon']).first(),
                          nb_taxon_present=variable['nombre'],
                          type_specimen=line['sexe'],
                          type_enregistrement=type_enregistrement, date=line['date'],
@@ -990,11 +990,11 @@ def list_sample_for_map(taxon):
     :return: a list of dict
     """
     list_sample = []
-    queryset = Prelevement.objects.filter(id_taxref=taxon.id)
+    queryset = Prelevement.objects.filter(id_taxon=taxon.id)
     if taxon.id == taxon.id_ref_id:
         queryset_taxon_synonymous = Taxon.objects.filter(id_ref=taxon.id).filter(~Q(id=taxon.id))
         for taxon in queryset_taxon_synonymous:
-            queryset_sample_of_synonymous = Prelevement.objects.filter(id_taxref=taxon.id)
+            queryset_sample_of_synonymous = Prelevement.objects.filter(id_taxon=taxon.id)
             queryset = queryset | queryset_sample_of_synonymous
     for sample in queryset:
         if sample.toponymie_x is not None and sample.toponymie_y is not None:

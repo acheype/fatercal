@@ -200,21 +200,39 @@ CREATE TABLE public.taxref_update(
 """
 
 CREATE_TYPE_TAXREF_DATA = """
-CREATE TYPE public.taxref_data AS (
-    regne character varying(250), phylum character varying(250),
-    classe character varying(250), ordre character varying(250),
-    famille character varying(250), group1_inpn character varying(50),
-    group2_inpn character varying(50), id integer, id_ref integer,
-    id_sup integer, cd_nom integer, cd_taxsup integer,
-    cd_sup integer, cd_ref integer, rang character varying(4),
-    lb_nom character varying(250), lb_auteur character varying(250),
-    nom_complet character varying(250), nom_complet_html character varying(250),
-    nom_valide character varying(100), nom_vern character varying(100),
-    nom_vern_eng character varying(100), habitat character varying(100),
-    nc character varying(4), grande_terre character varying(50),
-    iles_loyaute character varying(50), autre character varying(50),
-    non_present character varying(4), cd_ref_diff character varying(4),
-    cd_sup_diff character varying(4), validity_diff character varying(4)
+CREATE TYPE public.taxref_data AS
+(
+	regne character varying(250),
+	phylum character varying(250),
+	classe character varying(250),
+	ordre character varying(250),
+	famille character varying(250),
+	group1_inpn character varying(50),
+	group2_inpn character varying(50),
+	id integer,
+	id_ref integer,
+	id_sup integer,
+	cd_nom integer,
+	cd_taxsup integer,
+	cd_sup integer,
+	cd_ref integer,
+	rang character varying(4),
+	lb_nom character varying(250),
+	lb_auteur character varying(250),
+	nom_complet character varying(250),
+	nom_complet_html character varying(250),
+	nom_valide character varying(250),
+	nom_vern character varying(100),
+	nom_vern_eng character varying(100),
+	habitat character varying(100),
+	nc character varying(4),
+	grande_terre character varying(50),
+	iles_loyaute character varying(50),
+	autre character varying(50),
+	non_present character varying(4),
+	cd_ref_diff character varying(4),
+	cd_sup_diff character varying(4),
+	validity_diff character varying(4)
 );
 """
 

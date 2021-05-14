@@ -102,7 +102,7 @@ class Localisation(models.Model):
 
 
 class PlanteHote(models.Model):
-    id_plante_hote = models.AutoField(db_column='id_plante-hote', primary_key=True)  # Field renamed remove characters.
+    id_plante_hote = models.AutoField(db_column='id_plante_hote', primary_key=True)  # Field renamed remove characters.
     famille = models.CharField(max_length=100, blank=True, null=True, verbose_name="Famille")
     genre = models.CharField(max_length=100, blank=True, null=True, verbose_name="Genre")
     espece = models.CharField(max_length=100, blank=True, null=True, verbose_name="Espèce")
@@ -127,7 +127,7 @@ class Prelevement(models.Model):
     id_prelevement = models.AutoField(primary_key=True)
     id_loc = models.ForeignKey(Localisation, db_column='id_loc',
                                blank=True, null=True, verbose_name='Localisation', on_delete=models.DO_NOTHING)
-    id_taxref = models.ForeignKey('Taxon', db_column='id_taxref', verbose_name='Taxon', on_delete=models.DO_NOTHING)
+    id_taxon = models.ForeignKey('Taxon', db_column='id_taxon', verbose_name='Taxon', on_delete=models.DO_NOTHING)
     type_enregistrement = models.ForeignKey('TypeEnregistrement', db_column='type_enregistrement',
                                             blank=True, null=True, on_delete=models.DO_NOTHING)
     date = models.CharField(max_length=23, blank=True, null=True,
@@ -158,7 +158,7 @@ class Prelevement(models.Model):
     information_complementaire = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return self.id_taxref.__str__()
+        return self.id_taxon.__str__()
 
     class Meta:
         managed = True
@@ -202,8 +202,8 @@ class Taxon(models.Model):
     nom_complet = models.CharField(max_length=250, blank=True, null=True)
     rang = models.ForeignKey('TaxrefRang', db_column='rang', verbose_name='rang', on_delete=models.DO_NOTHING)
     habitat = models.ForeignKey('TaxrefHabitat', db_column='habitat', blank=True, null=True, on_delete=models.DO_NOTHING)
-    nc = models.ForeignKey('TaxrefStatus', db_column='nc', blank=True, null=True,
-                           verbose_name='Statut', on_delete=models.DO_NOTHING)
+    nc = models.ForeignKey('TaxrefStatus', db_column='nc', blank=True, null=True, verbose_name='Statut',
+                           on_delete=models.DO_NOTHING)
     grande_terre = models.NullBooleanField()
     iles_loyaute = models.NullBooleanField(verbose_name='Îles Loyauté')
     autre = models.NullBooleanField()
@@ -324,7 +324,7 @@ class TaxrefStatus(models.Model):
 
 class Vernaculaire(models.Model):
     id_taxvern = models.AutoField(primary_key=True)
-    id_taxref = models.ForeignKey(Taxon, db_column='id_taxref', verbose_name='Taxon', related_name="noms_vern", on_delete=models.DO_NOTHING)
+    id_taxon = models.ForeignKey(Taxon, db_column='id_taxon', verbose_name='Taxon', related_name="noms_vern", on_delete=models.DO_NOTHING)
     nom_vern = models.CharField(max_length=100, verbose_name='Nom Vernaculaire')
     pays = models.CharField(max_length=100, verbose_name='Pays d\'utilisation')
     iso639_3 = models.ForeignKey(Iso6393, db_column='iso639-3', on_delete=models.DO_NOTHING)
