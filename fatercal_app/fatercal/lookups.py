@@ -15,7 +15,7 @@ class ValidLookup(LookupChannel):
         return self.model.objects.filter(lb_nom__istartswith=q, id=F('id_ref')).order_by('lb_nom')
 
     def format_item_display(self, item):
-        return u"<span class='tag'>%s</span>" % "<a href='/fatercal/taxon/{}/'>{}</a>".format(item.id, item)
+        return u"<span class='tag'>%s</span>" % "<a href='/taxon/{}/'>{}</a>".format(item.id, item)
 
 
 @register('valid_and_syn')
@@ -29,4 +29,4 @@ class ValidSynLookup(LookupChannel):
         return self.model.objects.filter(lb_nom__istartswith=q).order_by('lb_nom')
 
     def format_item_display(self, item):
-        return u"<span class='tag'>%s</span>" % "<a href='/fatercal/taxon/{}/'>{}</a>".format(item.id, item)
+        return u"<span class='tag'>%s</span>" % "<a href='/taxon/{}/'>{}</a>".format(item.id, item)

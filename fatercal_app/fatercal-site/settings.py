@@ -32,7 +32,7 @@ INSTALLED_APPS = [
     'jet',
     'jet.dashboard',
     'fatercal',
-    'django.contrib.admin',
+    'fatercal.apps.FatercalAdminConfig',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',

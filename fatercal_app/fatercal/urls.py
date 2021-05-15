@@ -2,7 +2,6 @@ from django.urls import path, re_path, include
 from rest_framework import routers
 from . import views
 
-
 urlpatterns = [
     re_path(r'^change_ref/(?P<id_taxon>[0-9]+)/$', views.change_taxon_ref, name='change a taxon referent'),
     re_path(r'^change_sup/(?P<id_taxon>[0-9]+)/$', views.change_taxon_sup, name='change a taxon superior'),
@@ -21,14 +20,18 @@ urlpatterns = [
     path('insert_from_taxref/', views.insert_from_taxref, name='Insert from Taxref'),
     path('api/', views.api_root),
     path('api/taxons/search/', views.TaxonSearchViewSet.as_view()),
-    path('api/taxons/', views.TaxonViewSet.as_view({'get': 'list'}),name='taxon-list'),
+    path('api/taxons/', views.TaxonViewSet.as_view({'get': 'list'}), name='taxon-list'),
     path('api/taxons/<int:pk>/', views.TaxonViewSet.as_view({'get': 'retrieve'}), name='taxon-detail'),
     path('api/rangs/', views.TaxrefRangViewSet.as_view({'get': 'list'}), name='taxrefrang-list'),
-    re_path(r'^api/rangs/(?P<pk>[a-zA-Z]{2,4})/$', views.TaxrefRangViewSet.as_view({'get': 'retrieve'}), name='taxrefrang-detail'),
+    re_path(r'^api/rangs/(?P<pk>[a-zA-Z]{2,4})/$', views.TaxrefRangViewSet.as_view({'get': 'retrieve'}),
+            name='taxrefrang-detail'),
     path('api/habitats/', views.TaxrefHabitatViewSet.as_view({'get': 'list'}), name='taxrefhabitat-list'),
-    path('api/habitats/<int:pk>/', views.TaxrefHabitatViewSet.as_view({'get': 'retrieve'}), name='taxrefhabitat-detail'),
+    path('api/habitats/<int:pk>/', views.TaxrefHabitatViewSet.as_view({'get': 'retrieve'}),
+         name='taxrefhabitat-detail'),
     path('api/status/', views.TaxrefStatusViewSet.as_view({'get': 'list'}), name='taxrefstatus-list'),
-    re_path(r'^api/status/(?P<pk>[A-Z]{1})/$', views.TaxrefStatusViewSet.as_view({'get': 'retrieve'}), name='taxrefstatus-detail'),
+    re_path(r'^api/status/(?P<pk>[A-Z]{1})/$', views.TaxrefStatusViewSet.as_view({'get': 'retrieve'}),
+            name='taxrefstatus-detail'),
     path('api/vernaculaires/', views.VernaculaireViewSet.as_view({'get': 'list'}), name='vernaculaire-list'),
-    path('api/vernaculaires/<int:pk>/', views.VernaculaireViewSet.as_view({'get': 'retrieve'}), name='vernaculaire-detail'),
+    path('api/vernaculaires/<int:pk>/', views.VernaculaireViewSet.as_view({'get': 'retrieve'}),
+         name='vernaculaire-detail'),
 ]

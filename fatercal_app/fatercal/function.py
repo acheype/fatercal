@@ -559,7 +559,7 @@ def constr_hierarchy_tree_branch_parents(list_hierarchy):
     if list_hierarchy is not None:
         for parent in reversed(list_hierarchy):
             html_hierarchy_begin = html_hierarchy_begin + '''<li><label class="tree_label" for="c{}">
-            <strong>{} : </strong></al><a href="/fatercal/taxon/{}/">{}</a>
+            <strong>{} : </strong></al><a href="/taxon/{}/">{}</a>
             <ul>'''.format(count_parent, parent.rang, parent.id, parent)
             html_hierarchy_end = '</ul></li>' + html_hierarchy_end
             count_parent = count_parent + 1
@@ -581,7 +581,7 @@ def constr_hierarchy_tree_branch_adv_search_child(list_taxon, count, hierarchy_c
     for l_taxon in list_taxon:
         hierarchy_child = hierarchy_child + """
         <ul><li><al><label class="tree_label" for="c{}"/><strong>{} : </strong></al>
-        <a href="/fatercal/taxon/{}/">{}</a>""".format(count, l_taxon[0].rang, l_taxon[0].id, l_taxon[0])
+        <a href="/taxon/{}/">{}</a>""".format(count, l_taxon[0].rang, l_taxon[0].id, l_taxon[0])
         if l_taxon[1] is not None:
             hierarchy_child = constr_hierarchy_tree_branch_adv_search_child(l_taxon[1], count + 1, hierarchy_child)
         hierarchy_child = hierarchy_child + '</li></ul>'
@@ -603,10 +603,10 @@ def constr_hierarchy_tree_branch_child(list_child, nb):
             if rang != child.rang:
                 str_child = str_child + '''</ul></li><li class="folder"><label for="c{}">
                 <strong>{} : </strong><li><ul>
-                <a href="/fatercal/taxon/{}/">{}</a>'''.format(str(nb + 1), child.rang, child.id, child)
+                <a href="/taxon/{}/">{}</a>'''.format(str(nb + 1), child.rang, child.id, child)
                 rang = child.rang
             else:
-                str_child = str_child + '<li><a href="/fatercal/taxon/{}/">{} {}</a></li>' \
+                str_child = str_child + '<li><a href="/taxon/{}/">{} {}</a></li>' \
                     .format(child.id, child.lb_nom, child.lb_auteur)
     else:
         str_child = ''

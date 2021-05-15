@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.db.models import Q
+from django.urls import path, include
 from django.utils.safestring import mark_safe
 from django.db.models.signals import post_save
 from itertools import chain
@@ -9,6 +10,17 @@ import datetime
 from .views import ValidSpecialFilter, AltitudeSpecialFilter
 from .models import Taxon, Localisation, Prelevement, Recolteur, Hote, PlanteHote, Vernaculaire, Iso6393
 from .function import get_recolteur, constr_hierarchy_tree_branch_parents, constr_hierarchy_tree_branch_child, is_admin
+
+
+# This class serve to redefine all urls of django admin by removing the application name
+class FatercalAdminSite(admin.AdminSite):
+    def get_urls(self):
+        urlpatterns = super().get_urls()
+        for model, model_admin in self._registry.items():
+            urlpatterns += [
+                path('%s/' % (model._meta.model_name), include(model_admin.urls)),
+            ]
+        return urlpatterns
 
 
 # This class serve to modify or add a Parasite for the Model Taxon
@@ -235,8 +247,8 @@ class TaxonModify(admin.ModelAdmin):
         """
         if obj == obj.id_ref:
             return mark_safe("""<br/>
-            <p><a href='/fatercal/change_ref/{}/'>Changez le référent</a></p>
-            <p><a href="/fatercal/change_sup/{}/">Changez le supérieur</a></p>
+            <p><a href='/change_ref/{}/'>Changez le référent</a></p>
+            <p><a href="/change_sup/{}/">Changez le supérieur</a></p>
             <br/>""".format(obj.id, obj.id))
         else:
             return mark_safe("<p>Vous ne pouvez pas changez le supérieur ou le référent de ce taxon.</p>")
@@ -259,7 +271,7 @@ class TaxonModify(admin.ModelAdmin):
         else:
             for vern in list_vernaculaire:
                 string += vern.nom_vern + "</br>"
-        string += "</br><a href='/fatercal/vernaculaire/add?id_taxon={}'>Ajouter un Vernaculaire</a>".format(obj.id)
+        string += "</br><a href='/vernaculaire/add?id_taxon={}'>Ajouter un Vernaculaire</a>".format(obj.id)
         return mark_safe(string)
 
     def prelevements(self, obj):
@@ -289,14 +301,14 @@ class TaxonModify(admin.ModelAdmin):
                                     <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>
                                     <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>
                                     <td>{}</td> <td>{}</td>
-                                    <td><a href='/fatercal/prelevement/{}/'>Modification</a></td>
+                                    <td><a href='/prelevement/{}/'>Modification</a></td>
                                     </tr>
                                 ''' \
                 .format(prelev.id_loc, prelev.type_enregistrement, prelev.date, prelev.nb_taxon_present,
                         prelev.collection_museum, prelev.type_specimen, prelev.code_specimen, prelev.altitude_min,
                         prelev.altitude_max, prelev.mode_de_collecte, prelev.toponyme, prelev.toponymie_x,
                         prelev.toponymie_y, get_recolteur(prelev), prelev.id_prelevement)
-        board_prelevement += "</table></br><a href='/fatercal/prelevement/add?id_taxon={}'>Ajouter un Prelevement</a>"\
+        board_prelevement += "</table></br><a href='/prelevement/add?id_taxon={}'>Ajouter un Prelevement</a>"\
             .format(obj.id)
         return mark_safe(board_prelevement)
 
@@ -306,7 +318,7 @@ class TaxonModify(admin.ModelAdmin):
         :param obj: an Taxon object (see models.py)
         :return: the validity in html tag
         """
-        return mark_safe("""<a href='/fatercal/taxon/{}/'>{}</a> <br/> <br/> <a href="/fatercal/taxon_to_valid/{}">
+        return mark_safe("""<a href='/taxon/{}/'>{}</a> <br/> <br/> <a href="/taxon_to_valid/{}">
                    Cliquer ici pour le passer en valide.</a>""".format(obj.id_ref_id, obj.id_ref.nom_complet, obj.id))
 
     def syn(self, obj):
@@ -319,7 +331,7 @@ class TaxonModify(admin.ModelAdmin):
         if len(list_syn) != 0:
             string = "</br>"
             for syn in list_syn:
-                string += "<a href='/fatercal/taxon/{}/'>{}</a><br/>".format(syn.id, syn.nom_complet)
+                string += "<a href='/taxon/{}/'>{}</a><br/>".format(syn.id, syn.nom_complet)
         else:
             string = ""
         return mark_safe(string)
@@ -355,7 +367,7 @@ class TaxonModify(admin.ModelAdmin):
             str_taxon = '<li class="folder"><label><strong>{} :</strong> {} {}</label></li>' \
                 .format(obj.rang, obj.lb_nom, obj.lb_auteur)
         else:
-            str_taxon = '<li class="folder"><label><strong>{} :</strong><a href="/fatercal/taxon/{}/"> {} {}</a> ' \
+            str_taxon = '<li class="folder"><label><strong>{} :</strong><a href="/taxon/{}/"> {} {}</a> ' \
                 .format(obj.id_ref.rang, obj.id_ref_id, obj.id_ref.lb_nom, obj.id_ref.lb_auteur)
         str_child = constr_hierarchy_tree_branch_child(list_child, nb)
         if str_child == '':
@@ -367,7 +379,7 @@ class TaxonModify(admin.ModelAdmin):
     # list of file to use for style or javascript function
     class Media:
         css = {
-            'all': ('admin/fatercal/taxon/css.css',)
+            'all': ('fatercal/taxon/style.css',)
         }
 
     # Override attribute in Model Admin
@@ -458,15 +470,15 @@ class PrelevementModify(admin.ModelAdmin):
     def button_modal_date(self, obj):
         return mark_safe('''
         Ces champs ne sont pas obligatoires ils vous aident juste à remplir le champ date au-dessus.<br><br>
-        Date unique: <input type="date" oninput=Date_update('unique') id="date_1"><br><br>
-        Période: <input type="date" id="date_periode_1" oninput=Date_update('periode')>
-        <input type="date" id="date_periode_2" oninput=Date_update('periode')>
+        Date unique: <input type="date" oninput=date_update('unique') id="date_1"><br><br>
+        Période: <input type="date" id="date_periode_1" oninput=date_update('periode')>
+        <input type="date" id="date_periode_2" oninput=date_update('periode')>
         ''')
     button_modal_date.short_description = 'Date Calendrier'
 
     # list of file to use for style or javascript function
     class Media:
-        js = ('admin/fatercal/prelevement/prelev.js',)
+        js = ('fatercal/prelevement/prelev.js',)
 
 
 class HoteModify(admin.ModelAdmin):
@@ -598,15 +610,16 @@ def add_genre_to_name(sender, instance, created, **kwargs):
 
 
 # the list of model to show to the user for modification
-admin.site.register(Taxon, TaxonModify)
-admin.site.register(Localisation, LocalisationModify)
-admin.site.register(Prelevement, PrelevementModify)
-admin.site.register(Hote, HoteModify)
-admin.site.register(PlanteHote, PlanteHoteModify)
-admin.site.register(Vernaculaire, VernaculaireModify)
-admin.site.register(Iso6393, Iso6393Modify)
-admin.site.site_header = 'Fatercal'
-admin.site.site_title = 'Fatercal'
+fatercal_admin = FatercalAdminSite(name='FatercalAdmin')
+fatercal_admin.register(Taxon, TaxonModify)
+fatercal_admin.register(Localisation, LocalisationModify)
+fatercal_admin.register(Prelevement, PrelevementModify)
+fatercal_admin.register(Hote, HoteModify)
+fatercal_admin.register(PlanteHote, PlanteHoteModify)
+fatercal_admin.register(Vernaculaire, VernaculaireModify)
+fatercal_admin.register(Iso6393, Iso6393Modify)
+fatercal_admin.site_header = 'Fatercal'
+fatercal_admin.site_title = 'Fatercal'
 
 # list signals for different models
 post_save.connect(add_genre_to_name, sender=Taxon)

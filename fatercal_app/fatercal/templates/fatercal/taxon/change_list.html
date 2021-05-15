@@ -6,21 +6,21 @@
 {{ block.super }}
 <li>
     {% if request.user|has_group:"Admin"%}
-        <a href="/fatercal/export_taxref/" class="btn btn-high btn-success">Exporter pour Taxref</a>
-        <a href="/fatercal/choose_search_data_taxon/{% if request.GET %}?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}{% endif %}"
+        <a href="/export_taxref/" class="btn btn-high btn-success">Exporter pour Taxref</a>
+        <a href="/choose_search_data_taxon/{% if request.GET %}?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}{% endif %}"
            class="btn btn-high btn-success">V.Fatercal: Exporter la recherche</a>
-        <a href="/fatercal/export_search_taxref/{% if request.GET %}?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}{% endif %}"
+        <a href="/export_search_taxref/{% if request.GET %}?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}{% endif %}"
            class="btn btn-high btn-success">V.Taxref:Exporter la recherche</a>
-        <a href="/fatercal/export_for_import_sample/{% if request.GET %}?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}{% endif %}"
+        <a href="/export_for_import_sample/{% if request.GET %}?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}{% endif %}"
            class="btn btn-high btn-success">
             Exporter pour import de Prélèvements</a>
-         <a href="/fatercal/update_from_taxref/{% if request.GET %}?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}{% endif %}"
+         <a href="/update_from_taxref/{% if request.GET %}?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}{% endif %}"
            class="btn btn-high btn-success">
             Mise à jour depuis Taxref</a>
-         <a href="/fatercal/insert_from_taxref/{% if request.GET %}?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}{% endif %}"
+         <a href="/insert_from_taxref/{% if request.GET %}?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}{% endif %}"
            class="btn btn-high btn-success">
             Nouveau taxon depuis Taxref</a>
     {% endif %}
-        <a href="/fatercal/advanced_search/" class="btn btn-high btn-success">Recherche Avancée</a>
+        <a href="/advanced_search/" class="btn btn-high btn-success">Recherche Avancée</a>
 </li>
 {% endblock %}

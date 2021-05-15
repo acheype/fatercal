@@ -6,10 +6,10 @@
 {{ block.super }}
     <li>
         {% if request.user|has_group:"Admin"%}
-            <a href="/fatercal/export_search_sample/{% if request.GET %}?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}{% endif %}"
+            <a href="/export_search_sample/{% if request.GET %}?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}{% endif %}"
                class="btn btn-high btn-success">Exporter Recherche</a>
-            <a href="/fatercal/import_sample/" class="btn btn-high btn-success">Importer Prélèvements</a>
+            <a href="/import_sample/" class="btn btn-high btn-success">Importer Prélèvements</a>
         {% endif %}
-        <a href="/fatercal/map_sample/" class="btn btn-high btn-success">Carte des Prélèvements</a>
+        <a href="/map_sample/" class="btn btn-high btn-success">Carte des Prélèvements</a>
     </li>
 {% endblock %}

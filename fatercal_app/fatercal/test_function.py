@@ -461,20 +461,20 @@ class TaxonTestCase(TestCase):
         html_hierarchy_output, nb_output = constr_hierarchy_tree_adv_search(self.species, None)
         html_hierarchy_expected = """<ul class="tree"><br/><al><al><al><al><al><al><al>
     <li><label class="tree_label" for="c1">
-            <strong>Regne : </strong></al><a href="/fatercal/taxon/"""+ str(self.kingdom.id) +"""/">kingdom auteur1</a>
+            <strong>Regne : </strong></al><a href="/taxon/"""+ str(self.kingdom.id) +"""/">kingdom auteur1</a>
             <ul><li><label class="tree_label" for="c2">
-            <strong>Phylum : </strong></al><a href="/fatercal/taxon/"""+ str(self.phylum.id) +"""/">phylum auteur2</a>
+            <strong>Phylum : </strong></al><a href="/taxon/"""+ str(self.phylum.id) +"""/">phylum auteur2</a>
             <ul><li><label class="tree_label" for="c3">
-            <strong>Classe : </strong></al><a href="/fatercal/taxon/"""+ str(self.classe.id) +"""/">classe auteur3</a>
+            <strong>Classe : </strong></al><a href="/taxon/"""+ str(self.classe.id) +"""/">classe auteur3</a>
             <ul><li><label class="tree_label" for="c4">
-            <strong>Ordre : </strong></al><a href="/fatercal/taxon/"""+ str(self.order.id) +"""/">order auteur4</a>
+            <strong>Ordre : </strong></al><a href="/taxon/"""+ str(self.order.id) +"""/">order auteur4</a>
             <ul><li><label class="tree_label" for="c5">
-            <strong>Famille : </strong></al><a href="/fatercal/taxon/"""+ str(self.family.id) +"""/">family auteur5</a>
+            <strong>Famille : </strong></al><a href="/taxon/"""+ str(self.family.id) +"""/">family auteur5</a>
             <ul><li><label class="tree_label" for="c6">
-            <strong>Genre : </strong></al><a href="/fatercal/taxon/"""+ str(self.genus.id) +"""/">genus auteur6</a>
+            <strong>Genre : </strong></al><a href="/taxon/"""+ str(self.genus.id) +"""/">genus auteur6</a>
             <ul><li class="folder"><label><strong>Espèce :</strong> genus species auteur7</li>
         <ul><li><al><label class="tree_label" for="c7"/><strong>Sous-Espèce : </strong></al>
-        <a href="/fatercal/taxon/"""+ str(self.sub_species.id) +"""/">genus species sub_species auteur8</a></li></ul></ul></ul></li>"""
+        <a href="/taxon/"""+ str(self.sub_species.id) +"""/">genus species sub_species auteur8</a></li></ul></ul></ul></li>"""
         self.maxDiff = None
         self.assertEqual(html_hierarchy_expected, html_hierarchy_output)
         self.assertEqual(nb_output, 1)
@@ -482,20 +482,20 @@ class TaxonTestCase(TestCase):
         html_hierarchy_output, nb_output = constr_hierarchy_tree_adv_search(None, 'auteur7')
         html_hierarchy_expected = """<div><ul class="tree"><br/><al><al><al><al><al><al><al>
     <li><label class="tree_label" for="c1">
-            <strong>Regne : </strong></al><a href="/fatercal/taxon/"""+ str(self.kingdom.id) +"""/">kingdom auteur1</a>
+            <strong>Regne : </strong></al><a href="/taxon/"""+ str(self.kingdom.id) +"""/">kingdom auteur1</a>
             <ul><li><label class="tree_label" for="c2">
-            <strong>Phylum : </strong></al><a href="/fatercal/taxon/"""+ str(self.phylum.id) +"""/">phylum auteur2</a>
+            <strong>Phylum : </strong></al><a href="/taxon/"""+ str(self.phylum.id) +"""/">phylum auteur2</a>
             <ul><li><label class="tree_label" for="c3">
-            <strong>Classe : </strong></al><a href="/fatercal/taxon/"""+ str(self.classe.id) +"""/">classe auteur3</a>
+            <strong>Classe : </strong></al><a href="/taxon/"""+ str(self.classe.id) +"""/">classe auteur3</a>
             <ul><li><label class="tree_label" for="c4">
-            <strong>Ordre : </strong></al><a href="/fatercal/taxon/"""+ str(self.order.id) +"""/">order auteur4</a>
+            <strong>Ordre : </strong></al><a href="/taxon/"""+ str(self.order.id) +"""/">order auteur4</a>
             <ul><li><label class="tree_label" for="c5">
-            <strong>Famille : </strong></al><a href="/fatercal/taxon/"""+ str(self.family.id) +"""/">family auteur5</a>
+            <strong>Famille : </strong></al><a href="/taxon/"""+ str(self.family.id) +"""/">family auteur5</a>
             <ul><li><label class="tree_label" for="c6">
-            <strong>Genre : </strong></al><a href="/fatercal/taxon/"""+ str(self.genus.id) +"""/">genus auteur6</a>
+            <strong>Genre : </strong></al><a href="/taxon/"""+ str(self.genus.id) +"""/">genus auteur6</a>
             <ul><li class="folder"><label><strong>Espèce :</strong> genus species auteur7</li>
         <ul><li><al><label class="tree_label" for="c7"/><strong>Sous-Espèce : </strong></al>
-        <a href="/fatercal/taxon/"""+ str(self.sub_species.id) +"""/">genus species sub_species auteur8</a></li></ul></ul></ul></li></div>"""
+        <a href="/taxon/"""+ str(self.sub_species.id) +"""/">genus species sub_species auteur8</a></li></ul></ul></ul></li></div>"""
         self.assertEqual(html_hierarchy_expected, html_hierarchy_output)
         self.assertEqual(nb_output, 2)
 
@@ -504,17 +504,17 @@ class TaxonTestCase(TestCase):
         html_hierarchy_start_output, html_hierarchy_end_output = constr_hierarchy_tree_branch_parents(list_hierarchy)
         html_hierarchy_start_expected = """<ul class="tree"><br/><al><al><al><al><al><al><al>
             <li><label class="tree_label" for="c1">
-            <strong>Regne : </strong></al><a href="/fatercal/taxon/"""+ str(self.kingdom.id) +"""/">kingdom auteur1</a>
+            <strong>Regne : </strong></al><a href="/taxon/"""+ str(self.kingdom.id) +"""/">kingdom auteur1</a>
             <ul><li><label class="tree_label" for="c2">
-            <strong>Phylum : </strong></al><a href="/fatercal/taxon/"""+ str(self.phylum.id) +"""/">phylum auteur2</a>
+            <strong>Phylum : </strong></al><a href="/taxon/"""+ str(self.phylum.id) +"""/">phylum auteur2</a>
             <ul><li><label class="tree_label" for="c3">
-            <strong>Classe : </strong></al><a href="/fatercal/taxon/"""+ str(self.classe.id) +"""/">classe auteur3</a>
+            <strong>Classe : </strong></al><a href="/taxon/"""+ str(self.classe.id) +"""/">classe auteur3</a>
             <ul><li><label class="tree_label" for="c4">
-            <strong>Ordre : </strong></al><a href="/fatercal/taxon/"""+ str(self.order.id) +"""/">order auteur4</a>
+            <strong>Ordre : </strong></al><a href="/taxon/"""+ str(self.order.id) +"""/">order auteur4</a>
             <ul><li><label class="tree_label" for="c5">
-            <strong>Famille : </strong></al><a href="/fatercal/taxon/"""+ str(self.family.id) +"""/">family auteur5</a>
+            <strong>Famille : </strong></al><a href="/taxon/"""+ str(self.family.id) +"""/">family auteur5</a>
             <ul><li><label class="tree_label" for="c6">
-            <strong>Genre : </strong></al><a href="/fatercal/taxon/"""+ str(self.genus.id) +"""/">genus auteur6</a>
+            <strong>Genre : </strong></al><a href="/taxon/"""+ str(self.genus.id) +"""/">genus auteur6</a>
             <ul>"""
         self.assertHTMLEqual(html_hierarchy_start_expected, html_hierarchy_start_output)
         html_hierarchy_end_expected = "</ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul>"
@@ -524,7 +524,7 @@ class TaxonTestCase(TestCase):
         list_taxon, nb = get_child_of_child(self.species)
         hierarchy_child_output = constr_hierarchy_tree_branch_adv_search_child(list_taxon[1], nb, '')
         hierarchy_child_expected = """<ul><li><al><label class="tree_label" for="c1"/><strong>Sous-Espèce : </strong>
-        </al><a href="/fatercal/taxon/"""+ str(self.sub_species.id) +"""/">genus species sub_species auteur8</a></li></ul>"""
+        </al><a href="/taxon/"""+ str(self.sub_species.id) +"""/">genus species sub_species auteur8</a></li></ul>"""
         self.assertHTMLEqual(hierarchy_child_expected, hierarchy_child_output)
 
     def test_constr_hierarchy_tree_branch_child(self):
@@ -532,7 +532,7 @@ class TaxonTestCase(TestCase):
         list_child = Taxon.objects.filter(id_sup=self.species.id).order_by('rang')
         str_child_output = constr_hierarchy_tree_branch_child(list_child, nb)
         str_child_expected = """<ul><li><label class="tree_label" for="c7"/><strong>Sous-Espèce : </strong><ul>
-        <li><a href="/fatercal/taxon/"""+ str(self.sub_species.id) +"""/">genus species sub_species auteur8</a></li>"""
+        <li><a href="/taxon/"""+ str(self.sub_species.id) +"""/">genus species sub_species auteur8</a></li>"""
         self.assertHTMLEqual(str_child_expected, str_child_output)
 
     def test_get_taxon_adv_search(self):

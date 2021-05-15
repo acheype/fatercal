@@ -18,8 +18,8 @@
 {% block content %}
     <div class="breadcrumbs initialized">
         <a href="/">Accueil</a>
-        <span class="icon-arrow-right breadcrumbs-separator"></span> <a href="/fatercal/">Fatercal</a>
-        <span class="icon-arrow-right breadcrumbs-separator"></span> <a href="/fatercal/taxon/">Taxon</a>
+        <span class="icon-arrow-right breadcrumbs-separator"></span> <a href="/">Fatercal</a>
+        <span class="icon-arrow-right breadcrumbs-separator"></span> <a href="/taxon/">Taxon</a>
         {% if goal == 'update' %}
             <span class="icon-arrow-right breadcrumbs-separator"></span> Mise à jour depuis Taxref
         {% else %}
@@ -31,10 +31,10 @@
     <fieldset class="module aligned">
         <div>
             {% if goal == 'update' %}
-                <h1>Choix Taxon mise à jour:</h1>
+                <h1>Choix du taxon mis à jour :</h1>
             {% else %}
                 {% if goal == 'insert' %}
-                    <h1>Choix Taxon à inserer:</h1>
+                    <h1>Choix du taxon à insérer :</h1>
                 {% endif %}
             {% endif %}
         </div>
@@ -43,10 +43,10 @@
                 <h1> Les taxons ont été mis à jour</h1>
             {% else %}
                 {% if goal == 'insert' %}
-                    <h2> Les taxons ont été insérer.</h2>
+                    <h2> Les taxons ont été inséré.</h2>
                 {% endif %}
             {% endif %}
-            <a href='/fatercal/taxon/'>Retour a la page de choix de taxon</a>
+            <a href='/taxon/'>Retour a la page de choix de taxon</a>
         </div>
     </fieldset>
 {% endblock %}

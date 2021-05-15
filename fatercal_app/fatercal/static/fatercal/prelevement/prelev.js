@@ -6,7 +6,7 @@ $(document).ready(function(){
     });
 });
 
-function Date_update(date) {
+function date_update(date) {
     if (date=='unique'){
         var date = document.getElementById("date_1");
         document.getElementById("id_date").value = date.value;
