@@ -7,7 +7,7 @@ $BODY$
             OLD.altitude_min, OLD.mode_de_collecte, OLD.toponyme, OLD.toponymie_x, OLD.toponymie_y,
             OLD.information_complementaire, OLD.id_loc, OLD.id_taxon, OLD.type_enregistrement, OLD.gps,
             OLD.altitude_max, OLD.id_habitat, OLD.id_plante_hote,
-            NOW() at time zone 'Pacific/Noumea', 'Delete', '', OLD.utilisateur, OLD.source, OLD.taxref_version);
+            NOW() at time zone 'Pacific/Noumea', 'Delete', '', OLD.utilisateur, OLD.source);
 
         RETURN OLD;
     END;
