@@ -34,18 +34,18 @@ services:
             - POSTGRES_USER=fatercal
         env_file: fatercal-db.env
 
-    pgadmin:
-        image: dpage/pgadmin4:4.4.30
-        volumes:
-            - /data/fatercal/pdadmin:/var/lib/pgadmin
-        ports:
-            - "8080:80"
-        links:
-            - "db:pgsql-server"
-        environment:
-            - PGADMIN_DEFAULT_EMAIL: herve.jourdan@ird.fr
-            - PGADMIN_DEFAULT_PASSWORD: fatercal
-            - PGADMIN_LISTEN_PORT: 8080
+#    pgadmin:
+#        image: dpage/pgadmin4:4.4.30
+#        volumes:
+#            - /data/fatercal/pdadmin:/var/lib/pgadmin
+#        ports:
+#            - "8080:80"
+#        links:
+#            - "db:pgsql-server"
+#        environment:
+#            - PGADMIN_DEFAULT_EMAIL: herve.jourdan@ird.fr
+#            - PGADMIN_DEFAULT_PASSWORD: fatercal
+#            - PGADMIN_LISTEN_PORT: 8080
 
     cron:
         container_name: fatercal-cron
