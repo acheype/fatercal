@@ -3,4 +3,4 @@ django-jet==1.0.8
 psycopg2==2.8.6
 django-ajax-selects==1.7.1
 numpy==1.17.4
-djangorestframework==3.9.3
+djangorestframework==3.11.2
