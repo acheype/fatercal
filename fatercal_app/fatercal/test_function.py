@@ -400,7 +400,7 @@ class TaxonTestCase(TestCase):
         self.species.id_sup = None
         self.species.habitat = self.habitat
         self.species.nc = self.status
-        self.species.remarque = "Une remarque"
+        self.species.remarques = "Une remarque"
         self.species.sources = "Une source"
         self.species.reference_description = "Une description de reference"
         self.species.save()

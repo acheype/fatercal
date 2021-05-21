@@ -22,7 +22,7 @@ $BODY$
         INSERT INTO historique_taxon VALUES
         (OLD.id, OLD.cd_nom, OLD.cd_ref, OLD.cd_sup, OLD.lb_nom, OLD.lb_auteur,
             OLD.nom_complet, OLD.grande_terre, OLD.iles_loyaute, OLD.autre, OLD.territoire_fr,
-            OLD.remarque, OLD.sources, OLD.id_ancienne_bd, OLD.reference_description, OLD.habitat,
+            OLD.remarques, OLD.sources, OLD.id_ancienne_bd, OLD.reference_description, OLD.habitat,
             OLD.id_ref, OLD.id_sup, OLD.nc, OLD.rang, NOW() at time zone 'Pacific/Noumea',
             'Delete', '', OLD.utilisateur, OLD.source, OLD.taxref_version);
 
@@ -56,7 +56,7 @@ $BODY$
         INSERT INTO historique_taxon VALUES
         (NEW.id, NEW.cd_nom, NEW.cd_ref, NEW.cd_sup, NEW.lb_nom, NEW.lb_auteur,
             NEW.nom_complet, NEW.grande_terre, NEW.iles_loyaute, NEW.autre, NEW.territoire_fr,
-            NEW.remarque, NEW.sources, NEW.id_ancienne_bd, NEW.reference_description, NEW.habitat,
+            NEW.remarques, NEW.sources, NEW.id_ancienne_bd, NEW.reference_description, NEW.habitat,
             NEW.id_ref, NEW.id_sup, NEW.nc, NEW.rang, NOW() at time zone 'Pacific/Noumea',
             'Insert', '', NEW.utilisateur, NEW.source, NEW.taxref_version);
 
@@ -185,8 +185,8 @@ DECLARE changed_column_taxon varchar(250);
         IF NEW.territoire_fr != OLD.territoire_fr  THEN
             SELECT CONCAT(changed_column_taxon,'territoire_fr, ') INTO changed_column_taxon;
         END IF;
-        IF NEW.remarque != OLD.remarque  THEN
-            SELECT CONCAT(changed_column_taxon,'remarque, ') INTO changed_column_taxon;
+        IF NEW.remarques != OLD.remarques  THEN
+            SELECT CONCAT(changed_column_taxon,'remarques, ') INTO changed_column_taxon;
         END IF;
         IF NEW.sources != OLD.sources  THEN
             SELECT CONCAT(changed_column_taxon,'sources, ') INTO changed_column_taxon;
@@ -221,7 +221,7 @@ DECLARE changed_column_taxon varchar(250);
         INSERT INTO historique_taxon VALUES 
         (OLD.id, OLD.cd_nom, OLD.cd_ref, OLD.cd_sup, OLD.lb_nom, OLD.lb_auteur,
             OLD.nom_complet, OLD.grande_terre, OLD.iles_loyaute, OLD.autre, OLD.territoire_fr,
-            OLD.remarque, OLD.sources, OLD.id_ancienne_bd, OLD.reference_description, OLD.habitat,
+            OLD.remarques, OLD.sources, OLD.id_ancienne_bd, OLD.reference_description, OLD.habitat,
             OLD.id_ref, OLD.id_sup, OLD.nc, OLD.rang, NOW() at time zone 'Pacific/Noumea',
             'Update',changed_column_taxon, NEW.utilisateur, NEW.source, OLD.taxref_version);
 

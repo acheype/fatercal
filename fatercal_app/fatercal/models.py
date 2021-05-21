@@ -208,7 +208,7 @@ class Taxon(models.Model):
     iles_loyaute = models.NullBooleanField(verbose_name='Îles Loyauté')
     autre = models.NullBooleanField()
     territoire_fr = models.NullBooleanField()
-    remarque = models.TextField(blank=True, null=True)
+    remarques = models.TextField(blank=True, null=True)
     sources = models.TextField(blank=True, null=True)
     id_ancienne_bd = models.IntegerField(blank=True, null=True)
     reference_description = models.TextField(blank=True, null=True)

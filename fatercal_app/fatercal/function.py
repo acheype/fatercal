@@ -282,11 +282,11 @@ def construct_cleaned_taxon_search(taxon, cleaned_data):
         cleaned_taxon += (taxon.iles_loyaute,)
     if cleaned_data['other']:
         cleaned_taxon += (taxon.autre,)
-    if taxon.remarque is None:
+    if taxon.remarques is None:
         cleaned_taxon += (None,)
     else:
         if cleaned_data['remark']:
-            cleaned_taxon += (taxon.remarque.replace('\n', ''),)
+            cleaned_taxon += (taxon.remarques.replace('\n', ''),)
     if taxon.sources is None:
         cleaned_taxon += (None,)
     else:

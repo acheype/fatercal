@@ -45,7 +45,7 @@ class ChooseData(forms.Form):
     grande_terre = forms.BooleanField(required=False, label='Grande Terre')
     loyalty_island = forms.BooleanField(required=False, label='îles Loyauté')
     other = forms.BooleanField(required=False, label='Autre')
-    remark = forms.BooleanField(required=False, label='Remarque')
+    remark = forms.BooleanField(required=False, label='Remarques')
     source = forms.BooleanField(required=False, label='Sources')
     description_reference = forms.BooleanField(required=False, label='Reference description')
 

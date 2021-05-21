@@ -39,7 +39,7 @@ CREATE TABLE public.historique_taxon
   iles_loyaute boolean,
   autre boolean,
   territoire_fr boolean,
-  remarque text,
+  remarques text,
   sources text,
   id_ancienne_bd integer,
   reference_description text,

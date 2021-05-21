@@ -134,7 +134,7 @@ class TaxonModify(admin.ModelAdmin):
         }),
         ('Informations complémentaires', {
             'classes': ('collapse',),
-            'fields': ('remarque', 'sources', 'reference_description',)
+            'fields': ('remarques', 'sources', 'reference_description',)
         }),
         ('Identifiants', {
             'fields': ('id', 'id_ref_id', 'id_sup_id', 'cd_nom', 'cd_ref', 'cd_sup', 'id_ancienne_bd')
@@ -158,7 +158,7 @@ class TaxonModify(admin.ModelAdmin):
         }),
         ('Informations complémentaires', {
             'classes': ('collapse',),
-            'fields': ('remarque', 'sources', 'reference_description',)
+            'fields': ('remarques', 'sources', 'reference_description',)
         }),
         ('Identifiants', {
             'fields': ('id', 'id_ref_id', 'id_sup_id', 'cd_nom', 'cd_ref', 'cd_sup', 'id_ancienne_bd')
@@ -181,7 +181,7 @@ class TaxonModify(admin.ModelAdmin):
         }),
         ('Informations complémentaires', {
             'classes': ('collapse',),
-            'fields': ('remarque', 'sources', 'reference_description',)
+            'fields': ('remarques', 'sources', 'reference_description',)
         })
     )
 
