@@ -18,7 +18,7 @@ urlpatterns = [
     path('update_map/', views.update_map, name='Update Map'),
     path('update_from_taxref/', views.update_from_taxref, name='Update from Taxref'),
     path('insert_from_taxref/', views.insert_from_taxref, name='Insert from Taxref'),
-    path('api/', views.api_root),
+    path('api/', views.fatercal_api),
     path('api/taxons/search/', views.TaxonSearchViewSet.as_view()),
     path('api/taxons/', views.TaxonViewSet.as_view({'get': 'list'}), name='taxon-list'),
     path('api/taxons/<int:pk>/', views.TaxonViewSet.as_view({'get': 'retrieve'}), name='taxon-detail'),
