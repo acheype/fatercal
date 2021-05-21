@@ -594,10 +594,10 @@ def fatercal_api(request, format=None):
         taxonomique.
 
         Avec les urls listées ci-dessous, vous pouvez obtenir la liste de chaque type d'objet nécessaire à la
-        représentation des données taxonomique de FATERCAL : les **taxons**, les **rangs**, les **habitats** et les
-        **status**. De plus, chaque objet peut être accédé directement en rajoutant son *id* à la fin de l'url.
-        Par exemple, [http://fatercal.ird.nc/api/taxons/1](http://fatercal.ird.nc/api/taxons/1) permet d'accéder au
-        taxon avec l'*id 1*, soit le taxon *Biota* de rang *Domaine*.
+        représentation des données taxonomique de FATERCAL : les **taxons**, les **rangs**, les **habitats**,
+        **status** et les **noms vernaculaires**. De plus, chaque objet peut être accédé directement en rajoutant son
+        *id* à la fin de l'url. Par exemple, [http://fatercal.ird.nc/api/taxons/1](http://fatercal.ird.nc/api/taxons/1)
+        permet d'accéder au taxon avec l'*id 1*, soit le taxon *Biota* de rang *Domaine*.
 
         Pour permettre la recherche au sein des nombreux taxons, il est possible d'utiliser l'url
         [http://fatercal.ird.nc/api/taxons/search/](http://fatercal.ird.nc/api/taxons/search) et de spécifier en
@@ -608,6 +608,7 @@ def fatercal_api(request, format=None):
         'rangs': reverse('taxrefrang-list', request=request, format=format),
         'habitats': reverse('taxrefhabitat-list', request=request, format=format),
         'status': reverse('taxrefstatus-list', request=request, format=format),
+        'vernaculaires': reverse('vernaculaire-list', request=request, format=format),
     })
 
 
@@ -629,6 +630,7 @@ class TaxonViewSet(viewsets.ReadOnlyModelViewSet):
           - `lb_nom` : nom scientifique du taxon
           - `lb_auteur` : autorité du taxon, c'est à dire auteur et date de description
           - `nom_complet` : combinaison du nom scientifique et de l'autorité taxonomique associée
+          - `nom_vern` : liste des noms vernaculaires donnés au taxon
           - `rang' : rang taxonomique du taxon au sein de la classification hiérarchique taxonomique du règne animal,
           dont la liste des valeurs est identique à celles de TAXREF
           - `habitat`: code de la catégorie d'habitats utilisées par le taxon (*Terrestre*, *Eau douce*, etc.) dont la
@@ -691,6 +693,7 @@ class TaxonSearchViewSet(generics.ListAPIView):
     GET_PARAMS_FOR_EQUALS_FILTER = ['id', 'id_ref', 'id_sup', 'cd_nom', 'cd_ref', 'cd_sup', 'grande_terre',
                                     'iles_loyaute', 'autre', 'utilisateur', 'rang', 'habitat',
                                     'nc']
+    # TODO search also in noms_vern
     GET_PARAMS_FOR_ICONTAINS_FILTER = ['lb_nom', 'lb_auteur', 'nom_complet', 'remarques', 'sources',
                                        'reference_description', 'last_update']
 
