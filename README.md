@@ -18,17 +18,13 @@ docker-compose ([cf. installation](https://docs.docker.com/compose/install/)).
 
 **Configure the application**
 
-In the production environment, the compose configuration file is in the `docker/prod` directory.
+The compose configuration file for the production environment is in the root directory.
 
 The compose configuration file refer to only two containers: fatercal-db and fatercal-web. They are created from the
 version-tagged image downloaded from the Docker Hub (note that the code inside these images could be different that
 the one pulled in the `/data/fatercal.git` directory).
 
-Go inside this directory:
-
-    cd docker/prod/
-
-then next to the `docker-compose-prod.yml`, create two config files, each for each container, to define your passwords.
+Go inside this root directory, then next to the `docker-compose.yml`, create two config files, each for each container, to define your passwords.
 The first one `fatercal-db.env` must have this content :
 
     POSTGRES_PASSWORD=thePasswordOfTheFatercalUserInTheDb
@@ -97,22 +93,15 @@ Then enable the start at startup :
 
 ## From development to production
 
-To have the database set quicky, it's possible to use the same docker image than in production. For this, you can go to the directory `docker/test` and launch separately the service :
-
-    docker-compose up postgres
-    
-### TODO Write out this section
-
 launch the db in development
 
     docker-compose up postgres
 
 build the web application docker image
 
-    cd docker/test
     docker-compose build
 
-for the initialization, make sur the directory /data/fatercal/postgresql is empty
+to init from scratch, make sure the directory /data/fatercal/postgresql is empty. *Warning* : dont do it in production !
 
     rm /data/fatercal/postgresql -rf
 

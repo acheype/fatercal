@@ -631,7 +631,7 @@ class TaxonViewSet(viewsets.ReadOnlyModelViewSet):
           - `lb_auteur` : autorité du taxon, c'est à dire auteur et date de description
           - `nom_complet` : combinaison du nom scientifique et de l'autorité taxonomique associée
           - `nom_vern` : liste des noms vernaculaires donnés au taxon
-          - `rang' : rang taxonomique du taxon au sein de la classification hiérarchique taxonomique du règne animal,
+          - `rang` : rang taxonomique du taxon au sein de la classification hiérarchique taxonomique du règne animal,
           dont la liste des valeurs est identique à celles de TAXREF
           - `habitat`: code de la catégorie d'habitats utilisées par le taxon (*Terrestre*, *Eau douce*, etc.) dont la
           liste des valeurs est identique à celles de TAXREF
@@ -724,7 +724,7 @@ class TaxonSearchViewSet(generics.ListAPIView):
         If a GET parameter is not part of these two arrays, its value will be ignored.
         """
         filter_params = {}
-        self.__set_filter_params(filter_params);
+        self.__set_filter_params(filter_params)
 
         return Taxon.objects.filter(**filter_params)
 
