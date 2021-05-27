@@ -25,6 +25,7 @@ class DocsUses(models.Model):
 
 
 class HabitatDetail(models.Model):
+    id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
     nom = models.CharField(max_length=100)
 
     class Meta:
@@ -40,6 +41,7 @@ class HabitatDetail(models.Model):
 
 
 class Hote(models.Model):
+    id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
     id_hote = models.ForeignKey('Taxon', db_column='id_hote', related_name='hote', verbose_name='Hote',
                                 on_delete=models.DO_NOTHING)
     id_parasite = models.ForeignKey('Taxon', db_column='id_parasite', related_name='parasite', verbose_name='Parasite',
@@ -73,8 +75,8 @@ class Iso6393(models.Model):
 
 
 class TypeLoc(models.Model):
-    id_type = models.AutoField(primary_key=True)
-    type = models.CharField(max_length=10, verbose_name='Type')
+    id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
+    type = models.CharField(max_length=10)
 
     class Meta:
         managed = True
@@ -85,9 +87,9 @@ class TypeLoc(models.Model):
 
 
 class Localisation(models.Model):
-    id_loc = models.AutoField(primary_key=True)
-    id_sup = models.ForeignKey('Localisation', db_column='id_sup', blank=True,
-                               null=True, verbose_name="Localisation Supérieur", on_delete=models.DO_NOTHING)
+    id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
+    loc_sup = models.ForeignKey('Localisation', blank=True, null=True, verbose_name="Localisation Supérieur",
+                                on_delete=models.DO_NOTHING)
     loc_type = models.ForeignKey('TypeLoc', db_column='loc_type', verbose_name="Type", on_delete=models.DO_NOTHING)
     nom = models.CharField(max_length=250, verbose_name='Nom')
     latitude = models.FloatField(blank=True, null=True, )
@@ -102,9 +104,9 @@ class Localisation(models.Model):
 
 
 class PlanteHote(models.Model):
-    id_plante_hote = models.AutoField(db_column='id_plante_hote', primary_key=True)  # Field renamed remove characters.
-    famille = models.CharField(max_length=100, blank=True, null=True, verbose_name="Famille")
-    genre = models.CharField(max_length=100, blank=True, null=True, verbose_name="Genre")
+    id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
+    famille = models.CharField(max_length=100, blank=True, null=True)
+    genre = models.CharField(max_length=100, blank=True, null=True)
     espece = models.CharField(max_length=100, blank=True, null=True, verbose_name="Espèce")
 
     def plante(self):
@@ -124,9 +126,9 @@ class PlanteHote(models.Model):
 
 
 class Prelevement(models.Model):
-    id_prelevement = models.AutoField(primary_key=True)
-    id_loc = models.ForeignKey(Localisation, db_column='id_loc',
-                               blank=True, null=True, verbose_name='Localisation', on_delete=models.DO_NOTHING)
+    id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
+    localisation = models.ForeignKey(Localisation, db_column='id_localisation', blank=True, null=True,
+                                     on_delete=models.DO_NOTHING)
     id_taxon = models.ForeignKey('Taxon', db_column='id_taxon', verbose_name='Taxon', on_delete=models.DO_NOTHING)
     type_enregistrement = models.ForeignKey('TypeEnregistrement', db_column='type_enregistrement',
                                             blank=True, null=True, on_delete=models.DO_NOTHING)
@@ -134,14 +136,14 @@ class Prelevement(models.Model):
                             validators=[
                                 RegexValidator(
                                     regex=regex_date,
-                                    message='La date doit être dans l\'une des formes suivantes: '
+                                    message='La date doit être dans l\'une des formes suivantes : '
                                             '1850, 1850-12, 1850-12-01',
                                     code='invalid_username'
                                 ),
                             ]
                             )
-    nb_taxon_present = models.SmallIntegerField(blank=True, null=True, verbose_name='Nombre Individu')
-    habitat = models.ForeignKey(HabitatDetail, db_column='id_habitat', blank=True, null=True, verbose_name='Habitat',
+    nb_individus = models.SmallIntegerField(blank=True, null=True, verbose_name='Nombre Individus')
+    habitat = models.ForeignKey(HabitatDetail, db_column='id_habitat', blank=True, null=True,
                                 on_delete=models.DO_NOTHING)
     collection_museum = models.CharField(max_length=250, blank=True, null=True)
     type_specimen = models.CharField(max_length=250, blank=True, null=True)
@@ -150,12 +152,12 @@ class Prelevement(models.Model):
     altitude_max = models.BigIntegerField(blank=True, null=True, verbose_name='Altitude Maximum')
     mode_de_collecte = models.CharField(max_length=250, blank=True, null=True)
     plante_hote = models.ForeignKey(PlanteHote, db_column='id_plante_hote',
-                                    blank=True, null=True, verbose_name='Plante Hote', on_delete=models.DO_NOTHING)
+                                    blank=True, null=True, on_delete=models.DO_NOTHING)
     toponyme = models.CharField(max_length=250, blank=True, null=True)
     toponymie_x = models.FloatField(blank=True, null=True)
     toponymie_y = models.FloatField(blank=True, null=True)
     gps = models.NullBooleanField(verbose_name='GPS')
-    information_complementaire = models.TextField(blank=True, null=True)
+    infos_compl = models.TextField(blank=True, null=True, verbose_name='Informations complémentaires')
 
     def __str__(self):
         return self.id_taxon.__str__()
@@ -166,7 +168,8 @@ class Prelevement(models.Model):
 
 
 class Recolteur(models.Model):
-    id_prelevement = models.ForeignKey(Prelevement, db_column='id_prelevement', blank=True, null=True,
+    #id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
+    prelevement = models.ForeignKey(Prelevement, db_column='id_prelevement', blank=True, null=True,
                                        on_delete=models.DO_NOTHING)
     lb_auteur = models.CharField(max_length=250, blank=True, null=True, verbose_name='Récolteurs')
 
@@ -179,6 +182,7 @@ class Recolteur(models.Model):
 
 
 class TypeEnregistrement(models.Model):
+    id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
     lb_type = models.CharField(max_length=250, blank=True, null=True)
 
     def __str__(self):
@@ -190,6 +194,7 @@ class TypeEnregistrement(models.Model):
 
 
 class Taxon(models.Model):
+    id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
     id_ref = models.ForeignKey('self', db_column='id_ref', blank=True, null=True,
                                related_name='id_ref+', verbose_name='Référent', on_delete=models.DO_NOTHING)
     id_sup = models.ForeignKey('self', db_column='id_sup', blank=True, null=True,
@@ -200,7 +205,7 @@ class Taxon(models.Model):
     lb_nom = models.CharField(max_length=250, verbose_name='Nom')
     lb_auteur = models.CharField(max_length=250, blank=True, null=True, verbose_name='Auteur')
     nom_complet = models.CharField(max_length=250, blank=True, null=True)
-    rang = models.ForeignKey('TaxrefRang', db_column='rang', verbose_name='rang', on_delete=models.DO_NOTHING)
+    rang = models.ForeignKey('TaxrefRang', db_column='rang', on_delete=models.DO_NOTHING)
     habitat = models.ForeignKey('TaxrefHabitat', db_column='habitat', blank=True, null=True, on_delete=models.DO_NOTHING)
     nc = models.ForeignKey('TaxrefStatus', db_column='nc', blank=True, null=True, verbose_name='Statut',
                            on_delete=models.DO_NOTHING)
@@ -323,7 +328,7 @@ class TaxrefStatus(models.Model):
 
 
 class Vernaculaire(models.Model):
-    id_taxvern = models.AutoField(primary_key=True)
+    id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
     id_taxon = models.ForeignKey(Taxon, db_column='id_taxon', verbose_name='Taxon', related_name="noms_vern", on_delete=models.DO_NOTHING)
     nom_vern = models.CharField(max_length=100, verbose_name='Nom Vernaculaire')
     pays = models.CharField(max_length=100, verbose_name='Pays d\'utilisation')
@@ -339,10 +344,10 @@ class Vernaculaire(models.Model):
 
 class TaxrefExport(models.Model):
     regne = models.CharField(max_length=250, verbose_name='Règne')
-    phylum = models.CharField(max_length=250, verbose_name='Règne')
-    classe = models.CharField(max_length=250, verbose_name='Règne')
-    ordre = models.CharField(max_length=250, verbose_name='Règne')
-    famille = models.CharField(max_length=250, verbose_name='Règne')
+    phylum = models.CharField(max_length=250,)
+    classe = models.CharField(max_length=250)
+    ordre = models.CharField(max_length=250)
+    famille = models.CharField(max_length=250)
     group1_inpn = models.CharField(max_length=250, verbose_name='Group1 INPN')
     group2_inpn = models.CharField(max_length=250, verbose_name='Group2 INPN')
     id = models.BigIntegerField()
@@ -376,6 +381,7 @@ class TaxrefExport(models.Model):
 
 
 class TaxrefUpdate(models.Model):
+    id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
     taxon_id = models.ForeignKey('Taxon', db_column='taxon_id', verbose_name='Taxon', on_delete=models.DO_NOTHING, null=True)
     cd_nom = models.IntegerField(unique=True, blank=True, null=True)
     cd_ref = models.IntegerField(blank=True, null=True)
@@ -387,7 +393,7 @@ class TaxrefUpdate(models.Model):
     habitat = models.SmallIntegerField(null=True)
     nc = models.CharField(max_length=4, blank=True, null=True)
     date = models.DateTimeField(auto_now=False, auto_now_add=False)
-    taxref_version = models.CharField(max_length=250, verbose_name='Nom')
+    taxref_version = models.CharField(max_length=250)
 
     class Meta:
             managed = True

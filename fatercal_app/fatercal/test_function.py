@@ -993,8 +993,8 @@ class SampleTestClass(TestCase):
     def setUp(self):
         self.species = Taxon.objects.create(id=1, lb_nom="species", lb_auteur="auteur1",
                                             rang=TaxrefRang.objects.create(rang='ES', lb_rang='Espece'))
-        self.sample = Prelevement.objects.create(id_prelevement=10, id_taxon=self.species)
-        Recolteur.objects.create(id_prelevement=self.sample, lb_auteur="auteur")
+        self.sample = Prelevement.objects.create(id=10, id_taxon=self.species)
+        Recolteur.objects.create(id=self.sample, lb_auteur="auteur")
         self.species.id_ref = self.species
         self.species.save()
 
@@ -1013,7 +1013,7 @@ class SampleTestClass(TestCase):
         ville = Localisation.objects.create(nom='town', loc_type=TypeLoc.objects.create(type='ville'), id_sup=region)
         self.assertEqual(get_loc_from_sample(self.sample), {})
 
-        self.sample.id_loc = ville
+        self.sample.localisation = ville
         dict_loc_output = get_loc_from_sample(self.sample)
         dict_loc_expected = {
             'region': 'regions',
@@ -1116,7 +1116,7 @@ class SampleTestClass(TestCase):
         self.assertEqual(Localisation.objects.get(nom='regions'), region)
         self.assertEqual(Localisation.objects.get(nom='secteur'), secteur)
         self.assertEqual(Localisation.objects.get(nom='nom'), nom)
-        self.assertEqual(sample.id_loc, nom)
+        self.assertEqual(sample.localisation, nom)
 
         region.delete()
         region.id_sup = pays
@@ -1211,8 +1211,8 @@ class SampleTestClass(TestCase):
             'list_harvester': [],
             'habitat': habitat
         }
-        sample = Prelevement(id_taxon=self.species, nb_taxon_present=0, type_specimen=line['sexe'],
-                             type_enregistrement=typeEn, date='2018', information_complementaire='', toponymie_x=1,
+        sample = Prelevement(id_taxon=self.species, nb_individus=0, type_specimen=line['sexe'],
+                             type_enregistrement=typeEn, date='2018', infos_compl='', toponymie_x=1,
                              toponymie_y=2, gps=True, altitude_min=10, altitude_max=None)
         try:
             result_output = construct_sample(line, 1)
@@ -1220,11 +1220,11 @@ class SampleTestClass(TestCase):
             self.assertEqual(result_expected['habitat'], result_output['habitat'])
             self.assertEqual(result_expected['list_harvester'], result_output['list_harvester'])
             self.assertEqual(sample.id_taxon, result_output['sample'].id_taxon)
-            self.assertEqual(sample.nb_taxon_present, result_output['sample'].nb_taxon_present)
+            self.assertEqual(sample.nb_individus, result_output['sample'].nb_individus)
             self.assertEqual(sample.type_specimen, result_output['sample'].type_specimen)
             self.assertEqual(sample.type_enregistrement, result_output['sample'].type_enregistrement)
             self.assertEqual(sample.date, result_output['sample'].date)
-            self.assertEqual(sample.information_complementaire, result_output['sample'].information_complementaire)
+            self.assertEqual(sample.infos_compl, result_output['sample'].infos_compl)
             self.assertEqual(sample.toponymie_x, result_output['sample'].toponymie_x)
             self.assertEqual(sample.toponymie_y, result_output['sample'].toponymie_y)
             self.assertEqual(sample.gps, result_output['sample'].gps)
@@ -1306,9 +1306,9 @@ class SampleTestClass(TestCase):
                                            lb_auteur="auteur1", rang=self.species.rang)
         country = Localisation.objects.create(nom='country', loc_type=TypeLoc.objects.create(type='pays'),
                                               longitude=4, latitude=1)
-        Prelevement.objects.create(id_prelevement=2, id_taxon=species_syn, toponymie_x=1, toponymie_y=4,
+        Prelevement.objects.create(id=2, id_taxon=species_syn, toponymie_x=1, toponymie_y=4,
                                    type_enregistrement=TypeEnregistrement.objects.create(lb_type='pays'),
-                                   id_loc=country)
+                                   localisation=country)
         list_sample_output = list_sample_for_map(self.species)
         list_sample_expected = [{'id': 10, 'loc': None, 'default_loc': False, 'latitude': 2.0, 'longitude': 1.0,
                                  't_enre': None, 'date': None, 'collection_museum': None},

@@ -1,8 +1,8 @@
-﻿CREATE TABLE public.historique_prelevement
+﻿﻿CREATE TABLE public.historique_prelevement
 (
-  id_prelevement integer,
+  id integer,
   date character varying(21),
-  nb_taxon_present smallint,
+  nb_individus smallint,
   collection_museum character varying(250),
   type_specimen character varying(250),
   code_specimen character varying(255),
@@ -11,8 +11,8 @@
   toponyme character varying(250),
   toponymie_x double precision,
   toponymie_y double precision,
-  information_complementaire text,
-  id_loc integer,
+  infos_compl text,
+  id_localisation integer,
   id_taxon integer NOT NULL,
   type_enregistrement integer,
   gps boolean,

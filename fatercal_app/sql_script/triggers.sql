@@ -1,11 +1,11 @@
-﻿CREATE OR REPLACE FUNCTION public.function_trigger_delete_prelevement()
+﻿﻿CREATE OR REPLACE FUNCTION public.function_trigger_delete_prelevement()
   RETURNS trigger AS
 $BODY$
     BEGIN
         INSERT INTO historique_prelevement VALUES 
-        (OLD.id_prelevement, OLD.date, OLD.nb_taxon_present, OLD.collection_museum, OLD.type_specimen, OLD.code_specimen,
+        (OLD.id, OLD.date, OLD.nb_individus, OLD.collection_museum, OLD.type_specimen, OLD.code_specimen,
             OLD.altitude_min, OLD.mode_de_collecte, OLD.toponyme, OLD.toponymie_x, OLD.toponymie_y,
-            OLD.information_complementaire, OLD.id_loc, OLD.id_taxon, OLD.type_enregistrement, OLD.gps,
+            OLD.infos_compl, OLD.id_localisation, OLD.id_taxon, OLD.type_enregistrement, OLD.gps,
             OLD.altitude_max, OLD.id_habitat, OLD.id_plante_hote,
             NOW() at time zone 'Pacific/Noumea', 'Delete', '', OLD.utilisateur, OLD.source);
 
@@ -37,9 +37,9 @@ CREATE OR REPLACE FUNCTION public.function_trigger_insert_prelevement()
 $BODY$
     BEGIN
         INSERT INTO historique_prelevement VALUES 
-        (NEW.id_prelevement, NEW.date, NEW.nb_taxon_present, NEW.collection_museum, NEW.type_specimen, NEW.code_specimen,
+        (NEW.id, NEW.date, NEW.nb_individus, NEW.collection_museum, NEW.type_specimen, NEW.code_specimen,
             NEW.altitude_min, NEW.mode_de_collecte, NEW.toponyme, NEW.toponymie_x, NEW.toponymie_y,
-            NEW.information_complementaire, NEW.id_loc, NEW.id_taxon, NEW.type_enregistrement, NEW.gps,
+            NEW.infos_compl, NEW.id_localisation, NEW.id_taxon, NEW.type_enregistrement, NEW.gps,
             NEW.altitude_max, NEW.id_habitat, NEW.id_plante_hote, NOW() at time zone 'Pacific/Noumea',
             'Insert', '', NEW.utilisateur, NEW.source);
 
@@ -73,14 +73,14 @@ DECLARE changed_column_prelevement varchar(250);
     BEGIN
         changed_column_prelevement = '';
         -- Check that empname and salary are given
-        IF NEW.id_prelevement != OLD.id_prelevement  THEN
-            SELECT CONCAT(changed_column_prelevement,'id_prelevement, ') INTO changed_column_prelevement;
+        IF NEW.id != OLD.id  THEN
+            SELECT CONCAT(changed_column_prelevement,'id, ') INTO changed_column_prelevement;
         END IF;
         IF NEW.date != OLD.date  THEN
             SELECT CONCAT(changed_column_prelevement,'date, ') INTO changed_column_prelevement;
         END IF;
-        IF NEW.nb_taxon_present != OLD.nb_taxon_present  THEN
-            SELECT CONCAT(changed_column_prelevement,'nb_taxon_present, ') INTO changed_column_prelevement;
+        IF NEW.nb_individus != OLD.nb_individus  THEN
+            SELECT CONCAT(changed_column_prelevement,'nb_individus, ') INTO changed_column_prelevement;
         END IF;
         IF NEW.collection_museum != OLD.collection_museum  THEN
             SELECT CONCAT(changed_column_prelevement,'collection_museum, ') INTO changed_column_prelevement;
@@ -106,11 +106,11 @@ DECLARE changed_column_prelevement varchar(250);
         IF NEW.toponymie_y != OLD.toponymie_y  THEN
             SELECT CONCAT(changed_column_prelevement,'toponymie_y, ') INTO changed_column_prelevement;
         END IF;
-        IF NEW.information_complementaire != OLD.information_complementaire  THEN
-            SELECT CONCAT(changed_column_prelevement,'information_complementaire, ') INTO changed_column_prelevement;
+        IF NEW.infos_compl != OLD.infos_compl  THEN
+            SELECT CONCAT(changed_column_prelevement,'infos_compl, ') INTO changed_column_prelevement;
         END IF;
-        IF NEW.id_loc != OLD.id_loc  THEN
-            SELECT CONCAT(changed_column_prelevement,'id_loc, ') INTO changed_column_prelevement;
+        IF NEW.id_localisation != OLD.id_localisation  THEN
+            SELECT CONCAT(changed_column_prelevement,'id_localisation, ') INTO changed_column_prelevement;
         END IF;
         IF NEW.id_taxon != OLD.id_taxon  THEN
             SELECT CONCAT(changed_column_prelevement,'id_taxon, ') INTO changed_column_prelevement;
@@ -134,9 +134,9 @@ DECLARE changed_column_prelevement varchar(250);
             SELECT CONCAT(changed_column_prelevement,'source, ') INTO changed_column_prelevement;
         END IF;
         INSERT INTO historique_prelevement VALUES 
-        (OLD.id_prelevement, OLD.date, OLD.nb_taxon_present, OLD.collection_museum, OLD.type_specimen, OLD.code_specimen,
+        (OLD.id, OLD.date, OLD.nb_individus, OLD.collection_museum, OLD.type_specimen, OLD.code_specimen,
             OLD.altitude_min, OLD.mode_de_collecte, OLD.toponyme, OLD.toponymie_x, OLD.toponymie_y,
-            OLD.information_complementaire, OLD.id_loc, OLD.id_taxon, OLD.type_enregistrement, OLD.gps,
+            OLD.infos_compl, OLD.id_localisation, OLD.id_taxon, OLD.type_enregistrement, OLD.gps,
             OLD.altitude_max, OLD.id_habitat, OLD.id_plante_hote, NOW() at time zone 'Pacific/Noumea', 
             'Update', changed_column_prelevement, NEW.utilisateur, OLD.source);
 

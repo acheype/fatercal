@@ -1,4 +1,6 @@
 from django.contrib import admin
+# from django.contrib.admin import *
+
 from django.db.models import Q
 from django.urls import path, include
 from django.utils.safestring import mark_safe
@@ -10,17 +12,6 @@ import datetime
 from .views import ValidSpecialFilter, AltitudeSpecialFilter
 from .models import Taxon, Localisation, Prelevement, Recolteur, Hote, PlanteHote, Vernaculaire, Iso6393
 from .function import get_recolteur, constr_hierarchy_tree_branch_parents, constr_hierarchy_tree_branch_child, is_admin
-
-
-# This class serve to redefine all urls of django admin by removing the application name
-class FatercalAdminSite(admin.AdminSite):
-    def get_urls(self):
-        urlpatterns = super().get_urls()
-        for model, model_admin in self._registry.items():
-            urlpatterns += [
-                path('%s/' % (model._meta.model_name), include(model_admin.urls)),
-            ]
-        return urlpatterns
 
 
 # This class serve to modify or add a Parasite for the Model Taxon
@@ -94,7 +85,7 @@ class TaxonModify(admin.ModelAdmin):
         'hierarchy',
         'referent',
         'id',
-        'id_sup_id',
+        'id_sup_id', # TODO see if _id works...
         'id_ref_id',
         'cd_nom',
         'cd_ref',
@@ -304,10 +295,10 @@ class TaxonModify(admin.ModelAdmin):
                                     <td><a href='/prelevement/{}/'>Modification</a></td>
                                     </tr>
                                 ''' \
-                .format(prelev.id_loc, prelev.type_enregistrement, prelev.date, prelev.nb_taxon_present,
+                .format(prelev.localisation, prelev.type_enregistrement, prelev.date, prelev.nb_individus,
                         prelev.collection_museum, prelev.type_specimen, prelev.code_specimen, prelev.altitude_min,
                         prelev.altitude_max, prelev.mode_de_collecte, prelev.toponyme, prelev.toponymie_x,
-                        prelev.toponymie_y, get_recolteur(prelev), prelev.id_prelevement)
+                        prelev.toponymie_y, get_recolteur(prelev), prelev.id)
         board_prelevement += "</table></br><a href='/prelevement/add?id_taxon={}'>Ajouter un Prelevement</a>"\
             .format(obj.id)
         return mark_safe(board_prelevement)
@@ -396,7 +387,7 @@ class LocalisationModify(admin.ModelAdmin):
 
     fieldsets = [
         ('Informations', {
-            'fields': ('nom', 'id_sup', 'latitude', 'longitude', 'loc_type')
+            'fields': ('nom', 'loc_sup', 'latitude', 'longitude', 'loc_type')
         })
     ]
 
@@ -430,14 +421,14 @@ class PrelevementModify(admin.ModelAdmin):
 
     fieldsets = [
         ('Spécimen', {
-            'fields': ('id_taxon', 'collection_museum', 'code_specimen', 'nb_taxon_present', 'type_specimen',)
+            'fields': ('id_taxon', 'collection_museum', 'code_specimen', 'nb_individus', 'type_specimen',)
         }),
         ('Informations', {
             'fields': ('type_enregistrement', 'plante_hote', 'mode_de_collecte', 'date',
-                       'button_modal_date', 'information_complementaire')
+                       'button_modal_date', 'infos_compl')
         }),
         ('Localisation', {
-            'fields': ('id_loc', 'toponyme', 'toponymie_x', 'toponymie_y', 'habitat',
+            'fields': ('localisation', 'toponyme', 'toponymie_x', 'toponymie_y', 'habitat',
                        'gps', 'altitude_min', 'altitude_max')
         }),
     ]
@@ -453,10 +444,10 @@ class PrelevementModify(admin.ModelAdmin):
         :return: nothing
         """
         # When loc is given we take the loc and toponymie is not given, we take the localisation number from loc
-        if obj.id_loc is not None and (obj.toponymie_x is None and obj.toponymie_y is None):
-            if obj.id_loc.latitude is not None and obj.id_loc.longitude:
-                obj.toponymie_x = obj.id_loc.latitude
-                obj.toponymie_y = obj.id_loc.longitude
+        if obj.localisation is not None and (obj.toponymie_x is None and obj.toponymie_y is None):
+            if obj.localisation.latitude is not None and obj.localisation.longitude:
+                obj.toponymie_x = obj.localisation.latitude
+                obj.toponymie_y = obj.localisation.longitude
         super(PrelevementModify, self).save_model(request, obj, form, change)
 
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
@@ -609,7 +600,26 @@ def add_genre_to_name(sender, instance, created, **kwargs):
             instance.nom_complet = instance.lb_nom
 
 
+# This class serve to redefine all urls of django admin by removing the application name
+class FatercalAdminSite(admin.AdminSite):
+    site_header = 'Fatercal'
+    site_title = 'Fatercal'
+
+    # def __init__(self, *args, **kwargs):
+    #     super(FatercalAdminSite, self).__init__(*args, **kwargs)
+    #     self._registry.update(site._registry)  # PART
+
+    def get_urls(self):
+        urlpatterns = super().get_urls()
+        for model, model_admin in self._registry.items():
+            urlpatterns += [
+                path('%s/' % (model._meta.model_name), include(model_admin.urls)),
+            ]
+        return urlpatterns
+
+
 # the list of model to show to the user for modification
+# TODO adapt with autodiscovery solution presented at https://stackoverflow.com/questions/32612400/auto-register-django-auth-models-using-custom-admin-site
 fatercal_admin = FatercalAdminSite(name='FatercalAdmin')
 fatercal_admin.register(Taxon, TaxonModify)
 fatercal_admin.register(Localisation, LocalisationModify)
@@ -618,8 +628,7 @@ fatercal_admin.register(Hote, HoteModify)
 fatercal_admin.register(PlanteHote, PlanteHoteModify)
 fatercal_admin.register(Vernaculaire, VernaculaireModify)
 fatercal_admin.register(Iso6393, Iso6393Modify)
-fatercal_admin.site_header = 'Fatercal'
-fatercal_admin.site_title = 'Fatercal'
+
 
 # list signals for different models
 post_save.connect(add_genre_to_name, sender=Taxon)
