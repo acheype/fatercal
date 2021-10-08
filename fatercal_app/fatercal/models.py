@@ -367,7 +367,7 @@ class TaxrefExport(models.Model):
     nom_vern_eng = models.CharField(max_length=100, blank=True, null=True)
     habitat = models.CharField(max_length=100, blank=True, null=True)
     grande_terre = models.CharField(max_length=50, verbose_name='Grande terre')
-    iles_loyaute = models.CharField(max_length=50, verbose_name='îles Loyautée')
+    iles_loyaute = models.CharField(max_length=50, verbose_name='îles Loyauté')
     autre = models.CharField(max_length=50, verbose_name='Autre')
     nc = models.CharField(max_length=4, blank=True, null=True)
     non_present = models.CharField(max_length=4, blank=True, null=True)
