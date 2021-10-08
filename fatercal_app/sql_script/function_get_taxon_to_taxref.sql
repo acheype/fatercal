@@ -72,6 +72,9 @@ ELSE IF taxon_t.autre is FALSE THEN
 END IF;
 END IF;
 
+SELECT * INTO taxon_ref FROM taxon WHERE id=taxon_t.id_ref;
+result.nom_valide = taxon_ref.nom_complet;
+
 result.id = taxon_t.id;
 result.id_ref = taxon_t.id_ref;
 result.id_sup = taxon_t.id_sup;
