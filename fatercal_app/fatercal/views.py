@@ -292,6 +292,7 @@ def extract_taxon_taxref(request):
     # applications.
     if is_admin(request.user):
         param = None
+
         rows = (idx for idx in get_taxon_from_search_taxref(param))
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="fatercal_version_taxref' + \
@@ -615,7 +616,7 @@ def fatercal_api(request, format=None):
 class TaxonViewSet(viewsets.ReadOnlyModelViewSet):
     """
         Un taxon correspond à une unité taxonomique, c'est à dire tout rang taxonomique au sein de l'arborescence de
-        la classificaton hérarchique du vivant.
+        la classification hérarchique du vivant.
 
         Détails des champs :
 
@@ -640,7 +641,6 @@ class TaxonViewSet(viewsets.ReadOnlyModelViewSet):
           - `grande_terre` : présence sur la grande terre (y compris Île des pins et Belep)
           - `iles_loyaute` : présence sur au moins une des iles loyauté
           - `autre` : présence hors Nouvelle-Calédonie
-          - `remarques` : informations variées sur le taxon (biologie, statut, distribution...)
           - `sources` : sources bibliographiques pour occurence en Nouvelle-Calédonie, seules l'année et l'auteur sont
           renseignés, plusieurs sources sont séparées par des ;
           - `reference_description` : reférence bibliographique de la description originale du taxon, description
@@ -694,7 +694,7 @@ class TaxonSearchViewSet(generics.ListAPIView):
                                     'iles_loyaute', 'autre', 'utilisateur', 'rang', 'habitat',
                                     'nc']
     # TODO search also in noms_vern
-    GET_PARAMS_FOR_ICONTAINS_FILTER = ['lb_nom', 'lb_auteur', 'nom_complet', 'remarques', 'sources',
+    GET_PARAMS_FOR_ICONTAINS_FILTER = ['lb_nom', 'lb_auteur', 'nom_complet', 'sources',
                                        'reference_description', 'last_update']
 
     def __set_filter_params(self, params):
