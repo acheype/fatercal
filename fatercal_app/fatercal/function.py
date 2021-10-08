@@ -63,7 +63,7 @@ def get_recolteur(prelev):
     :param prelev: the object
     :return: a string
     """
-    list_recolt = Recolteur.objects.filter(id=prelev.id)
+    list_recolt = Recolteur.objects.filter(id_prelevement=prelev.id_prelevement)
     if len(list_recolt) > 0:
         str_recolt = ''
         first = True
@@ -325,7 +325,7 @@ def get_sample(param):
         else:
             dict_hierarchy = get_hierarchy_to_dict(taxon)
         altitude = format_altitude_sample(sample)
-        tupple = (sample.id, dict_hierarchy.get('Ordre'), dict_hierarchy.get('Famille'),
+        tupple = (sample.id_prelevement, dict_hierarchy.get('Ordre'), dict_hierarchy.get('Famille'),
                   dict_hierarchy.get('Sous-Famille'), dict_hierarchy.get('Genre'), dict_hierarchy.get('Sous-Genre'),
                   dict_hierarchy.get('Espèce'), dict_hierarchy.get('Sous-Espèce'), sample.id_taxon.lb_auteur,
                   sample.date, harvesters, None, None, altitude, dict_loc.get('Pays'), dict_loc.get('Region'),
@@ -342,14 +342,14 @@ def get_loc_from_sample(sample):
     :param sample: an object sample
     :return: a dictionnary
     """
-    if sample.localisation is None:
+    if sample.id_loc is None:
         return {}
     else:
-        loc = sample.localisation
+        loc = sample.id_loc
         dict_loc = {}
         while loc is not None:
             dict_loc[loc.loc_type.type] = loc.nom
-            loc = loc.loc_sup
+            loc = loc.id_sup
         return dict_loc
 
 
@@ -882,12 +882,12 @@ def save_all_sample(list_dict_sample):
             sample['loc']['nom'].save()
         else:
             sample['loc']['nom'].save()
-        sample['sample'].localisation = sample['loc']['nom']
+        sample['sample'].id_loc = sample['loc']['nom']
         if sample['habitat'] is not None:
             sample['sample'].habitat = sample['habitat']
         sample['sample'].save()
         for harvest in sample['list_harvester']:
-            harvest.id = sample['sample']
+            harvest.id_prelevement = sample['sample']
             harvest.save()
 
 
@@ -1003,14 +1003,14 @@ def list_sample_for_map(taxon):
                 t_enre = None
             else:
                 t_enre = sample.type_enregistrement.lb_type
-            if sample.localisation is None:
+            if sample.id_loc is None:
                 loc = None
             else:
-                loc = sample.localisation.nom
-                if sample.toponymie_x == sample.localisation.latitude and sample.localisation.longitude == sample.toponymie_y:
+                loc = sample.id_loc.nom
+                if sample.toponymie_x == sample.id_loc.latitude and sample.id_loc.longitude == sample.toponymie_y:
                     default_loc = True
             list_sample.append({
-                'id': sample.id,
+                'id': sample.id_prelevement,
                 'loc': loc,
                 'default_loc': default_loc,
                 'latitude': sample.toponymie_y,

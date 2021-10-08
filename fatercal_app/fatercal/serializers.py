@@ -36,5 +36,5 @@ class VernaculaireSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Vernaculaire
-        fields = ['id', 'taxon', 'nom_vern', 'pays', 'iso639_3']
+        fields = ['id_taxvern', 'taxon', 'nom_vern', 'pays', 'iso639_3']
 

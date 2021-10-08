@@ -75,8 +75,8 @@ class Iso6393(models.Model):
 
 
 class TypeLoc(models.Model):
-    id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
-    type = models.CharField(max_length=10)
+    id_type = models.AutoField(primary_key=True)
+    type = models.CharField(max_length=10, verbose_name='Type')
 
     class Meta:
         managed = True
@@ -87,9 +87,9 @@ class TypeLoc(models.Model):
 
 
 class Localisation(models.Model):
-    id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
-    loc_sup = models.ForeignKey('Localisation', blank=True, null=True, verbose_name="Localisation Supérieur",
-                                on_delete=models.DO_NOTHING)
+    id_loc = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
+    id_sup = models.ForeignKey('Localisation', db_column='id_sup', blank=True,
+                               null=True, verbose_name="Localisation Supérieur", on_delete=models.DO_NOTHING)
     loc_type = models.ForeignKey('TypeLoc', db_column='loc_type', verbose_name="Type", on_delete=models.DO_NOTHING)
     nom = models.CharField(max_length=250, verbose_name='Nom')
     latitude = models.FloatField(blank=True, null=True, )
@@ -104,9 +104,9 @@ class Localisation(models.Model):
 
 
 class PlanteHote(models.Model):
-    id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
-    famille = models.CharField(max_length=100, blank=True, null=True)
-    genre = models.CharField(max_length=100, blank=True, null=True)
+    id_plante_hote = models.AutoField(db_column='id_plante_hote', primary_key=True)  # Field renamed remove characters.
+    famille = models.CharField(max_length=100, blank=True, null=True, verbose_name="Famille")
+    genre = models.CharField(max_length=100, blank=True, null=True, verbose_name="Genre")
     espece = models.CharField(max_length=100, blank=True, null=True, verbose_name="Espèce")
 
     def plante(self):
@@ -126,9 +126,9 @@ class PlanteHote(models.Model):
 
 
 class Prelevement(models.Model):
-    id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
-    localisation = models.ForeignKey(Localisation, db_column='id_localisation', blank=True, null=True,
-                                     on_delete=models.DO_NOTHING)
+    id_prelevement = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
+    id_loc = models.ForeignKey(Localisation, db_column='id_loc',
+                               blank=True, null=True, verbose_name='Localisation', on_delete=models.DO_NOTHING)
     id_taxon = models.ForeignKey('Taxon', db_column='id_taxon', verbose_name='Taxon', on_delete=models.DO_NOTHING)
     type_enregistrement = models.ForeignKey('TypeEnregistrement', db_column='type_enregistrement',
                                             blank=True, null=True, on_delete=models.DO_NOTHING)
@@ -168,8 +168,8 @@ class Prelevement(models.Model):
 
 
 class Recolteur(models.Model):
-    #id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
-    prelevement = models.ForeignKey(Prelevement, db_column='id_prelevement', blank=True, null=True,
+    id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
+    id_prelevement = models.ForeignKey(Prelevement, db_column='id_prelevement', blank=True, null=True,
                                        on_delete=models.DO_NOTHING)
     lb_auteur = models.CharField(max_length=250, blank=True, null=True, verbose_name='Récolteurs')
 
@@ -328,7 +328,7 @@ class TaxrefStatus(models.Model):
 
 
 class Vernaculaire(models.Model):
-    id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
+    id_taxvern = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
     id_taxon = models.ForeignKey(Taxon, db_column='id_taxon', verbose_name='Taxon', related_name="noms_vern", on_delete=models.DO_NOTHING)
     nom_vern = models.CharField(max_length=100, verbose_name='Nom Vernaculaire')
     pays = models.CharField(max_length=100, verbose_name='Pays d\'utilisation')
@@ -344,7 +344,7 @@ class Vernaculaire(models.Model):
 
 class TaxrefExport(models.Model):
     regne = models.CharField(max_length=250, verbose_name='Règne')
-    phylum = models.CharField(max_length=250,)
+    phylum = models.CharField(max_length=250)
     classe = models.CharField(max_length=250)
     ordre = models.CharField(max_length=250)
     famille = models.CharField(max_length=250)

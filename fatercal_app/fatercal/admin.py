@@ -295,10 +295,10 @@ class TaxonModify(admin.ModelAdmin):
                                     <td><a href='/prelevement/{}/'>Modification</a></td>
                                     </tr>
                                 ''' \
-                .format(prelev.localisation, prelev.type_enregistrement, prelev.date, prelev.nb_individus,
+                .format(prelev.id_loc, prelev.type_enregistrement, prelev.date, prelev.nb_individus,
                         prelev.collection_museum, prelev.type_specimen, prelev.code_specimen, prelev.altitude_min,
                         prelev.altitude_max, prelev.mode_de_collecte, prelev.toponyme, prelev.toponymie_x,
-                        prelev.toponymie_y, get_recolteur(prelev), prelev.id)
+                        prelev.toponymie_y, get_recolteur(prelev), prelev.id_prelevement)
         board_prelevement += "</table></br><a href='/prelevement/add?id_taxon={}'>Ajouter un Prelevement</a>"\
             .format(obj.id)
         return mark_safe(board_prelevement)
@@ -387,7 +387,7 @@ class LocalisationModify(admin.ModelAdmin):
 
     fieldsets = [
         ('Informations', {
-            'fields': ('nom', 'loc_sup', 'latitude', 'longitude', 'loc_type')
+            'fields': ('nom', 'id_sup', 'latitude', 'longitude', 'loc_type')
         })
     ]
 
@@ -428,7 +428,7 @@ class PrelevementModify(admin.ModelAdmin):
                        'button_modal_date', 'infos_compl')
         }),
         ('Localisation', {
-            'fields': ('localisation', 'toponyme', 'toponymie_x', 'toponymie_y', 'habitat',
+            'fields': ('id_loc', 'toponyme', 'toponymie_x', 'toponymie_y', 'habitat',
                        'gps', 'altitude_min', 'altitude_max')
         }),
     ]
@@ -444,10 +444,10 @@ class PrelevementModify(admin.ModelAdmin):
         :return: nothing
         """
         # When loc is given we take the loc and toponymie is not given, we take the localisation number from loc
-        if obj.localisation is not None and (obj.toponymie_x is None and obj.toponymie_y is None):
-            if obj.localisation.latitude is not None and obj.localisation.longitude:
-                obj.toponymie_x = obj.localisation.latitude
-                obj.toponymie_y = obj.localisation.longitude
+        if obj.id_loc is not None and (obj.toponymie_x is None and obj.toponymie_y is None):
+            if obj.id_loc.latitude is not None and obj.id_loc.longitude:
+                obj.toponymie_x = obj.id_loc.latitude
+                obj.toponymie_y = obj.id_loc.longitude
         super(PrelevementModify, self).save_model(request, obj, form, change)
 
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
