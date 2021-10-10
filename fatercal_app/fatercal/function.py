@@ -63,7 +63,7 @@ def get_recolteur(prelev):
     :param prelev: the object
     :return: a string
     """
-    list_recolt = Recolteur.objects.filter(prelevement=prelev.prelevement)
+    list_recolt = Recolteur.objects.filter(prelevement=prelev.id)
     if len(list_recolt) > 0:
         str_recolt = ''
         first = True
@@ -306,7 +306,7 @@ def get_sample(param):
     :param param: the parameter's if the user want to export his research
     :return: a list of tuple
     """
-    if param is None:
+    if not param:
         list_not_proper = Prelevement.objects.all()
     else:
         list_not_proper = get_specific_search_sample(param)
@@ -325,7 +325,7 @@ def get_sample(param):
         else:
             dict_hierarchy = get_hierarchy_to_dict(taxon)
         altitude = format_altitude_sample(sample)
-        tupple = (sample.prelevement, dict_hierarchy.get('Ordre'), dict_hierarchy.get('Famille'),
+        tupple = (sample.id, dict_hierarchy.get('Ordre'), dict_hierarchy.get('Famille'),
                   dict_hierarchy.get('Sous-Famille'), dict_hierarchy.get('Genre'), dict_hierarchy.get('Sous-Genre'),
                   dict_hierarchy.get('Espèce'), dict_hierarchy.get('Sous-Espèce'), sample.id_taxon.lb_auteur,
                   sample.date, harvesters, None, None, altitude, dict_loc.get('Pays'), dict_loc.get('Region'),
@@ -345,7 +345,7 @@ def get_loc_from_sample(sample):
     if sample.id is None:
         return {}
     else:
-        loc = sample.id
+        loc = sample.localisation
         dict_loc = {}
         while loc is not None:
             dict_loc[loc.loc_type.type] = loc.nom
@@ -510,7 +510,7 @@ def constr_hierarchy_tree_adv_search(taxon, auteur):
     :return: a string
     """
     if taxon is None:
-        if auteur is '':
+        if auteur == '':
             html_hierarchy = 'Veuillez remplir le champ de recherche !'
             count_es = 0
         else:
@@ -1010,7 +1010,7 @@ def list_sample_for_map(taxon):
                 if sample.toponymie_x == sample.localisation.latitude and sample.localisation.longitude == sample.toponymie_y:
                     default_loc = True
             list_sample.append({
-                'id': sample.prelevement,
+                'id': sample.id,
                 'loc': loc,
                 'default_loc': default_loc,
                 'latitude': sample.toponymie_y,

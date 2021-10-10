@@ -6,6 +6,8 @@ from django.urls import path, include
 from django.utils.safestring import mark_safe
 from django.db.models.signals import post_save
 from itertools import chain
+# from django.contrib.auth.models import Group, User
+# from django.contrib.auth.admin import GroupAdmin, UserAdmin
 
 import datetime
 
@@ -629,6 +631,8 @@ fatercal_admin.register(PlanteHote, PlanteHoteModify)
 fatercal_admin.register(Vernaculaire, VernaculaireModify)
 fatercal_admin.register(Iso6393, Iso6393Modify)
 
+#fatercal_admin.register(Group, GroupAdmin)
+#fatercal_admin.register(User, UserAdmin)
 
 # list signals for different models
 post_save.connect(add_genre_to_name, sender=Taxon)

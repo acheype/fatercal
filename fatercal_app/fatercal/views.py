@@ -380,22 +380,22 @@ def extract_search_sample(request):
     # Generate a sequence of rows. The range is based on the maximum number of
     # rows that can be handled by a single sheet in most spreadsheet
     # applications.
-    if is_admin(request.user):
-        try:
-            list_param = request.GET
-            rows = (idx for idx in get_sample(list_param))
-            response = HttpResponse(content_type='text/csv')
-            response['Content-Disposition'] = 'attachment; filename="fatercal_search_sample_' + \
-                                              str(datetime.datetime.now()) + '.csv"'
-            response.write(codecs.BOM_UTF8)
-            writer = csv.writer(response, delimiter=';')
-            for row in rows:
-                writer.writerow(row)
-            return response
-        except AttributeError:
-            raise Http404("This page doesn't exist.")
-    else:
-        raise Http404("This page doesn't exist")
+    #if is_admin(request.user):
+    #try:
+    list_param = request.GET
+    rows = (idx for idx in get_sample(list_param))
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="fatercal_search_sample_' + \
+                                      str(datetime.datetime.now()) + '.csv"'
+    response.write(codecs.BOM_UTF8)
+    writer = csv.writer(response, delimiter=';')
+    for row in rows:
+        writer.writerow(row)
+    return response
+    #except AttributeError:
+    #    raise Http404("This page doesn't exist.")
+    #else:
+     #   raise Http404("This page doesn't exist")
 
 
 @login_required()
