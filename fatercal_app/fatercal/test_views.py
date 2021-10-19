@@ -60,24 +60,25 @@ class TaxonTestCase(TestCase):
                                               rang=self.species.rang, id_sup=self.genus)
         second_species.id_ref = second_species
         second_species.save()
-        response = self.client.get('/change_ref/7/')
-        self.assertRedirects(response, '/login/?next=/change_ref/7/')
+        response = self.client.get(reverse('change_taxon_ref', args=[7]))
+        # TODO fix the path with reverse function
+        self.assertRedirects(response, reverse('login') + '?next=' + reverse('change_taxon_ref', args=[7]))
 
         self.client.login(username='temporary', password='temporary')
-        response = self.client.get('/change_ref/7/')
+        response = self.client.get(reverse('change_taxon_ref', args=[7]))
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.post('/change_ref/7/', {'taxon': ''})
-        self.assertEqual(response.status_code, 200)
-        self.species = Taxon.objects.get(id=7)
-        self.assertEqual(self.species.id_ref, self.species)
-
-        response = self.client.post('/change_ref/7/', {'taxon': self.species.id})
+        response = self.client.post(reverse('change_taxon_ref', args=[7]), {'taxon': ''})
         self.assertEqual(response.status_code, 200)
         self.species = Taxon.objects.get(id=7)
         self.assertEqual(self.species.id_ref, self.species)
 
-        response = self.client.post('/change_ref/7/', {'taxon': second_species.id})
+        response = self.client.post(reverse('change_taxon_ref', args=[7]), {'taxon': self.species.id})
+        self.assertEqual(response.status_code, 200)
+        self.species = Taxon.objects.get(id=7)
+        self.assertEqual(self.species.id_ref, self.species)
+
+        response = self.client.post(reverse('change_taxon_ref', args=[7]), {'taxon': second_species.id})
         self.assertEqual(response.status_code, 200)
         self.species = Taxon.objects.get(id=7)
         self.sub_species = Taxon.objects.get(id=8)
@@ -91,138 +92,139 @@ class TaxonTestCase(TestCase):
             id=10, lb_nom="second_genus", lb_auteur="auteur10", rang=self.genus.rang, id_sup=self.genus)
         second_genus.id_ref = second_genus
         second_genus.save()
-        response = self.client.get('/change_sup/7/')
-        self.assertRedirects(response, '/login/?next=/change_sup/7/')
+        response = self.client.get(reverse('change_taxon_sup', args=[7]))
+        self.assertRedirects(response, reverse('login') + '?next=' + reverse('change_taxon_ref', args=[7]))
 
         self.client.login(username='temporary', password='temporary')
-        response = self.client.get('/change_sup/7/')
+        response = self.client.get(reverse('change_taxon_sup', args=[7]))
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.get('/change_sup/9/')
+        response = self.client.get(reverse('change_taxon_sup', args=[9]))
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.post('/change_sup/7/', {'taxon_superieur': ''})
+        response = self.client.post(reverse('change_taxon_sup', args=[7]), {'taxon_superieur': ''})
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.post('/change_sup/7/', {'taxon_superieur': self.sub_species.id})
+        response = self.client.post(reverse('change_taxon_sup', args=[7]), {'taxon_superieur': self.sub_species.id})
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.post('/change_sup/7/', {'taxon_superieur': self.species.id})
+        response = self.client.post(reverse('change_taxon_sup', args=[7]), {'taxon_superieur': self.species.id})
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.post('/change_sup/7/', {'taxon_superieur': second_genus.id})
+        response = self.client.post(reverse('change_taxon_sup', args=[7]), {'taxon_superieur': second_genus.id})
         self.assertEqual(response.status_code, 200)
         self.species = Taxon.objects.get(id=7)
         self.assertEqual(self.species.id_sup, second_genus)
 
     def test_change_validity_to_valid(self):
-        response = self.client.get('/taxon_to_valid/1/')
-        self.assertRedirects(response, '/login/?next=/taxon_to_valid/1/')
+        response = self.client.get(reverse('change_taxon_sup', args=[7]))
+        self.assertRedirects(response, reverse('taxon_to_valid', args=[1]))
 
         self.client.login(username='temporary', password='temporary')
-        response = self.client.get('/taxon_to_valid/1/')
+        response = self.client.get(reverse('taxon_to_valid', args=[1]))
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.get('/taxon_to_valid/9/')
+        response = self.client.get(reverse('taxon_to_valid', args=[9]))
         self.assertEqual(response.status_code, 200)
         self.species_syn = Taxon.objects.get(id=9)
         self.assertEqual(self.species_syn.id_ref, self.species_syn)
 
     def test_advanced_search(self):
-        response = self.client.get('/advanced_search/')
-        self.assertRedirects(response, '/login/?next=/advanced_search/')
+        response = self.client.get(reverse('advanced_search'))
+        self.assertRedirects(response, reverse('login') + '?next=' + reverse('advanced_search'))
 
         self.client.login(username='temporary', password='temporary')
-        response = self.client.get('/advanced_search/')
+        response = self.client.get(reverse('advanced_search'))
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.post('/change_sup/7/', {'taxon': self.species.id})
+        response = self.client.post(reverse('change_taxon_sup', args=[7]), {'taxon': self.species.id})
         self.assertEqual(response.status_code, 200)
 
     def test_extract_taxon_taxref(self):
-        response = self.client.get('/export_taxref/')
-        self.assertRedirects(response, '/login/?next=/export_taxref/')
+        response = self.client.get(reverse('export_taxref'))
+        self.assertRedirects(response, reverse('login') + '?next=' + reverse('export_taxref'))
 
         self.client.login(username='temporary', password='temporary')
-        response = self.client.get('/export_taxref/')
+        response = self.client.get(reverse('export_taxref'))
         self.assertEqual(response.status_code, 404)
 
         self.my_group.user_set.add(self.user)
-        response = self.client.get('/export_taxref/')
+        response = self.client.get(reverse('export_taxref'))
         self.assertEqual(response.status_code, 200)
 
     def test_extract_search_taxon_taxref(self):
-        response = self.client.get('/export_search_taxref/?q=q')
-        self.assertRedirects(response, '/login/?next=/export_search_taxref/?q=q')
+        # continue to add reverse function to adapt urls
+        response = self.client.get(reverse('export_search_taxref') + '?q=q')
+        self.assertRedirects(response, reverse('login') + '?next=' + reverse('export_search_taxref') + '?q=q')
 
         self.client.login(username='temporary', password='temporary')
-        response = self.client.get('/export_search_taxref/?q=q')
+        response = self.client.get(reverse('export_search_taxref') + '?q=q')
         self.assertEqual(response.status_code, 404)
 
         self.my_group.user_set.add(self.user)
-        response = self.client.get('/export_search_taxref/?q=q')
+        response = self.client.get(reverse('export_search_taxref') + '?q=q')
         self.assertEqual(response.status_code, 200)
 
     def test_choose_search_data(self):
-        response = self.client.get('/choose_search_data_taxon/')
-        self.assertRedirects(response, '/login/?next=/choose_search_data_taxon/')
+        response = self.client.get(reverse('choose_search_data_taxon'))
+        self.assertRedirects(response, reverse('login') + '?next=' + reverse('choose_search_data_taxon'))
 
         self.client.login(username='temporary', password='temporary')
-        response = self.client.get('/choose_search_data_taxon/')
+        response = self.client.get(reverse('choose_search_data_taxon'))
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.post('/change_sup/7/', {'q': ''})
+        response = self.client.post(reverse('change_taxon_sup', args=[7]), {'q': ''})
         self.assertEqual(response.status_code, 200)
 
     def test_extract_search_sample(self):
-        response = self.client.get('/export_taxref/')
-        self.assertRedirects(response, '/login/?next=/export_taxref/')
+        response = self.client.get(reverse('export_taxref'))
+        self.assertRedirects(response, reverse('login') + '?next=' + reverse('export_taxref'))
 
         self.client.login(username='temporary', password='temporary')
-        response = self.client.get('/export_taxref/')
+        response = self.client.get(reverse('export_taxref'))
         self.assertEqual(response.status_code, 404)
 
         self.my_group.user_set.add(self.user)
-        response = self.client.get('/export_taxref/')
+        response = self.client.get(reverse('export_taxref'))
         self.assertEqual(response.status_code, 200)
 
     def test_export_for_import_sample(self):
-        response = self.client.get('/export_taxref/')
-        self.assertRedirects(response, '/login/?next=/export_taxref/')
+        response = self.client.get(reverse('export_taxref'))
+        self.assertRedirects(response, reverse('login') + '?next=' + reverse('export_taxref'))
 
         self.client.login(username='temporary', password='temporary')
-        response = self.client.get('/export_taxref/')
+        response = self.client.get(reverse('export_taxref'))
         self.assertEqual(response.status_code, 404)
 
         self.my_group.user_set.add(self.user)
-        response = self.client.get('/export_taxref/')
+        response = self.client.get(reverse('export_taxref'))
         self.assertEqual(response.status_code, 200)
 
     def test_add_sample_by_csv(self):
-        response = self.client.get('/export_taxref/')
-        self.assertRedirects(response, '/login/?next=/export_taxref/')
+        response = self.client.get(reverse('export_taxref'))
+        self.assertRedirects(response, reverse('login') + '?next=' + reverse('export_taxref'))
 
         self.client.login(username='temporary', password='temporary')
-        response = self.client.get('/export_taxref/')
+        response = self.client.get(reverse('export_taxref'))
         self.assertEqual(response.status_code, 404)
 
         self.my_group.user_set.add(self.user)
-        response = self.client.get('/export_taxref/')
+        response = self.client.get(reverse('export_taxref'))
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.post('/export_taxref/', {'not_good': ''})
+        response = self.client.post(reverse('export_taxref'), {'not_good': ''})
         self.assertEqual(response.status_code, 200)
 
     def test_export_adv_search(self):
-        response = self.client.get('/export_taxref/')
-        self.assertRedirects(response, '/login/?next=/export_taxref/')
+        response = self.client.get(reverse('export_taxref'))
+        self.assertRedirects(response, reverse('login') + '?next=' + reverse('export_taxref'))
 
         self.client.login(username='temporary', password='temporary')
-        response = self.client.get('/export_taxref/')
+        response = self.client.get(reverse('export_taxref'))
         self.assertEqual(response.status_code, 404)
 
         self.my_group.user_set.add(self.user)
-        response = self.client.get('/export_taxref/')
+        response = self.client.get(reverse('export_taxref'))
         self.assertEqual(response.status_code, 200)
 
 
@@ -238,15 +240,15 @@ class SampleTestClass(TestCase):
         self.species.save()
 
     def test_update_map(self):
-        response = self.client.get('/update_map/')
-        self.assertRedirects(response, '/login/?next=/update_map/')
+        response = self.client.get(reverse('update_map'))
+        self.assertRedirects(response, reverse('login') + '?next=' + reverse('update_map'))
 
         self.client.login(username='temporary', password='temporary')
-        response = self.client.get('/update_map/')
+        response = self.client.get(reverse('update_map'))
         self.assertEqual(response.status_code, 200)
         self.assertJSONEqual(force_text(response.content), [])
 
-        response = self.client.get('/update_map/?taxon=1')
+        response = self.client.get(reverse('update_map') + '?taxon=1')
         self.assertEqual(response.status_code, 200)
         json_output = force_text(response.content)
         json_expected = json.dumps([])
@@ -255,7 +257,7 @@ class SampleTestClass(TestCase):
         self.sample.toponymie_x = 1
         self.sample.toponymie_y = 1
         self.sample.save()
-        response = self.client.get('/update_map/?taxon=1')
+        response = self.client.get(reverse('update_map') + '?taxon=1')
         self.assertEqual(response.status_code, 200)
         json_output = force_text(response.content)
         json_expected = json.dumps([{'collection_museum': None, 'date': None, 'default_loc': False, 'id': 1,
@@ -263,10 +265,9 @@ class SampleTestClass(TestCase):
         self.assertJSONEqual(json_expected, json_output)
 
     def test_map_sample(self):
-        response = self.client.get('/map_sample/')
-        self.assertRedirects(response, '/login/?next=/map_sample/')
+        response = self.client.get(reverse('map_sample'))
+        self.assertRedirects(response, reverse('login') + '?next=' + reverse('map_sample'))
 
         self.client.login(username='temporary', password='temporary')
-        response = self.client.get('/map_sample/')
+        response = self.client.get(reverse('map_sample'))
         self.assertEqual(response.status_code, 200)
-

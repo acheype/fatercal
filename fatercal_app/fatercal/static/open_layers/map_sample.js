@@ -76,7 +76,7 @@ function addMarker(data) {
 
 function update_map(){
     var taxon = django.jQuery("#id_taxon").val();
-    django.jQuery.get('/update_map', {taxon: taxon}, function(data){
+    django.jQuery.get('/admin/update_map', {taxon: taxon}, function(data){
                if (data != null){
                     markerSource.clear();
                     for (var i = 0; i < data.length; i++ ){
@@ -92,7 +92,7 @@ select.on('select', function(e) {
     e.selected.forEach(function(element){
         var not_attribute = ""
         divIcon.innerHTML = divIcon.innerHTML +
-        "<a href=/prelevement/" + element.get("id") + "/>Lien vers le prélèvement</a>" +
+        "<a href=/admin/prelevement/" + element.get("id") + "/>Lien vers le prélèvement</a>" +
         "<br> <b>Lontitude:</b> " + element.get("longitude") +", <b>Latitude:</b> " + element.get("latitude") + "<br>";
         if (element.get("loc") == null){
             not_attribute = not_attribute + "Aucune localisation associé.";

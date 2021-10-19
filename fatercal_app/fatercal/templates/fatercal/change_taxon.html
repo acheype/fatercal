@@ -5,7 +5,7 @@
 {% block branding %}
     <div class="head">
         <h1 id="site-name">
-            <a href="/">Fatercal</a>
+            <a href="{% url 'admin:index' %}">Fatercal</a>
         </h1>
     </div>
 {% endblock %}
@@ -16,11 +16,11 @@
         <h1>{{ taxon_to_change }}</h1>
         <ul>
         {% if taxon_to_change.id_sup != None %}
-            <li> <a href="/taxon/{{ taxon_to_change.id }}">Supérieur : {{ taxon_to_change.id_sup }}</a></li>
+            <li><a href="{% url 'admin:fatercal_taxon_change' taxon_to_change.id %}">Supérieur : {{ taxon_to_change.id_sup }}</a></li>
         {% else %}
-                {% if taxon_to_change.id_ref_id == taxon_to_change.id %}
+            {% if taxon_to_change.id_ref_id == taxon_to_change.id %}
                 Il n'a pas de supérieur Hiérarchique
-                {% endif %}
+            {% endif %}
         {% endif %}
         </ul>
         <div>

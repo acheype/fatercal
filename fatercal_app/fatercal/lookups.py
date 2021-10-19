@@ -1,4 +1,6 @@
 from ajax_select import register, LookupChannel
+from django.urls import reverse
+
 from .models import Taxon
 from django.db.models import F
 
@@ -15,7 +17,8 @@ class ValidLookup(LookupChannel):
         return self.model.objects.filter(lb_nom__istartswith=q, id=F('id_ref')).order_by('lb_nom')
 
     def format_item_display(self, item):
-        return u"<span class='tag'>%s</span>" % "<a href='/taxon/{}/'>{}</a>".format(item.id, item)
+        return f'''<span class='tag'><a href="{reverse('admin:fatercal_taxon_change', args=[item.id])}">{item}</a>''' \
+               '</span>'
 
 
 @register('valid_and_syn')
@@ -29,4 +32,5 @@ class ValidSynLookup(LookupChannel):
         return self.model.objects.filter(lb_nom__istartswith=q).order_by('lb_nom')
 
     def format_item_display(self, item):
-        return u"<span class='tag'>%s</span>" % "<a href='/taxon/{}/'>{}</a>".format(item.id, item)
+        return f'''<span class='tag'><a href="{reverse('admin:fatercal_taxon_change', args=[item.id])}">{item}</a>''' \
+               '</span>'

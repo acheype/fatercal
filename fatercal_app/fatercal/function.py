@@ -4,6 +4,8 @@ from django.core.exceptions import ValidationError
 from django.db import connection
 from django.db.models import F, Q, Max
 from django.template import loader
+from django.urls import reverse
+
 from .forms import ChooseTaxonToInsert
 
 from .models import Taxon, Prelevement, Localisation, TypeEnregistrement, Recolteur, TypeLoc, HabitatDetail, \
@@ -12,7 +14,7 @@ from .variable import regex_date, list_hierarchy
 import os
 
 
-def change_ref_taxon(taxon_to_change, cleaned_data):
+def update_taxon_ref(taxon_to_change, cleaned_data):
     """
     Change the ref of the taxon
     :param taxon_to_change:
@@ -36,7 +38,7 @@ def change_ref_taxon(taxon_to_change, cleaned_data):
     taxon_to_change.save()
 
 
-def change_sup_taxon(taxon_to_change, cleaned_data):
+def update_taxon_sup(taxon_to_change, cleaned_data):
     """
     Change the superior of the taxon
     :param taxon_to_change:
@@ -526,9 +528,10 @@ def constr_hierarchy_tree_adv_search(taxon, auteur):
                 html_hierarchy_begin, html_hierarchy_end = constr_hierarchy_tree_branch_parents(list_hierarchy)
                 html_hierarchy_child = ''
                 html_hierarchy_child = constr_hierarchy_tree_branch_adv_search_child(l_taxon[1],
-                                                                                     count + 1, html_hierarchy_child)
-                html_taxon = '<li class="folder"><label><strong>{} :</strong> {} {}</li>' \
-                    .format(l_taxon[0].rang, l_taxon[0].lb_nom, l_taxon[0].lb_auteur)
+                                                                                     count + 1,
+                                                                                     html_hierarchy_child)
+                html_taxon = f'<li class="folder"><label>{l_taxon[0].rang} :</label> ' \
+                             f'{l_taxon[0].lb_nom} {l_taxon[0].lb_auteur}</li>'
                 html_hierarchy_end = html_hierarchy_child + '</ul></ul></li>'
                 html_hierarchy += html_hierarchy_begin + html_taxon + html_hierarchy_end + '</div>'
     else:
@@ -537,9 +540,9 @@ def constr_hierarchy_tree_adv_search(taxon, auteur):
         html_hierarchy_begin, html_hierarchy_end = constr_hierarchy_tree_branch_parents(list_hierarchy)
         html_hierarchy_child = ''
         html_hierarchy_child = constr_hierarchy_tree_branch_adv_search_child(list_taxon[1],
-                                                                             count + 1, html_hierarchy_child)
-        html_taxon = '<li class="folder"><label><strong>{} :</strong> {} {}</li>' \
-            .format(taxon.rang, taxon.lb_nom, taxon.lb_auteur)
+                                                                             count + 1,
+                                                                             html_hierarchy_child)
+        html_taxon = f'<li class="folder"><label>{taxon.rang} :</label> {taxon.lb_nom} {taxon.lb_auteur}</li>'
         html_hierarchy_end = html_hierarchy_child + '</ul></ul></li>'
         html_hierarchy = html_hierarchy_begin + html_taxon + html_hierarchy_end
 
@@ -558,15 +561,13 @@ def constr_hierarchy_tree_branch_parents(list_hierarchy):
     html_hierarchy_end = '</ul>'
     if list_hierarchy is not None:
         for parent in reversed(list_hierarchy):
-            html_hierarchy_begin = html_hierarchy_begin + '''<li><label class="tree_label" for="c{}">
-            <strong>{} : </strong></al><a href="/taxon/{}/">{}</a>
-            <ul>'''.format(count_parent, parent.rang, parent.id, parent)
+            html_hierarchy_begin = html_hierarchy_begin + \
+                                   f'<li><label class="tree_label" for="c{count_parent}">{parent.rang} :</label> ' \
+                                   f'''<a href="{reverse('admin:fatercal_taxon_change', args=[parent.id])}">''' \
+                                   f'''{parent}</a><ul class="tree">'''
             html_hierarchy_end = '</ul></li>' + html_hierarchy_end
             count_parent = count_parent + 1
-    for x in range(count_parent):
-        html_hierarchy_begin_start = html_hierarchy_begin_start + '<al>'
-    html_hierarchy_begin = html_hierarchy_begin_start + """
-    """ + html_hierarchy_begin
+    html_hierarchy_begin = html_hierarchy_begin_start + html_hierarchy_begin
     return html_hierarchy_begin, html_hierarchy_end
 
 
@@ -579,9 +580,10 @@ def constr_hierarchy_tree_branch_adv_search_child(list_taxon, count, hierarchy_c
     :return: a string with html tag
     """
     for l_taxon in list_taxon:
-        hierarchy_child = hierarchy_child + """
-        <ul><li><al><label class="tree_label" for="c{}"/><strong>{} : </strong></al>
-        <a href="/taxon/{}/">{}</a>""".format(count, l_taxon[0].rang, l_taxon[0].id, l_taxon[0])
+        hierarchy_child = hierarchy_child + \
+                          f'<ul class="tree"><li><label class="tree_label" for="c{count}">{l_taxon[0].rang} :</label> ' \
+                          f'''<a href="{reverse('admin:fatercal_taxon_change', args=[l_taxon[0].id])}'">''' \
+                          f'{l_taxon[0]}</a>'
         if l_taxon[1] is not None:
             hierarchy_child = constr_hierarchy_tree_branch_adv_search_child(l_taxon[1], count + 1, hierarchy_child)
         hierarchy_child = hierarchy_child + '</li></ul>'
@@ -597,17 +599,19 @@ def constr_hierarchy_tree_branch_child(list_child, nb):
     """
     if len(list_child) > 0:
         rang = list_child[0].rang
-        str_child = """<ul><li><label class="tree_label" for="c{}"/><strong>{} : </strong><ul>
-        """.format(str(nb + 1), rang)
+        str_child = f'<ul class="tree"><li><label class="tree_label" for="c{str(nb + 1)}">{rang} :</label>' \
+                    '<ul class="tree">'
         for child in list_child:
             if rang != child.rang:
-                str_child = str_child + '''</ul></li><li class="folder"><label for="c{}">
-                <strong>{} : </strong><li><ul>
-                <a href="/taxon/{}/">{}</a>'''.format(str(nb + 1), child.rang, child.id, child)
+                str_child = str_child + \
+                            f'''</ul></li><li class="tree_label"><label for="c{str(nb + 1)}">{child.rang} :</label> ''' \
+                            f'<li><ul class="tree">' \
+                            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[child.id])}">{child}</a>'''
                 rang = child.rang
             else:
-                str_child = str_child + '<li><a href="/taxon/{}/">{} {}</a></li>' \
-                    .format(child.id, child.lb_nom, child.lb_auteur)
+                str_child = str_child + \
+                            f'''<li><a href="{reverse('admin:fatercal_taxon_change', args=[child.id])}">''' \
+                            f'''{child.lb_nom} {child.lb_auteur}</a></li>'''
     else:
         str_child = ''
     return str_child

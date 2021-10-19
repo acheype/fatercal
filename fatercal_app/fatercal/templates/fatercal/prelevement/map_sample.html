@@ -7,14 +7,14 @@
 {% block branding %}
     <div class="head">
         <h1 id="site-name">
-            <a href="/">Fatercal</a>
+            <a href="{% url 'admin:index' %}">Fatercal</a>
         </h1>
     </div>
 {% endblock %}
 
-{% load staticfiles %}
+{% load static %}
 {% block extrahead %}
-    <link rel="stylesheet" href="{% static 'open_layers/css/ol.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'open_layers/css/ol.css' %}">
     <script type="text/javascript" src="{% static 'admin/js/jquery.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'admin/js/jquery.init.js' %}"></script>
     <script type="text/javascript" src="{% static 'open_layers/build/ol.js' %}"></script>

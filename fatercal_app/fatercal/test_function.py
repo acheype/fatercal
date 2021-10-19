@@ -58,13 +58,13 @@ class TaxonTestCase(TestCase):
         self.kingdom.save()
         create_db_view_test()
 
-    def test_change_ref_taxon(self):
+    def test_update_taxon_ref(self):
         second_species = Taxon.objects.create(id=10, lb_nom="second_species", lb_auteur="auteur10",
                                               rang=self.species.rang, id_sup=self.genus)
         second_species.id_ref = second_species
         second_species.save()
         cleaned_data = {'taxon': second_species}
-        change_ref_taxon(self.species, cleaned_data)
+        update_taxon_ref(self.species, cleaned_data)
         self.species = Taxon.objects.get(id=7)
         self.sub_species = Taxon.objects.get(id=8)
         self.species_syn = Taxon.objects.get(id=9)
@@ -72,7 +72,7 @@ class TaxonTestCase(TestCase):
         self.assertEqual(self.sub_species.id_sup, second_species)
         self.assertEqual(self.species.id_ref, second_species)
 
-    def test_change_sup_taxon(self):
+    def test_update_taxon_sup(self):
         second_genus = Taxon.objects.create(lb_nom="second_genus", lb_auteur="auteur10",
                                             rang=self.genus.rang, id_sup=self.genus)
         second_genus.id_ref = second_genus
@@ -80,7 +80,7 @@ class TaxonTestCase(TestCase):
         cleaned_data = {'taxon_superieur': second_genus}
         template_expected = loader.get_template('fatercal/return_change_taxon.html')
         error_expected = ''
-        template_output, error_output = change_sup_taxon(self.species, cleaned_data)
+        template_output, error_output = update_taxon_sup(self.species, cleaned_data)
         self.assertEqual(template_expected.render(), template_output.render())
         self.assertEqual(error_expected, error_output)
         self.species = Taxon.objects.get(id=self.species.id)
@@ -89,7 +89,7 @@ class TaxonTestCase(TestCase):
         cleaned_data = {'taxon_superieur': self.sub_species}
         template_expected = loader.get_template('fatercal/change_taxon.html')
         error_expected = 'Le taxon supérieur a un rang inférieur a votre taxon .'
-        template_output, error_output = change_sup_taxon(self.species, cleaned_data)
+        template_output, error_output = update_taxon_sup(self.species, cleaned_data)
         self.assertEqual(template_expected.render(), template_output.render())
         self.assertEqual(error_expected, error_output)
         self.species = Taxon.objects.get(id=self.species.id)
@@ -459,63 +459,65 @@ class TaxonTestCase(TestCase):
 
     def test_constr_hierarchy_tree_adv_search(self):
         html_hierarchy_output, nb_output = constr_hierarchy_tree_adv_search(self.species, None)
-        html_hierarchy_expected = """<ul class="tree"><br/><al><al><al><al><al><al><al>
-    <li><label class="tree_label" for="c1">
-            <strong>Regne : </strong></al><a href="/taxon/"""+ str(self.kingdom.id) +"""/">kingdom auteur1</a>
-            <ul><li><label class="tree_label" for="c2">
-            <strong>Phylum : </strong></al><a href="/taxon/"""+ str(self.phylum.id) +"""/">phylum auteur2</a>
-            <ul><li><label class="tree_label" for="c3">
-            <strong>Classe : </strong></al><a href="/taxon/"""+ str(self.classe.id) +"""/">classe auteur3</a>
-            <ul><li><label class="tree_label" for="c4">
-            <strong>Ordre : </strong></al><a href="/taxon/"""+ str(self.order.id) +"""/">order auteur4</a>
-            <ul><li><label class="tree_label" for="c5">
-            <strong>Famille : </strong></al><a href="/taxon/"""+ str(self.family.id) +"""/">family auteur5</a>
-            <ul><li><label class="tree_label" for="c6">
-            <strong>Genre : </strong></al><a href="/taxon/"""+ str(self.genus.id) +"""/">genus auteur6</a>
-            <ul><li class="folder"><label><strong>Espèce :</strong> genus species auteur7</li>
-        <ul><li><al><label class="tree_label" for="c7"/><strong>Sous-Espèce : </strong></al>
-        <a href="/taxon/"""+ str(self.sub_species.id) +"""/">genus species sub_species auteur8</a></li></ul></ul></ul></li>"""
+        html_hierarchy_expected = '<ul class="tree"><br/>' \
+            '<li><label class="tree_label" for="c1">Regne : ' \
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[self.kingdom.id])}">kingdom auteur1</a>''' \
+            '<ul class="tree"><li><label class="tree_label" for="c2">Phylum : ' \
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[self.phylum.id])}">phylum auteur2</a>''' \
+            '<ul class="tree"><li><label class="tree_label" for="c3">Classe : ' \
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[self.classe.id])}">classe auteur3</a>''' \
+            '<ul class="tree"><li><label class="tree_label" for="c4">Ordre : ' \
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[self.order.id])}">order auteur4</a>''' \
+            '<ul class="tree"><li><label class="tree_label" for="c5">Famille : ' \
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[self.family.id])}">family auteur5</a>''' \
+            '<ul class="tree"><li><label class="tree_label" for="c6">Genre : ' \
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[self.genus.id])}">genus auteur6</a>''' \
+            '<ul class="tree"><li class="folder"><label>Espèce : genus species auteur7</li>' \
+            '<ul class="tree"><li><label class="tree_label" for="c7"/>Sous-Espèce : ' \
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[self.sub_species.id])}">''' \
+            'genus species sub_species auteur8</a></li></ul></ul></ul></li>'
         self.maxDiff = None
         self.assertEqual(html_hierarchy_expected, html_hierarchy_output)
         self.assertEqual(nb_output, 1)
 
         html_hierarchy_output, nb_output = constr_hierarchy_tree_adv_search(None, 'auteur7')
-        html_hierarchy_expected = """<div><ul class="tree"><br/><al><al><al><al><al><al><al>
-    <li><label class="tree_label" for="c1">
-            <strong>Regne : </strong></al><a href="/taxon/"""+ str(self.kingdom.id) +"""/">kingdom auteur1</a>
-            <ul><li><label class="tree_label" for="c2">
-            <strong>Phylum : </strong></al><a href="/taxon/"""+ str(self.phylum.id) +"""/">phylum auteur2</a>
-            <ul><li><label class="tree_label" for="c3">
-            <strong>Classe : </strong></al><a href="/taxon/"""+ str(self.classe.id) +"""/">classe auteur3</a>
-            <ul><li><label class="tree_label" for="c4">
-            <strong>Ordre : </strong></al><a href="/taxon/"""+ str(self.order.id) +"""/">order auteur4</a>
-            <ul><li><label class="tree_label" for="c5">
-            <strong>Famille : </strong></al><a href="/taxon/"""+ str(self.family.id) +"""/">family auteur5</a>
-            <ul><li><label class="tree_label" for="c6">
-            <strong>Genre : </strong></al><a href="/taxon/"""+ str(self.genus.id) +"""/">genus auteur6</a>
-            <ul><li class="folder"><label><strong>Espèce :</strong> genus species auteur7</li>
-        <ul><li><al><label class="tree_label" for="c7"/><strong>Sous-Espèce : </strong></al>
-        <a href="/taxon/"""+ str(self.sub_species.id) +"""/">genus species sub_species auteur8</a></li></ul></ul></ul></li></div>"""
+        html_hierarchy_expected = '<div><ul class="tree"><br/>' \
+            '<li><label class="tree_label" for="c1">Regne : ' \
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[self.kingdom.id])}">kingdom auteur1</a>''' \
+            '<ul class="tree"><li><label class="tree_label" for="c2">Phylum : ' \
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[self.phylum.id])}">phylum auteur2</a>''' \
+            '<ul class="tree"><li><label class="tree_label" for="c3">Classe : ' \
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[self.classe.id])}">classe auteur3</a>''' \
+            '<ul class="tree"><li><label class="tree_label" for="c4">Ordre : ' \
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[self.order.id])}">order auteur4</a>''' \
+            '<ul class="tree"><li><label class="tree_label" for="c5">Famille : ' \
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[self.family.id])}">family auteur5</a>''' \
+            '<ul class="tree"><li><label class="tree_label" for="c6">Genre : ' \
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[self.genus.id])}">genus auteur6</a>''' \
+            '<ul class="tree"><li class="folder"><label>Espèce : genus species auteur7</li>' \
+            '<ul class="tree"><li><label class="tree_label" for="c7"/>Sous-Espèce : ' \
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[self.sub_species.id])}">''' \
+            'genus species sub_species auteur8</a></li></ul></ul></ul></li></div>'
         self.assertEqual(html_hierarchy_expected, html_hierarchy_output)
         self.assertEqual(nb_output, 2)
 
     def test_constr_hierarchy_tree_branch_parents(self):
         list_hierarchy, nb = self.species.get_hierarchy()
         html_hierarchy_start_output, html_hierarchy_end_output = constr_hierarchy_tree_branch_parents(list_hierarchy)
-        html_hierarchy_start_expected = """<ul class="tree"><br/><al><al><al><al><al><al><al>
-            <li><label class="tree_label" for="c1">
-            <strong>Regne : </strong></al><a href="/taxon/"""+ str(self.kingdom.id) +"""/">kingdom auteur1</a>
-            <ul><li><label class="tree_label" for="c2">
-            <strong>Phylum : </strong></al><a href="/taxon/"""+ str(self.phylum.id) +"""/">phylum auteur2</a>
-            <ul><li><label class="tree_label" for="c3">
-            <strong>Classe : </strong></al><a href="/taxon/"""+ str(self.classe.id) +"""/">classe auteur3</a>
-            <ul><li><label class="tree_label" for="c4">
-            <strong>Ordre : </strong></al><a href="/taxon/"""+ str(self.order.id) +"""/">order auteur4</a>
-            <ul><li><label class="tree_label" for="c5">
-            <strong>Famille : </strong></al><a href="/taxon/"""+ str(self.family.id) +"""/">family auteur5</a>
-            <ul><li><label class="tree_label" for="c6">
-            <strong>Genre : </strong></al><a href="/taxon/"""+ str(self.genus.id) +"""/">genus auteur6</a>
-            <ul>"""
+        html_hierarchy_start_expected = '<ul class="tree"><br/>' \
+            '<li><label class="tree_label" for="c1">Regne : ' \
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[self.kingdom.id])}">kingdom auteur1</a>''' \
+            '<ul class="tree"><li><label class="tree_label" for="c2">Phylum : ' \
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[self.phylum.id])}">phylum auteur2</a>''' \
+            '<ul class="tree"><li><label class="tree_label" for="c3">Classe : ' \
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[self.classe.id])}">classe auteur3</a>''' \
+            '<ul class="tree"><li><label class="tree_label" for="c4">Ordre : ' \
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[self.order.id])}">order auteur4</a>''' \
+            '<ul class="tree"><li><label class="tree_label" for="c5">Famille : ' \
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[self.family.id])}">family auteur5</a>''' \
+            '<ul class="tree"><li><label class="tree_label" for="c6">Genre : ' \
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[self.genus.id])}">genus auteur6</a>''' \
+            '<ul class="tree">'
         self.assertHTMLEqual(html_hierarchy_start_expected, html_hierarchy_start_output)
         html_hierarchy_end_expected = "</ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul>"
         self.assertEqual(html_hierarchy_end_expected, html_hierarchy_end_output)
@@ -523,16 +525,18 @@ class TaxonTestCase(TestCase):
     def test_contr_hierarchy_tree_branch_adv_search_child(self):
         list_taxon, nb = get_child_of_child(self.species)
         hierarchy_child_output = constr_hierarchy_tree_branch_adv_search_child(list_taxon[1], nb, '')
-        hierarchy_child_expected = """<ul><li><al><label class="tree_label" for="c1"/><strong>Sous-Espèce : </strong>
-        </al><a href="/taxon/"""+ str(self.sub_species.id) +"""/">genus species sub_species auteur8</a></li></ul>"""
+        hierarchy_child_expected = '<ul class="tree"><li><label class="tree_label" for="c1"/>Sous-Espèce : ' \
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[self.sub_species.id])}">''' \
+            'genus species sub_species auteur8</a></li></ul>'
         self.assertHTMLEqual(hierarchy_child_expected, hierarchy_child_output)
 
     def test_constr_hierarchy_tree_branch_child(self):
         list_hierarchy, nb = self.species.get_hierarchy()
         list_child = Taxon.objects.filter(id_sup=self.species.id).order_by('rang')
         str_child_output = constr_hierarchy_tree_branch_child(list_child, nb)
-        str_child_expected = """<ul><li><label class="tree_label" for="c7"/><strong>Sous-Espèce : </strong><ul>
-        <li><a href="/taxon/"""+ str(self.sub_species.id) +"""/">genus species sub_species auteur8</a></li>"""
+        str_child_expected = '<ul class="tree"><li><label class="tree_label" for="c7"/>Sous-Espèce :<ul class="tree">' \
+            f'''<li><a href="{reverse('admin:fatercal_taxon_change', args=[self.sub_species.id])}">''' \
+            'genus species sub_species auteur8</a></li>'
         self.assertHTMLEqual(str_child_expected, str_child_output)
 
     def test_get_taxon_adv_search(self):

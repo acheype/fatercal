@@ -2,12 +2,13 @@ from django.contrib import admin
 # from django.contrib.admin import *
 
 from django.db.models import Q
-from django.urls import path, include
+from django.urls import path, include, reverse
+from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.db.models.signals import post_save
 from itertools import chain
-# from django.contrib.auth.models import Group, User
-# from django.contrib.auth.admin import GroupAdmin, UserAdmin
+from django.contrib.auth.models import Group, User
+from django.templatetags.static import static
 
 import datetime
 
@@ -87,7 +88,7 @@ class TaxonModify(admin.ModelAdmin):
         'hierarchy',
         'referent',
         'id',
-        'id_sup_id', # TODO see if _id works...
+        'id_sup_id',  # TODO see if _id works...
         'id_ref_id',
         'cd_nom',
         'cd_ref',
@@ -239,10 +240,10 @@ class TaxonModify(admin.ModelAdmin):
         :return: a link to another page
         """
         if obj == obj.id_ref:
-            return mark_safe("""<br/>
-            <p><a href='/change_ref/{}/'>Changez le référent</a></p>
-            <p><a href="/change_sup/{}/">Changez le supérieur</a></p>
-            <br/>""".format(obj.id, obj.id))
+            return mark_safe(
+                f'''<br/><p><a href="{reverse('change_taxon_ref', args=[obj.id])}">Changez le référent</a></p>'''
+                f'''<p><a href="{reverse('change_taxon_sup', args=[obj.id])}">Changez le supérieur</a></p>'''
+            )
         else:
             return mark_safe("<p>Vous ne pouvez pas changez le supérieur ou le référent de ce taxon.</p>")
 
@@ -264,7 +265,8 @@ class TaxonModify(admin.ModelAdmin):
         else:
             for vern in list_vernaculaire:
                 string += vern.nom_vern + "</br>"
-        string += "</br><a href='/vernaculaire/add?id_taxon={}'>Ajouter un Vernaculaire</a>".format(obj.id)
+        string += f'''</br><a href="{reverse('admin:fatercal_vernaculaire_add')}?id_taxon={obj.id}">''' \
+                  'Ajouter un Vernaculaire</a>'
         return mark_safe(string)
 
     def prelevements(self, obj):
@@ -273,16 +275,17 @@ class TaxonModify(admin.ModelAdmin):
         :param obj: an Taxon object (see models.py)
         :return: an html table
         """
-        board_prelevement = """<table><tr>
-                                    <td><strong>Localisation</strong></td> <td><strong>Type enregistrement</strong></td>
-                                    <td><strong>Date</strong></td><td> <strong>Nb taxon present</strong></td>
-                                    <td><strong>Collection museum</strong></td> <td><strong>Type specimen </strong></td>
-                                    <td><strong>Code specimen</strong></td> <td><strong>Altitude Minimum</strong></td>
-                                    <td><strong>Altitude Maximum</strong></td> 
-                                    <td><strong>Mode de collecte</strong></td> <td><strong>Toponyme</strong></td>
-                                    <td><strong>Toponymie x</strong></td> <td><strong>Toponymie y</strong></td>
-                                    <td><strong>Lien Modif</strong></td>
-                                </tr>"""
+        board_prelevement = '''<table><thead>
+                                    <td>Localisation</td> <td>Type enregistrement</td>
+                                    <td>Date</td><td> Nb taxon present</td>
+                                    <td>Collection museum</td> <td>Type specimen </td>
+                                    <td>Code specimen</td> <td>Altitude Minimum</td>
+                                    <td>Altitude Maximum</td> 
+                                    <td>Mode de collecte</td> <td>Toponyme</td>
+                                    <td>Toponymie x</td> <td>Toponymie y</td>
+                                    <td>Récoleurs</td>
+                                    <td>Lien Modif</td>
+                                </thead><tbody>'''
         list_prelevement = Prelevement.objects.filter(id_taxon=obj.id)
         if obj.id == obj.id_ref_id:
             list_syn = Taxon.objects.filter(id_ref=obj.id).filter(~Q(id=obj.id))
@@ -290,19 +293,27 @@ class TaxonModify(admin.ModelAdmin):
                 list_prelevement_syn = Prelevement.objects.filter(id_taxon=syn.id)
                 list_prelevement = list(chain(list_prelevement, list_prelevement_syn))
         for prelev in list_prelevement:
-            board_prelevement += '''<tr>
-                                    <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>
-                                    <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>  <td>{}</td>
-                                    <td>{}</td> <td>{}</td>
-                                    <td><a href='/prelevement/{}/'>Modification</a></td>
-                                    </tr>
-                                ''' \
-                .format(prelev.localisation, prelev.type_enregistrement, prelev.date, prelev.nb_individus,
-                        prelev.collection_museum, prelev.type_specimen, prelev.code_specimen, prelev.altitude_min,
-                        prelev.altitude_max, prelev.mode_de_collecte, prelev.toponyme, prelev.toponymie_x,
-                        prelev.toponymie_y, get_recolteur(prelev), prelev.id)
-        board_prelevement += "</table></br><a href='/prelevement/add?id_taxon={}'>Ajouter un Prelevement</a>"\
-            .format(obj.id)
+            board_prelevement += f'''<tr>
+                                        <td>{escape(prelev.localisation)}</td>
+                                        <td>{prelev.type_enregistrement}</td>
+                                        <td>{prelev.date}</td>
+                                        <td>{prelev.nb_individus}</td>
+                                        <td>{prelev.collection_museum}</td>
+                                        <td>{prelev.type_specimen}</td>
+                                        <td>{prelev.code_specimen}</td>
+                                        <td>{prelev.altitude_min}</td>
+                                        <td>{prelev.altitude_max}</td>
+                                        <td>{prelev.mode_de_collecte}</td>
+                                        <td>{prelev.toponyme}</td>
+                                        <td>{prelev.toponymie_x}</td>
+                                        <td>{prelev.toponymie_y}</td>
+                                        <td>{get_recolteur(prelev)}</td>
+                                        <td><a href='{reverse('admin:fatercal_prelevement_change', args=[prelev.id])}'>''' \
+                                 'Modification</a></td>' \
+                                 '</tr>'
+        board_prelevement += f'''</tbody></table></br>''' \
+                             f'''<a href="{reverse('admin:fatercal_prelevement_add')}?id_taxon={obj.id}">''' \
+                             'Ajouter un Prélevement</a>'
         return mark_safe(board_prelevement)
 
     def referent(self, obj):
@@ -311,8 +322,11 @@ class TaxonModify(admin.ModelAdmin):
         :param obj: an Taxon object (see models.py)
         :return: the validity in html tag
         """
-        return mark_safe("""<a href='/taxon/{}/'>{}</a> <br/> <br/> <a href="/taxon_to_valid/{}">
-                   Cliquer ici pour le passer en valide.</a>""".format(obj.id_ref_id, obj.id_ref.nom_complet, obj.id))
+        return mark_safe(
+            f'''<a href="{reverse('admin:fatercal_taxon_change', args=[obj.id_ref_id])}">{obj.id_ref.nom_complet}</a>'''
+            f'''<br><br>'''
+            f'''<a href="{reverse('taxon_to_valid', args=[obj.id])}">Cliquer ici pour le passer en valide.</a>'''
+        );
 
     def syn(self, obj):
         """
@@ -324,7 +338,8 @@ class TaxonModify(admin.ModelAdmin):
         if len(list_syn) != 0:
             string = "</br>"
             for syn in list_syn:
-                string += "<a href='/taxon/{}/'>{}</a><br/>".format(syn.id, syn.nom_complet)
+                string += f'''<a href="{reverse('admin:fatercal_taxon_change', args=[syn.id])}">''' \
+                          f'{syn.nom_complet}</a><br/>'
         else:
             string = ""
         return mark_safe(string)
@@ -336,9 +351,9 @@ class TaxonModify(admin.ModelAdmin):
         :return: an image
         """
         if obj.id == obj.id_ref_id:
-            return mark_safe('<img src="/static/admin/img/icon-yes.gif" alt="True">')
+            return mark_safe(f'''<img src="{static('admin/img/icon-yes.gif')}" alt="True">''')
         else:
-            return mark_safe('<img src="/static/admin/img/icon-no.gif" alt="False">')
+            return mark_safe(f'''<img src="{static('admin/img/icon-no.gif')}" alt="False">''')
 
     # This function will construct the hierarchy tree of the taxon
     def hierarchy(self, obj):
@@ -357,17 +372,17 @@ class TaxonModify(admin.ModelAdmin):
             is_valid = False
         str_hierarchy_begin, str_hierarchy_end = constr_hierarchy_tree_branch_parents(list_hierarchy)
         if is_valid:
-            str_taxon = '<li class="folder"><label><strong>{} :</strong> {} {}</label></li>' \
-                .format(obj.rang, obj.lb_nom, obj.lb_auteur)
+            str_taxon = f'<li class="folder"><label>{obj.rang} :</label> {obj.lb_nom} {obj.lb_auteur}</li>'
         else:
-            str_taxon = '<li class="folder"><label><strong>{} :</strong><a href="/taxon/{}/"> {} {}</a> ' \
-                .format(obj.id_ref.rang, obj.id_ref_id, obj.id_ref.lb_nom, obj.id_ref.lb_auteur)
+            str_taxon = f'<li class="folder"><label>{obj.id_ref.rang} : ' \
+                        f'''<a href="{reverse('admin:fatercal_taxon_change', args=[obj.id_ref_id])}">''' \
+                        f'{obj.id_ref.lb_nom} {obj.id_ref.lb_auteur}</a>'''
         str_child = constr_hierarchy_tree_branch_child(list_child, nb)
         if str_child == '':
             return mark_safe('<ul class="tree"><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end)
         else:
             str_hierarchy_end = str_child + '</ul></ul></li>'
-            return mark_safe('<ul><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end)
+            return mark_safe('<ul class="tree"><br/>' + str_hierarchy_begin + str_taxon + str_hierarchy_end)
 
     # list of file to use for style or javascript function
     class Media:
@@ -380,6 +395,7 @@ class TaxonModify(admin.ModelAdmin):
     syn.short_description = 'Autre(s) combinaison(s) et/ou synonyme(s)'
     valid.short_description = 'Valide'
     hierarchy.short_description = 'Hiérarchie'
+    prelevements.short_description = 'Liste des prélèvements'
 
 
 class LocalisationModify(admin.ModelAdmin):
@@ -461,12 +477,13 @@ class PrelevementModify(admin.ModelAdmin):
 
     # an url path to change referent or superior
     def button_modal_date(self, obj):
-        return mark_safe('''
-        Ces champs ne sont pas obligatoires ils vous aident juste à remplir le champ date au-dessus.<br><br>
-        Date unique: <input type="date" oninput=date_update('unique') id="date_1"><br><br>
-        Période: <input type="date" id="date_periode_1" oninput=date_update('periode')>
-        <input type="date" id="date_periode_2" oninput=date_update('periode')>
-        ''')
+        return mark_safe(
+            '''Ces champs ne sont pas obligatoires ils vous aident juste à remplir le champ date au-dessus.<br><br>
+            Date unique: <input type="date" oninput=date_update('unique') id="date_1"><br><br>
+            Période: <input type="date" id="date_periode_1" oninput=date_update('periode')>
+            <input type="date" id="date_periode_2" oninput=date_update('periode')>'''
+        )
+
     button_modal_date.short_description = 'Date Calendrier'
 
     # list of file to use for style or javascript function
@@ -620,6 +637,9 @@ class FatercalAdminSite(admin.AdminSite):
         return urlpatterns
 
 
+# list signals for different models
+post_save.connect(add_genre_to_name, sender=Taxon)
+
 # the list of model to show to the user for modification
 # TODO adapt with autodiscovery solution presented at https://stackoverflow.com/questions/32612400/auto-register-django-auth-models-using-custom-admin-site
 fatercal_admin = FatercalAdminSite(name='FatercalAdmin')
@@ -631,8 +651,9 @@ fatercal_admin.register(PlanteHote, PlanteHoteModify)
 fatercal_admin.register(Vernaculaire, VernaculaireModify)
 fatercal_admin.register(Iso6393, Iso6393Modify)
 
-#fatercal_admin.register(Group, GroupAdmin)
-#fatercal_admin.register(User, UserAdmin)
+# inline import fix a 'Module does not define class' error
+# https://stackoverflow.com/questions/67760162/module-does-not-define-class-error-while-replacing-default-admin-site
+from django.contrib.auth.admin import UserAdmin, GroupAdmin
 
-# list signals for different models
-post_save.connect(add_genre_to_name, sender=Taxon)
+fatercal_admin.register(Group, GroupAdmin)
+fatercal_admin.register(User, UserAdmin)

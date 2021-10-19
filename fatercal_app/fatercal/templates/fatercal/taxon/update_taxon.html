@@ -10,16 +10,16 @@
 </style>
     <div class="head">
         <h1 id="site-name">
-            <a href="/">Fatercal</a>
+            <a href="{% url 'admin:index' %}">Fatercal</a>
         </h1>
     </div>
 {% endblock %}
 
 {% block content %}
     <div class="breadcrumbs initialized">
-        <a href="/">Accueil</a>
-        <span class="icon-arrow-right breadcrumbs-separator"></span> <a href="/">Fatercal</a>
-        <span class="icon-arrow-right breadcrumbs-separator"></span> <a href="/taxon/">Taxon</a>
+        <a href="{% url 'admin:index' %}">Accueil</a>
+        <span class="icon-arrow-right breadcrumbs-separator"></span> <a href="{% url 'admin:index' %}">Fatercal</a>
+        <span class="icon-arrow-right breadcrumbs-separator"></span> <a href="{% url 'admin:fatercal_taxon_changelist' %}">Taxon</a>
         {% if goal == 'update' %}
             <span class="icon-arrow-right breadcrumbs-separator"></span> Mise à jour depuis Taxref
         {% else %}
@@ -46,7 +46,7 @@
                     <h2> Les taxons ont été inséré.</h2>
                 {% endif %}
             {% endif %}
-            <a href='/taxon/'>Retour a la page de choix de taxon</a>
+            <a href='{% url 'admin:fatercal_taxon_changelist' %}'>Retour a la page de choix de taxon</a>
         </div>
     </fieldset>
 {% endblock %}

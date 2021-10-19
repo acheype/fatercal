@@ -11,7 +11,7 @@ from rest_framework.reverse import reverse
 from .forms import AllTaxon, TaxonChangeSup, SearchAdvanced, ChooseData, UploadFileCsv, \
     ChooseTaxonToUpdate, ChooseTaxonToInsert
 from .function import constr_hierarchy_tree_adv_search, get_taxon_from_search, is_admin, update_taxon_from_taxref, \
-    get_taxon_personal, get_sample, get_taxons_for_sample, get_taxon_adv_search, change_ref_taxon, change_sup_taxon, \
+    get_taxon_personal, get_sample, get_taxons_for_sample, get_taxon_adv_search, update_taxon_ref, update_taxon_sup, \
     verify_and_save_sample, list_sample_for_map, get_taxon_from_search_taxref, get_taxref_update, get_taxref_insert, \
     insert_taxon_from_taxref, get_last_taxref_version, next_taxref_insert_page, delete_not_choose_taxref_insert
 from .models import Taxon, TaxrefRang, TaxrefHabitat, TaxrefStatus, Vernaculaire
@@ -118,11 +118,11 @@ def change_taxon_ref(request, id_taxon):
             form = AllTaxon(request.POST)
             if form.is_valid():
                 if taxon_to_change.id_ref == form.cleaned_data['taxon'].id_ref:
-                    error = "Mettez un référent différent de celui existant."
+                    error = 'Mettez un référent différent de celui existant.'
                     template = loader.get_template('fatercal/change_taxon.html')
                 else:
-                    change_ref_taxon(taxon_to_change, form.cleaned_data)
-                    message = "Le Taxon {} a bien été mis à jour".format(taxon_to_change.nom_complet)
+                    update_taxon_ref(taxon_to_change, form.cleaned_data)
+                    message = f'Le Taxon {taxon_to_change.nom_complet} a bien été mis à jour.'
                     template = loader.get_template('fatercal/return_change_taxon.html')
             else:
                 template = loader.get_template('fatercal/change_taxon.html')
@@ -133,8 +133,7 @@ def change_taxon_ref(request, id_taxon):
             error = None
     else:
         template = loader.get_template('fatercal/return_change_taxon.html')
-        message = 'Le taxon {} n\'est pas un taxon valide. Retour a la page du taxon.' \
-            .format(taxon_to_change.nom_complet)
+        message = f'Le taxon {taxon_to_change.nom_complet} n\'est pas un taxon valide.'
     form = AllTaxon()
     context = {
         'form': form,
@@ -160,10 +159,10 @@ def change_taxon_sup(request, id_taxon):
     if taxon_to_change == taxon_to_change.id_ref:
         if request.method == 'POST':
             form = TaxonChangeSup(request.POST)
-            message = "Le Taxon {} a bien été mis à jour".format(taxon_to_change.nom_complet)
+            message = 'Le Taxon {taxon_to_change.nom_complet} a bien été mis à jour'
             if form.is_valid():
                 if taxon_to_change != form.cleaned_data['taxon_superieur']:
-                    template, error = change_sup_taxon(taxon_to_change, form.cleaned_data)
+                    template, error = update_taxon_sup(taxon_to_change, form.cleaned_data)
                 else:
                     form = TaxonChangeSup()
                     template = loader.get_template('fatercal/change_taxon.html')
@@ -177,8 +176,7 @@ def change_taxon_sup(request, id_taxon):
             template = loader.get_template('fatercal/change_taxon.html')
     else:
         template = loader.get_template('fatercal/return_change_taxon.html')
-        message = 'Le taxon {} n\'est pas un taxon valide. Retour a la page du taxon.' \
-                  ''.format(taxon_to_change.nom_complet)
+        message = f'Le taxon {taxon_to_change.nom_complet} n\'est pas un taxon valide.'
     context = {
         'error': error,
         'form': form,

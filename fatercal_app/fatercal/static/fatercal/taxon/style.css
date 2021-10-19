@@ -16,3 +16,30 @@ a#delete_id_id_ref {
 a#delete_id_id_sup {
     display: none;
 }
+
+ul.tree, ul.tree li {
+    list-style-type: none;
+    margin-left: 0;
+}
+.tree_label, .folder, .folder a {
+    font-weight: bold;
+    padding-right: 0!important;
+}
+.folder label {
+    font-weight: normal;
+    padding-right: 0!important;
+}
+
+.field-prelevements label {
+    float: none;
+}
+.field-prelevements table {
+    border-radius: 0;
+}
+.field-prelevements table thead {
+    background-color: #ecf2f6;
+    color: #7a889d;
+}
+.field-prelevements table thead tr td {
+    font-weight: bold;
+}

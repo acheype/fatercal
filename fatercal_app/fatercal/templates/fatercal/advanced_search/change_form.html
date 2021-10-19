@@ -1,21 +1,25 @@
 {% extends 'admin/base_site.html' %}
 
 {% load static %}
+{% block extrahead %}
+    <link rel="stylesheet" type="text/css" href="{% static 'fatercal/taxon/style.css' %}">
+{% endblock %}
+
 {% block title %}
     Recherche Avancée | Fatercal
 {% endblock %}
 {% block branding %}
     <div class="head">
         <h1 id="site-name">
-            <a href="/">Fatercal</a>
+            <a href="{% url 'admin:index' %}">Fatercal</a>
         </h1>
     </div>
 {% endblock %}
 
 {% block content %}
     <div class="breadcrumbs initialized">
-        <a href="/">Accueil</a>
-        <span class="icon-arrow-right breadcrumbs-separator"></span> <a href="/">Fatercal</a>
+        <a href="{% url 'admin:index' %}">Accueil</a>
+        <span class="icon-arrow-right breadcrumbs-separator"></span> <a href="{% url 'admin:index' %}">Fatercal</a>
         <span class="icon-arrow-right breadcrumbs-separator"></span> Recherche Avancée
     </div><br>
     <fieldset class="module aligned ">
@@ -26,9 +30,9 @@
                 <input type="submit" value="Recherche!" />
             </form><br>
             {{ form.media }}
-            <p>Cette page vous affichera, pour un taxon donné, ses enfants ainsi que leurs enfants sous la forme
-                d'un arbre hiérarchique complet. Si vous afficher les taxons liées à un auteur particulier
-                ne choissisez pas de taxon
+            <p>
+                Cette page vous affichera, pour un taxon donné, ses enfants sous la forme d'un arbre hiérarchique
+                complet. Si vous affichez les taxons liés à un auteur particulier, ne choissisez pas de taxon.
             </p>
         </div><br><br>
     </fieldset>
@@ -37,12 +41,12 @@
         <ul class="object-tools initialized">
             <li>
                 {% if taxon != null%}
-                    <a href="/export_adv_search/?id={{taxon.id}}" class="btn btn-high btn-success">
+                    <a href="{% url 'export_adv_search' %}?id={{taxon.id}}" class="btn btn-high btn-success">
                         Export pour import de prélèvements
                     </a>
                 {% else %}
                     {% if count_es != 0 %}
-                        <a href="/export_adv_search/?auteur={{auteur}}" class="btn btn-high btn-success">
+                        <a href="{% url 'export_adv_search' %}?auteur={{auteur}}" class="btn btn-high btn-success">
                             Export pour import de prélèvements
                         </a>
                     {% endif %}
@@ -53,7 +57,7 @@
             <div class="form-row field-lb_nom">
                 {% if taxon != null%}
                     <p>
-                        Taxon Choisi: <a href='/taxon/{{taxon.id}}/'>{{taxon}}</a>
+                        Taxon Choisi : <a href='{% url 'admin:fatercal_taxon_change' taxon.id %}'>{{taxon}}</a>
                     </p>
 
                 {%endif%}
@@ -61,7 +65,7 @@
                     Nombre d'Espece Trouvée(s) : {{count_es}}
                 </p>
                 <p>
-                    {{list_taxon |safe }}
+                    {{list_taxon|safe}}
                 </p>
             </div>
         </fieldset>

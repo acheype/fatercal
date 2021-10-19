@@ -6,10 +6,10 @@
 {{ block.super }}
     <li>
         {% if request.user|has_group:"Admin"%}
-            <a href="/export_search_sample/{% if request.GET %}?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}{% endif %}"
+            <a href="{% url 'export_search_sample' %}{% if request.GET %}?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}{% endif %}"
                class="btn btn-high btn-success">Exporter Recherche</a>
-            <a href="/import_sample/" class="btn btn-high btn-success">Importer Prélèvements</a>
+            <a href="{% url 'import_sample' %}" class="btn btn-high btn-success">Importer Prélèvements</a>
         {% endif %}
-        <a href="/map_sample/" class="btn btn-high btn-success">Carte des Prélèvements</a>
+        <a href="{% url 'map_sample' %}" class="btn btn-high btn-success">Carte des Prélèvements</a>
     </li>
 {% endblock %}
