@@ -3,7 +3,7 @@ services:
     webapp:
         container_name: fatercal-web
         image: acheype/fatercal-web:2.3.1
-        build: ./fatercal_app
+        build: fatercal_apps
         volumes:
             - /etc/letsencrypt:/etc/letsencrypt
             - /tmp/:/var/log/letsencrypt

@@ -31,7 +31,7 @@ RUN a2enmod headers
 RUN mkdir /app
 COPY manage.py requirements.txt /app/
 COPY fatercal /app/fatercal
-COPY fatercal-site /app/fatercal-site
+COPY fatercal_apps /app/fatercal-site
 COPY script_import /app/script_import
 COPY index.html /var/www/html/index.html
 
