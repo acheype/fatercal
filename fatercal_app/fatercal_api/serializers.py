@@ -1,10 +1,11 @@
 from rest_framework import serializers
 
-from .models import Taxon, TaxrefRang, TaxrefHabitat, TaxrefStatus, Vernaculaire
+from fatercal.models import Taxon, TaxrefRang, TaxrefHabitat, TaxrefStatus, Vernaculaire
 
 
 class TaxonSerializer(serializers.HyperlinkedModelSerializer):
     last_update = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S");
+
     class Meta:
         model = Taxon
         fields = ['url', 'id', 'id_ref', 'id_sup', 'cd_nom', 'cd_ref', 'cd_sup', 'lb_nom', 'lb_auteur', 'nom_complet',

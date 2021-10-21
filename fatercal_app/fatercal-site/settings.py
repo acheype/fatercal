@@ -31,8 +31,9 @@ ALLOWED_HOSTS = ['*']
 INSTALLED_APPS = [
     'jet',
     'jet.dashboard',
-    'fatercal',
     'fatercal.apps.FatercalAdminConfig',
+    'fatercal',
+    'fatercal_api',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',

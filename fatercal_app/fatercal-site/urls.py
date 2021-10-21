@@ -28,6 +28,7 @@ urlpatterns = [
     path('jet/dashboard/', include('jet.dashboard.urls', 'jet-dashboard')),  # Django JET dashboard URLS
     path('admin/', fatercal_admin.urls),
     path('admin/', include('fatercal.urls')),
+    path('api/', include('fatercal_api.urls')),
     path('', RedirectView.as_view(url='/admin/', permanent=False)),
     path('login/', RedirectView.as_view(url='/admin/login/', permanent=False), name='login')
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
