@@ -598,7 +598,7 @@ class TaxonTestCase(TestCase):
         self.genus.save()
         self.species.save()
         taxon_taxref = TaxrefUpdate.objects.create(
-            taxon_id=self.species, cd_nom=1,
+            id_taxon=self.species, cd_nom=1,
             cd_ref=1, cd_sup=2, rang='ES',
             lb_nom='different_name', lb_auteur='different author',
             nom_complet='different_name different author',
@@ -607,7 +607,7 @@ class TaxonTestCase(TestCase):
         )
         empty, taxref_version, count = get_taxref_update()
         taxref_version_expected = "11"
-        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species)
+        taxon_taxref = TaxrefUpdate.objects.get(id_taxon=self.species)
         nom_complet_expected = "different_name different author: Le nom du taxon est différent. "\
             "Nom Chez Fatercal: genus species, Chez taxref: different_name. Le nom de l'auteur de "\
             "ce taxon est différent. Auteur Chez Fatercal: auteur7, Chez taxref: different author. "
@@ -624,7 +624,7 @@ class TaxonTestCase(TestCase):
         taxon_taxref.lb_auteur = 'auteur7'
         taxon_taxref.save()
         empty, taxref_version, count = get_taxref_update()
-        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species)
+        taxon_taxref = TaxrefUpdate.objects.get(id_taxon=self.species)
         nom_complet_expected = "genus species auteur7: Le supérieur de ce taxon "\
             "est différent et celui de Fatercal n'existe pas chez Taxref. "
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
@@ -637,7 +637,7 @@ class TaxonTestCase(TestCase):
         self.species.id_sup=None
         self.species.save()
         empty, taxref_version, count = get_taxref_update()
-        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species)
+        taxon_taxref = TaxrefUpdate.objects.get(id_taxon=self.species)
         nom_complet_expected = "genus species auteur7: Ce taxon n'a pas de supérieur "\
             "dans fatercal et Taxref lui en a assigné un Supérieur chez Taxref: genus auteur6"
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
@@ -648,7 +648,7 @@ class TaxonTestCase(TestCase):
         self.genus.cd_nom = None
         self.genus.save()
         empty, taxref_version, count = get_taxref_update()
-        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species)
+        taxon_taxref = TaxrefUpdate.objects.get(id_taxon=self.species)
         nom_complet_expected = "genus species auteur7: Ce taxon n'a pas de supérieur dans fatercal "\
             "et Taxref lui en a assigné un mais il n'exist pas chez fatercal. Cd_nom supérieur chez Taxref: 2"
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
@@ -664,7 +664,7 @@ class TaxonTestCase(TestCase):
         self.species_syn.save()
         taxon_taxref.save()
         empty, taxref_version, count = get_taxref_update()
-        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species)
+        taxon_taxref = TaxrefUpdate.objects.get(id_taxon=self.species)
         nom_complet_expected = "genus species auteur7: Le taxon est valide "\
             "chez fatercal mais synonyme chez Taxref. Taxon référent chez Taxref: species_synonymous auteur9 (Non Valide)"
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
@@ -675,7 +675,7 @@ class TaxonTestCase(TestCase):
         self.species_syn.cd_nom = None
         self.species_syn.save()
         empty, taxref_version, count = get_taxref_update()
-        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species)
+        taxon_taxref = TaxrefUpdate.objects.get(id_taxon=self.species)
         nom_complet_expected = "genus species auteur7: Le taxon est valide chez fatercal "\
             "mais synonyme chez Taxrefet n'éxiste pas chez Fatercal. Cd_nom taxon référent chez Taxref: 3."
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
@@ -687,7 +687,7 @@ class TaxonTestCase(TestCase):
         self.species.save()
         self.species_syn.cd_nom = 1
         self.species_syn.save()
-        taxon_taxref.taxon_id = self.species_syn
+        taxon_taxref.id_taxon = self.species_syn
         taxon_taxref.cd_ref = 3
         taxon_taxref.lb_nom = "species_synonymous"
         taxon_taxref.lb_auteur = "auteur9"
@@ -695,7 +695,7 @@ class TaxonTestCase(TestCase):
         self.genus.cd_nom = 2
         self.genus.save()
         empty, taxref_version, count = get_taxref_update()
-        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species_syn)
+        taxon_taxref = TaxrefUpdate.objects.get(id_taxon=self.species_syn)
         nom_complet_expected = "species_synonymous auteur9: Le référent de ce taxon est différent "\
             "et celui de Fatercal n'existe pas chez Taxref. "
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
@@ -711,7 +711,7 @@ class TaxonTestCase(TestCase):
         self.genus.cd_nom = None
         self.genus.save()
         empty, taxref_version, count = get_taxref_update()
-        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species_syn)
+        taxon_taxref = TaxrefUpdate.objects.get(id_taxon=self.species_syn)
         nom_complet_expected = "species_synonymous auteur9: Le taxon est synonyme chez fatercal "\
             "mais valide chez Taxref mais le taxon supérieur n'existe pas chez Fatercal Cd_nom taxon "\
                 "supérieur chez Taxref: 2. "
@@ -723,7 +723,7 @@ class TaxonTestCase(TestCase):
         self.genus.cd_nom = 2
         self.genus.save()
         empty, taxref_version, count = get_taxref_update()
-        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species_syn)
+        taxon_taxref = TaxrefUpdate.objects.get(id_taxon=self.species_syn)
         nom_complet_expected = "species_synonymous auteur9: Le taxon est synonyme "\
             "chez fatercal mais valide chez Taxref. Supérieur chez Taxref: genus auteur6. "
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
@@ -734,7 +734,7 @@ class TaxonTestCase(TestCase):
         taxon_taxref.cd_ref = 4
         taxon_taxref.save()
         empty, taxref_version, count = get_taxref_update()
-        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species_syn)
+        taxon_taxref = TaxrefUpdate.objects.get(id_taxon=self.species_syn)
         nom_complet_expected = "species_synonymous auteur9: Le référent de ce taxon "\
             "est différent et n'existe pas dans Fatercal. CD_NOM = 4. "
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
@@ -745,7 +745,7 @@ class TaxonTestCase(TestCase):
         self.sub_species.cd_nom = 4
         self.sub_species.save()
         empty, taxref_version, count = get_taxref_update()
-        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species_syn)
+        taxon_taxref = TaxrefUpdate.objects.get(id_taxon=self.species_syn)
         nom_complet_expected = "species_synonymous auteur9: Le référent de ce taxon est différent. "\
             "Référent chez fatercal: genus species auteur7, chez Taxref genus species sub_species auteur8. "
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
@@ -759,7 +759,7 @@ class TaxonTestCase(TestCase):
         taxon_taxref.nc = "NEIF"
         taxon_taxref.save()
         empty, taxref_version, count = get_taxref_update()
-        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species_syn)
+        taxon_taxref = TaxrefUpdate.objects.get(id_taxon=self.species_syn)
         nom_complet_expected = "species_synonymous auteur9: Le rang est différent et n'existe pas "\
             "chez Fatercal. Nouveau rang: NEIF. Un habitat a été spécifié pour ce taxon mais il n'existe pas chez fatercal. Nouvelle habitat: 154. Un status a été spécifié pour ce taxon mais il n'existe pas chez fatercal. Nouveau Status: NEIF. "
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
@@ -773,7 +773,7 @@ class TaxonTestCase(TestCase):
         self.species_syn.habitat = TaxrefHabitat.objects.get(habitat=1)
         self.species_syn.save()
         empty, taxref_version, count = get_taxref_update()
-        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species_syn)
+        taxon_taxref = TaxrefUpdate.objects.get(id_taxon=self.species_syn)
         nom_complet_expected = "species_synonymous auteur9: L'habitat est différent "\
             "et n'existe pas chez Fatercal. Nouvelle Habitat: 154. Le status est différent "\
             "et n'existe pas chez Fatercal. Nouveau Status: NEIF"
@@ -786,7 +786,7 @@ class TaxonTestCase(TestCase):
         taxon_taxref.habitat = 2
         taxon_taxref.save()
         empty, taxref_version, count = get_taxref_update()
-        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species_syn)
+        taxon_taxref = TaxrefUpdate.objects.get(id_taxon=self.species_syn)
         nom_complet_expected = "species_synonymous auteur9: L'habitat est différent. "\
             "Nouvelle Habitat: Terrestre. Le status est différent. Nouveau Status: Présent"
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
@@ -798,7 +798,7 @@ class TaxonTestCase(TestCase):
         self.species_syn.habitat = None
         self.species_syn.save()
         empty, taxref_version, count = get_taxref_update()
-        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species_syn)
+        taxon_taxref = TaxrefUpdate.objects.get(id_taxon=self.species_syn)
         nom_complet_expected = "species_synonymous auteur9: Un habitat a été spécifié pour ce taxon. "\
             "Nouvelle Habitat: Terrestre. Un status a été spécifié pour ce taxon. Nouveau Status: Présent. "
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
@@ -811,7 +811,7 @@ class TaxonTestCase(TestCase):
         self.species_syn.save()
         taxon_taxref.save()
         empty, taxref_version, count = get_taxref_update()
-        taxon_taxref = TaxrefUpdate.objects.get(taxon_id=self.species_syn)
+        taxon_taxref = TaxrefUpdate.objects.get(id_taxon=self.species_syn)
         nom_complet_expected = "species_synonymous auteur9: Aucune différence mais des "\
             "identifiant venant de Taxref était manquant."
         self.assertEqual(nom_complet_expected, taxon_taxref.nom_complet)
@@ -889,7 +889,7 @@ class TaxonTestCase(TestCase):
         self.species.save()
         self.species_syn.save()
         taxon_taxref = TaxrefUpdate.objects.create(
-            taxon_id=self.species, cd_nom=1,
+            id_taxon=self.species, cd_nom=1,
             cd_ref=1, cd_sup=2, rang='ES',
             lb_nom='different name', lb_auteur='different author',
             nom_complet='different_name different author',
@@ -899,7 +899,7 @@ class TaxonTestCase(TestCase):
             taxref_version='11'
         )
         taxon_taxref_syn = TaxrefUpdate.objects.create(
-            taxon_id=self.species_syn, cd_nom=4,
+            id_taxon=self.species_syn, cd_nom=4,
             cd_ref=4, cd_sup=2, rang='ES',
             lb_nom='syn_name', lb_auteur='syn_author',
             nom_complet='syn_name syn_author',

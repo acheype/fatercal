@@ -321,7 +321,7 @@ def get_sample(param):
     for sample in list_not_proper.iterator():
         harvesters = get_recolteur(sample)
         dict_loc = get_loc_from_sample(sample)
-        taxon = Taxon.objects.get(id=sample.id_taxon_id)
+        taxon = Taxon.objects.get(id=sample.id_taxon)
         if taxon.id != taxon.id_ref_id:
             dict_hierarchy = get_hierarchy_to_dict(taxon.id_ref)
         else:
@@ -909,7 +909,7 @@ def get_taxon_adv_search(taxon_id, auteur):
          'capture/relacher', 'informations complementaires', 'photo', 'x wgs 84', 'y wgs 84', 'x rgnc', 'y rgnc')
     ]
     if taxon_id is not None:
-        taxon = Taxon.objects.get(id=taxon_id)
+        taxon = Taxon.objects.get(id=id_taxon)
         list_child_taxon, count_es = get_child_of_child(taxon)
         dict_hierarchy = get_hierarchy_to_dict(taxon)
         list_taxon.append((taxon.id, dict_hierarchy.get('Ordre'), dict_hierarchy.get('Famille'),
@@ -1034,19 +1034,19 @@ def get_taxref_update():
     # Here we get the latest version of taxref
     taxref_version = TaxrefUpdate.objects.aggregate(Max('taxref_version'))
     if not TaxrefUpdate.objects.filter(Q(taxref_version=taxref_version['taxref_version__max'])
-        & ~Q(taxon_id=None)).exists():
+        & ~Q(id_taxon=None)).exists():
         empty = True
         count = 0
     else:
         empty = False
         list_taxon_to_update = TaxrefUpdate.objects.filter(
             Q(taxref_version=taxref_version['taxref_version__max']) &
-            ~Q(taxon_id=None))
+            ~Q(id_taxon=None))
         count = len(list_taxon_to_update)
         # For every taxon we check all possible update
         for taxref_taxon in list_taxon_to_update.iterator():
             diff = ""
-            fatercal_taxon = Taxon.objects.get(id=taxref_taxon.taxon_id_id)
+            fatercal_taxon = Taxon.objects.get(id=taxref_taxon.id_taxon)
             is_taxon_sup = Taxon.objects.filter(Q(cd_nom=taxref_taxon.cd_sup) & ~Q(cd_nom=None)).exists()
             is_taxon_ref = Taxon.objects.filter(Q(cd_nom=taxref_taxon.cd_ref) & ~Q(cd_nom=None)).exists()
             rang = TaxrefRang.objects.filter(rang=taxref_taxon.rang).exists()
@@ -1186,7 +1186,7 @@ def update_taxon_from_taxref(data, taxref_version, user):
     """
     if data['choices']:
         for taxon in data['choices']:
-            fatercal_taxon = taxon.taxon_id
+            fatercal_taxon = taxon.id_taxon
             # Check if the lb_nom is different
             if fatercal_taxon.lb_nom != taxon.lb_nom:
                 fatercal_taxon.lb_nom = taxon.lb_nom
@@ -1247,10 +1247,10 @@ def update_taxon_from_taxref(data, taxref_version, user):
     # on taxon not updated with Taxref Data 
     list_taxon = TaxrefUpdate.objects.filter(
             Q(taxref_version=taxref_version['taxref_version__max'])
-            & ~Q(taxon_id=None)
+            & ~Q(id_taxon=None)
         )
     for taxon in list_taxon.iterator():
-        fatercal_taxon = taxon.taxon_id
+        fatercal_taxon = taxon.id_taxon
         fatercal_taxon.taxref_version = taxref_version['taxref_version__max']
         fatercal_taxon.source = "Fatercal"
         fatercal_taxon.utilisateur = user.__str__()
@@ -1271,20 +1271,20 @@ def get_taxref_insert(rang):
     taxref_version = TaxrefUpdate.objects.aggregate(Max('taxref_version'))
     exist = TaxrefUpdate.objects.filter(
         Q(taxref_version=taxref_version['taxref_version__max']) &
-        Q(taxon_id=None)).exists()
+        Q(id_taxon=None)).exists()
     if exist:
         exist_rang = TaxrefUpdate.objects.filter(
             Q(taxref_version=taxref_version['taxref_version__max']) &
-            Q(taxon_id=None) & Q(rang=rang)).exists()
+            Q(id_taxon=None) & Q(rang=rang)).exists()
         if exist_rang or rang == 'other':
             if rang == 'other':
                 list_taxon_to_insert = TaxrefUpdate.objects.filter(
                     Q(taxref_version=taxref_version['taxref_version__max']) &
-                    Q(taxon_id=None) & ~Q(rang__in=list_hierarchy))
+                    Q(id_taxon=None) & ~Q(rang__in=list_hierarchy))
             else:
                 list_taxon_to_insert = TaxrefUpdate.objects.filter(
                     Q(taxref_version=taxref_version['taxref_version__max']) &
-                    Q(taxon_id=None) & Q(rang=rang))
+                    Q(id_taxon=None) & Q(rang=rang))
             nb_taxon = list_taxon_to_insert.count()
             for taxon in list_taxon_to_insert.iterator():
                 is_taxon_sup = Taxon.objects.filter(cd_nom=taxon.cd_sup).exists()
@@ -1386,7 +1386,7 @@ def delete_not_choose_taxref_insert():
     # We delete all TaxrefUpdate object new taxon not selected by user
     list_taxon = TaxrefUpdate.objects.filter(
             Q(taxref_version=taxref_version['taxref_version__max'])
-            & Q(taxon_id=None)
+            & Q(id_taxon=None)
         )
     list_taxon.delete()
 

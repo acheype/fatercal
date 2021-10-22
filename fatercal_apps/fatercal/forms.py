@@ -62,7 +62,7 @@ class ChooseTaxonToUpdate(forms.Form):
         self.fields['choices'] = forms.ModelMultipleChoiceField(
             queryset=TaxrefUpdate.objects.filter(
                 Q(taxref_version=taxref_version['taxref_version__max'])
-                & ~Q(taxon_id=None)
+                & ~Q(id_taxon=None)
             ),
             required=False,
             widget=forms.CheckboxSelectMultiple)
@@ -77,7 +77,7 @@ class ChooseTaxonToInsert(forms.Form):
         field = forms.ModelMultipleChoiceField(
                     queryset=TaxrefUpdate.objects.filter(
                         Q(taxref_version=taxref_version['taxref_version__max'])
-                        & Q(taxon_id=None) & ~Q(rang__in=list_hierarchy)
+                        & Q(id_taxon=None) & ~Q(rang__in=list_hierarchy)
                     ),
                     required=False,
                     widget=forms.CheckboxSelectMultiple
@@ -93,7 +93,7 @@ class ChooseTaxonToInsert(forms.Form):
                         self.fields['choices'] = forms.ModelMultipleChoiceField(
                             queryset=TaxrefUpdate.objects.filter(
                                 Q(taxref_version=taxref_version['taxref_version__max'])
-                                & Q(taxon_id=None) & Q(rang=kwargs['initial']['rang'])
+                                & Q(id_taxon=None) & Q(rang=kwargs['initial']['rang'])
                             ),
                             required=False,
                             widget=forms.CheckboxSelectMultiple

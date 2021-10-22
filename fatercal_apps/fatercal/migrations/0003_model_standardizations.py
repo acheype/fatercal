@@ -95,12 +95,12 @@ class Migration(migrations.Migration):
         migrations.RenameField(
             model_name='prelevement',
             old_name='id_loc',
-            new_name='localisation',
+            new_name='id_localisation',
         ),
         migrations.AlterField(
             model_name='prelevement',
-            name='localisation',
-            field=models.ForeignKey(blank=True, db_column='localisation', null=True,
+            name='id_localisation',
+            field=models.ForeignKey(blank=True, db_column='id_localisation', null=True,
                                     on_delete=django.db.models.deletion.DO_NOTHING, to='fatercal.Localisation',
                                     verbose_name='Localisation'),
         ),
@@ -112,7 +112,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='recolteur',
             name='prelevement',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING,
+            field=models.ForeignKey(blank=True, null=True, db_column='id_prelevement', on_delete=django.db.models.deletion.DO_NOTHING,
                                     to='fatercal.Prelevement'),
         ),
         migrations.AlterField(
@@ -139,5 +139,17 @@ class Migration(migrations.Migration):
             model_name='taxrefupdate',
             name='taxref_version',
             field=models.CharField(max_length=250),
+        ),
+        migrations.RenameField(
+            model_name='taxrefupdate',
+            old_name='taxon_id',
+            new_name='id_taxon',
+        ),
+        migrations.AlterField(
+            model_name='taxrefupdate',
+            name='id_taxon',
+            field=models.ForeignKey(db_column='id_taxon', null=True,
+                                    on_delete=django.db.models.deletion.DO_NOTHING, to='fatercal.Taxon',
+                                    verbose_name='Taxon'),
         ),
     ]

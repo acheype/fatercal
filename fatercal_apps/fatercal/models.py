@@ -127,7 +127,7 @@ class PlanteHote(models.Model):
 
 class Prelevement(models.Model):
     id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
-    localisation = models.ForeignKey(Localisation, db_column='localisation',
+    localisation = models.ForeignKey(Localisation, db_column='id_localisation',
                                blank=True, null=True, verbose_name='Localisation', on_delete=models.DO_NOTHING)
     id_taxon = models.ForeignKey('Taxon', db_column='id_taxon', verbose_name='Taxon', on_delete=models.DO_NOTHING)
     type_enregistrement = models.ForeignKey('TypeEnregistrement', db_column='type_enregistrement',
@@ -169,7 +169,8 @@ class Prelevement(models.Model):
 
 class Recolteur(models.Model):
     id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
-    prelevement = models.ForeignKey(Prelevement, blank=True, null=True, on_delete=models.DO_NOTHING)
+    prelevement = models.ForeignKey(Prelevement, db_column='id_prelevement', blank=True, null=True,
+                                    on_delete=models.DO_NOTHING)
     lb_auteur = models.CharField(max_length=250, blank=True, null=True, verbose_name='Récolteurs')
 
     class Meta:
@@ -205,7 +206,8 @@ class Taxon(models.Model):
     lb_auteur = models.CharField(max_length=250, blank=True, null=True, verbose_name='Auteur')
     nom_complet = models.CharField(max_length=250, blank=True, null=True)
     rang = models.ForeignKey('TaxrefRang', db_column='rang', on_delete=models.DO_NOTHING)
-    habitat = models.ForeignKey('TaxrefHabitat', db_column='habitat', blank=True, null=True, on_delete=models.DO_NOTHING)
+    habitat = models.ForeignKey('TaxrefHabitat', db_column='habitat', blank=True, null=True,
+                                on_delete=models.DO_NOTHING)
     nc = models.ForeignKey('TaxrefStatus', db_column='nc', blank=True, null=True, verbose_name='Statut',
                            on_delete=models.DO_NOTHING)
     grande_terre = models.NullBooleanField()
@@ -381,7 +383,7 @@ class TaxrefExport(models.Model):
 
 class TaxrefUpdate(models.Model):
     id = models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
-    taxon_id = models.ForeignKey('Taxon', db_column='taxon_id', verbose_name='Taxon', on_delete=models.DO_NOTHING, null=True)
+    id_taxon = models.ForeignKey('Taxon', db_column='id_taxon', verbose_name='Taxon', on_delete=models.DO_NOTHING, null=True)
     cd_nom = models.IntegerField(unique=True, blank=True, null=True)
     cd_ref = models.IntegerField(blank=True, null=True)
     cd_sup = models.IntegerField(blank=True, null=True)

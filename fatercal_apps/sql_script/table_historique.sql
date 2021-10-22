@@ -12,7 +12,7 @@
   toponymie_x double precision,
   toponymie_y double precision,
   infos_compl text,
-  localisation integer,
+  id_localisation integer,
   id_taxon integer NOT NULL,
   type_enregistrement integer,
   gps boolean,
