@@ -32,6 +32,7 @@ RUN mkdir /app
 COPY manage.py requirements.txt /app/
 COPY fatercal /app/fatercal
 COPY fatercal_apps /app/fatercal_apps
+COPY fatercal_api /app/fatercal_api
 COPY script_import /app/script_import
 COPY index.html /var/www/html/index.html
 
