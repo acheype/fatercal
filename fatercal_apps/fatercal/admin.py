@@ -101,7 +101,7 @@ class TaxonModify(admin.ModelAdmin):
         'lb_nom',
         'lb_auteur',
         'rang',
-        'valide',
+        'valid',
     )
 
     # The list of filter the user can use
@@ -120,8 +120,8 @@ class TaxonModify(admin.ModelAdmin):
     # The field that will be showing to the user when we edit a synonymous
     fieldsets_edit_syn = (
         ('Taxonomie', {
-            'fields': ('lb_nom', 'lb_auteur', 'nom_complet', 'valid', 'vernaculaires',
-                       'referent', 'id_sup', 'rang', 'hierarchy')
+            'fields': ('lb_nom', 'lb_auteur', 'nom_complet', 'valid', 'referent', 'vernaculaires', 'id_sup', 'rang',
+                       'hierarchy')
         }),
         ('Statut et Habitat', {
             'fields': ('nc', 'habitat', 'grande_terre', 'iles_loyaute', 'autre',)
@@ -144,8 +144,8 @@ class TaxonModify(admin.ModelAdmin):
     # The field that will be showing to the user when we edit a valid taxon
     fieldsets_edit_valid = (
         ('Taxonomie', {
-            'fields': ('lb_nom', 'lb_auteur', 'nom_complet', 'valid', 'vernaculaires',
-                       'syn', 'id_sup', 'rang', 'hierarchy')
+            'fields': ('lb_nom', 'lb_auteur', 'nom_complet', 'valid', 'syn', 'vernaculaires', 'id_sup', 'rang',
+                       'hierarchy')
         }),
         ('Statut et Habitat', {
             'fields': ('nc', 'habitat', 'grande_terre', 'iles_loyaute', 'autre',)
@@ -223,7 +223,7 @@ class TaxonModify(admin.ModelAdmin):
         else:
             obj.nom_complet = obj.lb_nom + ' ' + obj.lb_auteur
         super(TaxonModify, self).save_model(request, obj, form, change)
-        # When a user want to create a new valid taxon to refer itself
+        # when a user want to create a new valid taxon to refer itself
         if obj.id_ref is None:
             obj.id_ref = obj
             obj.save()
@@ -254,19 +254,27 @@ class TaxonModify(admin.ModelAdmin):
         :return:
         """
         list_vernaculaire = Vernaculaire.objects.filter(id_taxon=obj.id)
-        string = "</br>"
+        list_vernaculaire_syn = []
+        string = ''
         if obj.id == obj.id_ref_id:
             list_syn = Taxon.objects.filter(id_ref=obj.id).filter(~Q(id=obj.id))
             for syn in list_syn:
-                list_vernaculaire_syn = Prelevement.objects.filter(id_taxon=syn.id)
-                list_vernaculaire = list(chain(list_vernaculaire, list_vernaculaire_syn))
-        if len(list_vernaculaire) == 0:
-            string += "Aucun nom vernaculaire"
+                list_vernaculaire_syn = Vernaculaire.objects.filter(id_taxon=syn.id)
+        if not list_vernaculaire and not list_vernaculaire_syn:
+            string += "Aucun nom vernaculaire<br>"
         else:
             for vern in list_vernaculaire:
-                string += vern.nom_vern + "</br>"
-        string += f'''</br><a href="{reverse('admin:fatercal_vernaculaire_add')}?id_taxon={obj.id}">''' \
-                  'Ajouter un Vernaculaire</a>'
+                string += f'''<a href="{reverse('admin:fatercal_vernaculaire_change', args=[vern.id])}">''' \
+                        f'{vern.nom_vern}</a><br>'
+            string += f'''<a href="{reverse('admin:fatercal_vernaculaire_add')}?id_taxon={obj.id}">''' \
+                      '<i class="fas fa-plus-circle"></i> Ajouter un Vernaculaire</a><br>'
+            if list_vernaculaire_syn:
+                if list_vernaculaire:
+                    string += '<br>'
+                string += 'pour le(s) autre(s) combinaison(s) : <br>'
+            for vern in list_vernaculaire_syn:
+                string += f'''<a href="{reverse('admin:fatercal_vernaculaire_change', args=[vern.id])}">''' \
+                        f'{vern.nom_vern}</a><br>'
         return mark_safe(string)
 
     def prelevements(self, obj):
@@ -335,8 +343,8 @@ class TaxonModify(admin.ModelAdmin):
         :return: The list of synonymous in html tag
         """
         list_syn = Taxon.objects.filter(id_ref=obj.id).filter(~Q(id=obj.id))
-        if len(list_syn) != 0:
-            string = "</br>"
+        if list_syn:
+            string = ''
             for syn in list_syn:
                 string += f'''<a href="{reverse('admin:fatercal_taxon_change', args=[syn.id])}">''' \
                           f'{syn.nom_complet}</a><br/>'
@@ -387,7 +395,7 @@ class TaxonModify(admin.ModelAdmin):
     # list of file to use for style or javascript function
     class Media:
         css = {
-            'all': ('fatercal/taxon/style.css',)
+            'all': ('fatercal/taxon/style.css', static('fontawesome_free/css/all.min.css'),)
         }
 
     # Override attribute in Model Admin
