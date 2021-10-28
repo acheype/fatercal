@@ -359,9 +359,9 @@ class TaxonModify(admin.ModelAdmin):
         :return: an image
         """
         if obj.id == obj.id_ref_id:
-            return mark_safe(f'''<img src="{static('admin/img/icon-yes.gif')}" alt="True">''')
+            return mark_safe(f'''<img src="{static('admin/img/icon-yes.svg')}" alt="True">''')
         else:
-            return mark_safe(f'''<img src="{static('admin/img/icon-no.gif')}" alt="False">''')
+            return mark_safe(f'''<img src="{static('admin/img/icon-no.svg')}" alt="False">''')
 
     # This function will construct the hierarchy tree of the taxon
     def hierarchy(self, obj):
