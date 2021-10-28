@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'ajax_select',
     'rest_framework',
+    'fontawesome-free',
 ]
 
 MIDDLEWARE = [
