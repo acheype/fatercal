@@ -1,4 +1,4 @@
-FROM ubuntu:18.10
+FROM ubuntu:20.04
 LABEL author="laurent.schaeffer313@gmail.com"
 
 # apache-httpd environment variables
@@ -20,10 +20,8 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # install the ubuntu packages needed
 RUN apt-get update && apt-get install -y software-properties-common
-RUN add-apt-repository ppa:certbot/certbot
-#RUN apt-get update && apt-get install -y apache2 mod_ssl apache2-utils libapache2-mod-wsgi-py3 python3 python3-pip libpq-dev postgresql-client-9.6 vim python-certbot-apache && apt-get clean
-RUN apt-get update && apt-get install -y apache2 apache2-utils libapache2-mod-wsgi-py3 python3 python3-pip libpq-dev vim python-certbot-apache iputils-ping
-RUN apt-get update && apt-get install -y postgresql-client-10
+RUN apt-get update && apt-get install -y apache2 apache2-utils libapache2-mod-wsgi-py3 python3 python3-pip libpq-dev vim certbot python3-certbot-apache iputils-ping
+RUN apt-get update && apt-get install -y postgresql-client
 RUN a2enmod ssl
 RUN a2enmod headers
 

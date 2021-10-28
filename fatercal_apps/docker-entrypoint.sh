@@ -11,13 +11,13 @@ until PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -U $POSTGRES_DB -c '\
 done
 >&2 echo "Postgres is up - continuing"
 
-#echo "Collect static files..."
+echo "Collect static files..."
 python3 /app/manage.py collectstatic --noinput
 
-# create django schema if not already exist
+echo "Create django schema if not already exist..."
 PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -U $POSTGRES_DB -d $POSTGRES_DB -c 'CREATE SCHEMA IF NOT EXISTS django;'
 
-#echo "Apply database migrations (if needed)..."
+echo "Apply database migrations if needed..."
 python3 /app/manage.py migrate auth --database=django
 python3 /app/manage.py migrate admin --database=django
 python3 /app/manage.py migrate contenttypes --database=django
