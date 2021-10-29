@@ -93,17 +93,41 @@ Then enable the start at startup :
 
 ## From development to production
 
-launch the db in development
+**In development**
 
-    docker-compose up postgres
+Developments are made in the *development* branch.
+The version deployed in production are rebased in the *master* branch, and a tag named with the version number is made 
+in the Git repository.
+
+For rebase the dev branch into the master branch, do :
+
+    git checkout master
+    git rebase development
+    
+Then to tag the current version to a tag, you can type (the tag is named 2.3.3 in this example) :
+
+    git tag 2.3.3
+
+To test and develop the web application, you can launch the development server by taping :
+    
+    python3 manage.py runserver
+
+Then connect to http://localhost in a web navigator.
+
+**Update the docker image of the web application**
+
+In this example, we want to build the web application image directly on the server in the already existing local 
+repository located in */data/fatercal.git*. It may have to init the repository before.
+First get the tagged version of the git repository we want to deploy (we choose 2.3.3 for this example) :
+
+    cd /data/fatercal.git/
+    git master 2.3.3
+    
+
 
 build the web application docker image
 
     docker-compose build
-
-to init from scratch, make sure the directory /data/fatercal/postgresql is empty. *Warning* : dont do it in production !
-
-    rm /data/fatercal/postgresql -rf
 
 launch the postgres service (as it's the first startup, it will create the database and the database user)
 
@@ -116,17 +140,9 @@ the table managed by django and the public schema with the one managed by the fa
 
 test the application in development
 
-    python3 manage.py runserver
+    
 
-create a superuser to test the web application
 
-    docker exec -it fatercal-web python3 /app/manage.py createsuperuser
-
-Then connect to localhost:8000 in a web navigator
-
-If you need to import some data, for a dump in a clear sql file, launch :
-
-    docker exec -i fatercal-db psql -h localhost -d fatercal -U fatercal < dump_to_import.sql
 
 After trying in development environement, you can update the docker image in production.
 
@@ -156,6 +172,28 @@ before to start :
 
     cd docker/prod
     docker-compose up
+    
+## Other usefull commands in production
+
+**Create a superuser to access to the admin application**
+
+After the first deployment in production, you need to create a superuser to have access to the admin application : 
+
+    docker exec -it fatercal-web python3 /app/manage.py createsuperuser
+    
+**Init the database from scratch**
+
+Before to do it, make sure you are not in production with existing data !!
+
+    rm /data/fatercal/postgresql -rf
+    
+**Import a database from a dump file**
+
+If you need to import some data, for a dump in a clear sql file, launch :
+
+    docker exec -i fatercal-db psql -h localhost -d fatercal -U fatercal < dump_to_import.sql
+
+**Import a TAXREF revision**
 
 To import with the import script (operation to be done for each taxref revision, generally once a year), first copy the
 taxref file in the docker image then execute (the file need to be named ``taxref_animalia.csv`` and put in `` ):
