@@ -2,7 +2,7 @@ Django==2.2.24
 django-jet==1.0.8
 psycopg2==2.8.6
 django-ajax-selects==1.7.1
-numpy==1.17.4
+numpy==1.22.0
 djangorestframework==3.11.2
 Markdown==3.2.1
 fontawesome-free==5.15.4
